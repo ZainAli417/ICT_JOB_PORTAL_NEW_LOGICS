@@ -165,7 +165,7 @@ class _LandingPageState extends State<LandingPage>
                   ],
                 ),
                 child: const Icon(
-                  Icons.work_rounded,
+                  Icons.join_left_outlined,
                   color: Colors.white,
                   size: 24,
                 ),
