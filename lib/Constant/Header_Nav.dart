@@ -11,7 +11,7 @@ class HeaderNav extends StatefulWidget {
   State<HeaderNav> createState() => _HeaderNavState();
 }
 
-class _HeaderNavState extends State<HeaderNav> with SingleTickerProviderStateMixin {
+class _HeaderNavState extends State<HeaderNav> with TickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _animation;
   static const Color pureWhite = Color(0xFFFFFFFF);

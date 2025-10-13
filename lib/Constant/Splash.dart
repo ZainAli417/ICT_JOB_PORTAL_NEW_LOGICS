@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 void main() {
@@ -410,7 +411,11 @@ class _LandingPageState extends State<LandingPage>
                       Row(
                         children: [
                           ElevatedButton.icon(
-                            onPressed: () {},
+                            onPressed: () {
+
+                              context.go('/register');
+
+                            },
                             icon: Icon(Icons.person_add_rounded, size: 20),
                             label: Text('Join as Candidate',
                                 style: GoogleFonts.poppins(
@@ -427,7 +432,10 @@ class _LandingPageState extends State<LandingPage>
                           ),
                           SizedBox(width: 20),
                           OutlinedButton.icon(
-                            onPressed: () {},
+                            onPressed: () {
+                              context.go('/register');
+
+                            },
                             icon: Icon(Icons.business_center,
                                 color: Color(0xFF10B981)),
                             label: Text('I\'m a Recruiter',
