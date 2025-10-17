@@ -21,8 +21,9 @@ class _HeaderNavState extends State<HeaderNav> with TickerProviderStateMixin {
 
   @override
   void initState() {
+    // slow rotation controller (kept but visual won't have heavy gradients/shadows)
     _rotationController = AnimationController(
-      duration: const Duration(seconds: 30), // slower background rotation
+      duration: const Duration(seconds: 30),
       vsync: this,
     )..repeat();
     _rotationAnimation =
@@ -40,6 +41,8 @@ class _HeaderNavState extends State<HeaderNav> with TickerProviderStateMixin {
   @override
   void dispose() {
     _controller.dispose();
+    // dispose rotation controller too (important)
+    _rotationController.dispose();
     super.dispose();
   }
 
@@ -53,47 +56,32 @@ class _HeaderNavState extends State<HeaderNav> with TickerProviderStateMixin {
           end: Offset.zero,
         ).animate(_animation),
         child: Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.05),
-                blurRadius: 20,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
+          // NOTE: removed outer boxShadow so header is flat (no bottom shadow)
+          color: Colors.white,
           child: ClipRRect(
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 20),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      Colors.white.withOpacity(0.95),
-                      Colors.white.withOpacity(0.9)
-                    ],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  border: const Border(
-                    bottom: BorderSide(
-                      color: Color(0xFFE5E7EB),
-                      width: 1,
-                    ),
+            // keep clip but remove blur/backdrop to make header visually separate
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 20),
+              // solid white background (no transparent gradient)
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                // keep a subtle bottom border line for separation if desired
+                border: Border(
+                  bottom: BorderSide(
+                    color: Color(0xFFE5E7EB),
+                    width: 1,
                   ),
                 ),
-                child: LayoutBuilder(
-                  builder: (context, constraints) {
-                    final isNarrow = constraints.maxWidth < 900;
+              ),
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final isNarrow = constraints.maxWidth < 900;
 
-                    if (isNarrow) {
-                      return _buildMobileHeader(context);
-                    }
-                    return _buildDesktopHeader(context);
-                  },
-                ),
+                  if (isNarrow) {
+                    return _buildMobileHeader(context);
+                  }
+                  return _buildDesktopHeader(context);
+                },
               ),
             ),
           ),
@@ -105,7 +93,7 @@ class _HeaderNavState extends State<HeaderNav> with TickerProviderStateMixin {
   Widget _buildDesktopHeader(BuildContext context) {
     return Row(
       children: [
-        // Logo with animation
+        // Logo with animation (simplified, no purple gradient or outer shadows)
         TweenAnimationBuilder<double>(
           tween: Tween(begin: 0.8, end: 1.0),
           duration: const Duration(milliseconds: 500),
@@ -119,18 +107,11 @@ class _HeaderNavState extends State<HeaderNav> with TickerProviderStateMixin {
                   onTap: () => context.go('/'),
                   child: Container(
                     padding: const EdgeInsets.all(8),
+                    // simplified: flat white background, small colored icon, no boxShadow
                     decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
-                      ),
+                      color: Colors.white,
                       borderRadius: BorderRadius.circular(12),
-                      boxShadow: [
-                        BoxShadow(
-                          color: const Color(0xFF6366F1).withOpacity(0.3),
-                          blurRadius: 12,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
+                      border: Border.all(color: Colors.transparent),
                     ),
                     child: _buildCleanLogo(),
                   ),
@@ -161,7 +142,7 @@ class _HeaderNavState extends State<HeaderNav> with TickerProviderStateMixin {
 
         const Spacer(),
 
-        // Recruiter CTA with gradient
+        // Recruiter CTA with gradient (kept visual interest but no header shadow)
         _AnimatedButton(
           onPressed: () => context.go('/recruiter-signup'),
           child: Container(
@@ -169,8 +150,8 @@ class _HeaderNavState extends State<HeaderNav> with TickerProviderStateMixin {
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [
-                  const Color(0xFFF59E0B).withOpacity(0.1),
-                  const Color(0xFFEC4899).withOpacity(0.1),
+                  const Color(0xFFF59E0B).withOpacity(0.12),
+                  const Color(0xFFEC4899).withOpacity(0.12),
                 ],
               ),
               borderRadius: BorderRadius.circular(10),
@@ -212,7 +193,7 @@ class _HeaderNavState extends State<HeaderNav> with TickerProviderStateMixin {
 
         const SizedBox(width: 16),
 
-        // Login button
+        // Login button (flat, no extra header shadow)
         _AnimatedButton(
           onPressed: () => context.go('/login'),
           child: Container(
@@ -224,13 +205,6 @@ class _HeaderNavState extends State<HeaderNav> with TickerProviderStateMixin {
                 color: const Color(0xFF6366F1),
                 width: 2,
               ),
-              boxShadow: [
-                BoxShadow(
-                  color: const Color(0xFF6366F1).withOpacity(0.1),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-              ],
             ),
             child: Text(
               "Login",
@@ -255,13 +229,6 @@ class _HeaderNavState extends State<HeaderNav> with TickerProviderStateMixin {
                 colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
               ),
               borderRadius: BorderRadius.circular(10),
-              boxShadow: [
-                BoxShadow(
-                  color: const Color(0xFF6366F1).withOpacity(0.4),
-                  blurRadius: 12,
-                  offset: const Offset(0, 4),
-                ),
-              ],
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
@@ -291,13 +258,11 @@ class _HeaderNavState extends State<HeaderNav> with TickerProviderStateMixin {
   Widget _buildMobileHeader(BuildContext context) {
     return Row(
       children: [
-        // Logo
+        // Logo simplified for mobile as well
         Container(
           padding: const EdgeInsets.all(6),
           decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
-            ),
+            color: Colors.white,
             borderRadius: BorderRadius.circular(10),
           ),
           child: ClipRRect(
@@ -335,67 +300,45 @@ class _HeaderNavState extends State<HeaderNav> with TickerProviderStateMixin {
       ],
     );
   }
+
   Widget _buildCleanLogo() {
+    // simplified logo: small indigo circle with white icon + plain text (no gradient shader, no shadow)
     return Row(
       children: [
         AnimatedBuilder(
           animation: _rotationController,
           builder: (context, child) {
             return Transform.rotate(
-              angle: _rotationAnimation.value * 0.05,
+              angle: _rotationAnimation.value * 0.02, // tiny rotate for subtle motion
               child: Container(
-                width: 52,
-                height: 52,
+                width: 48,
+                height: 48,
                 decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      Colors.indigo.shade900,
-                      Colors.indigo.shade700,
-                      Colors.indigo.shade800,
-                    ],
-                  ),
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.indigo.withOpacity(0.4),
-                      blurRadius: 20,
-                      offset: const Offset(0, 8),
-                    ),
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
-                      blurRadius: 10,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
+                  color: const Color(0xFF6366F1), // flat indigo square
+                  borderRadius: BorderRadius.circular(12),
                 ),
                 child: const Icon(
                   Icons.auto_awesome_outlined,
                   color: pureWhite,
-                  size: 28,
+                  size: 26,
                 ),
               ),
             );
           },
         ),
-        const SizedBox(width: 20),
+        const SizedBox(width: 14),
         Column(
           mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            ShaderMask(
-              shaderCallback: (bounds) => LinearGradient(
-                colors: [Colors.indigo.shade900, Colors.indigo.shade600],
-              ).createShader(bounds),
-              child: Text(
-                'Maha Services',
-                style: GoogleFonts.poppins(
-                  fontSize: 28,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.white,
-                  letterSpacing: 1,
-                ),
+            // plain text (no ShaderMask / gradient)
+            Text(
+              'Maha Services',
+              style: GoogleFonts.poppins(
+                fontSize: 22,
+                fontWeight: FontWeight.w600,
+                color: charcoalGray,
+                letterSpacing: 0.4,
               ),
             ),
             Text(
@@ -404,7 +347,7 @@ class _HeaderNavState extends State<HeaderNav> with TickerProviderStateMixin {
                 fontSize: 11,
                 fontWeight: FontWeight.w300,
                 color: charcoalGray.withOpacity(0.6),
-                letterSpacing: 1.5,
+                letterSpacing: 1.2,
               ),
             ),
           ],
@@ -493,7 +436,6 @@ class _HeaderNavState extends State<HeaderNav> with TickerProviderStateMixin {
     );
   }
 }
-
 class _NavLink extends StatefulWidget {
   final String label;
   final IconData icon;

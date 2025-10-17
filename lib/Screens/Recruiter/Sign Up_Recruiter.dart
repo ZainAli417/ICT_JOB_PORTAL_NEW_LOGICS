@@ -6,7 +6,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
 import '../../Constant/Header_Nav.dart';
-import '../Job_Seeker/Signup_Provider.dart';
+import '../../Signup_Provider.dart';
 import 'Signup_Provider_Recruiter.dart';
 
 

@@ -156,7 +156,7 @@ class SignUpWidgets {
                                       ),
                                       child: const Icon(Icons.people_rounded, color: Colors.white, size: 22),
                                     ),
-                                    const SizedBox(width: 12),
+                                    const SizedBox(width: 10),
                                     Column(
                                       mainAxisAlignment: MainAxisAlignment.center,
                                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -201,7 +201,7 @@ class SignUpWidgets {
                                       ),
                                       child: const Icon(Icons.work_rounded, color: Colors.white, size: 22),
                                     ),
-                                    const SizedBox(width: 12),
+                                    const SizedBox(width: 10),
                                     Column(
                                       mainAxisAlignment: MainAxisAlignment.center,
                                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -246,7 +246,7 @@ class SignUpWidgets {
                                       ),
                                       child: const Icon(Icons.business_rounded, color: Colors.white, size: 22),
                                     ),
-                                    const SizedBox(width: 12),
+                                    const SizedBox(width: 10),
                                     Column(
                                       mainAxisAlignment: MainAxisAlignment.center,
                                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -345,7 +345,7 @@ class SignUpWidgets {
                   buildProgressBar(context, step, totalSteps, currentSteps, primaryColor),
                   const SizedBox(height: 35),
                   SizedBox(
-                    height: 350,
+                    height:450,
                     child: FadeTransition(
                       opacity: fadeAnimation,
                       child: Form(key: ValueKey<int>(step), child: stepContent),

@@ -7,20 +7,21 @@ import 'package:provider/provider.dart';
 import 'Constant/Forget Password Provider.dart';
 import 'Screens/Job_Seeker/List_applied_jobs_provider.dart';
 import 'Screens/Job_Seeker/Profile_Provider.dart';
-import 'Screens/Job_Seeker/Signup_Provider.dart';
 import 'Screens/Job_Seeker/job_seeker_provider.dart';
 import 'Screens/Job_Seeker/jobs_application_provider.dart';
-import 'Screens/Job_Seeker/login_provider.dart';
 import 'Screens/Recruiter/LIst_of_Applicants_provider.dart';
 import 'Screens/Recruiter/Signup_Provider_Recruiter.dart';
 import 'Screens/Recruiter/Recruiter_provider_old.dart';
 import 'Screens/Recruiter/login_provider_Recruiter.dart';
 import 'Screens/Recruiter/sidebar_provider.dart';
+import 'Signup_Provider.dart';
 import 'Top_Nav_Provider.dart';
 import 'Web_routes.dart';
 import 'firebase_options.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_web_plugins/url_strategy.dart';
+
+import 'login_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();

@@ -5,12 +5,13 @@ import 'dart:html' as html;
 
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
-import '../../Constant/Header_Nav.dart';
-import '../../widgets/signup_steps.dart';
-import '../../widgets/signup_widgets.dart';
+import 'Constant/Header_Nav.dart';
+import 'widgets/signup_steps.dart';
+import 'widgets/signup_widgets.dart';
 import 'Signup_Provider.dart';
 
 class JobSeekerSignUpScreen extends StatefulWidget {
@@ -25,7 +26,8 @@ class _JobSeekerSignUpScreenState extends State<JobSeekerSignUpScreen> with Tick
   late AnimationController _fadeController;
   late Animation<double> _fadeAnimation;
   int _step = 0;
-  int _totalSteps = 12;
+  // Note: this value will be set properly in _updateStepsForRole()
+  int _totalSteps = 13;
   late PageController _reviewPageController;
   int _currentReviewPage = 0;
   String role = 'Job Seeker';
@@ -70,21 +72,26 @@ class _JobSeekerSignUpScreenState extends State<JobSeekerSignUpScreen> with Tick
     _fadeAnimation = CurvedAnimation(parent: _fadeController, curve: Curves.easeInOut);
     _fadeController.forward();
     _reviewPageController = PageController();
+
+    // --- JOB SEEKER STEPS: nationality is now a dedicated step at index 4 ---
     _jobSeekerSteps = {
       0: StepDetails(icon: Icons.person_outline_rounded, title: 'Role', subtitle: 'Choose your path'),
       1: StepDetails(icon: Icons.badge_outlined, title: 'Name', subtitle: 'Your identity'),
       2: StepDetails(icon: Icons.mail_outline_rounded, title: 'Email', subtitle: 'Stay connected'),
       3: StepDetails(icon: Icons.phone_outlined, title: 'Phone', subtitle: 'Contact info'),
-      4: StepDetails(icon: Icons.lock_outline_rounded, title: 'Password', subtitle: 'Secure access'),
-      5: StepDetails(icon: Icons.family_restroom_outlined, title: 'Details', subtitle: 'Personal info'),
-      6: StepDetails(icon: Icons.camera_alt_outlined, title: 'Photo', subtitle: 'Your face'),
-      7: StepDetails(icon: Icons.school_outlined, title: 'Education', subtitle: 'Academic background'),
-      8: StepDetails(icon: Icons.work_outline_rounded, title: 'Experience', subtitle: 'Career history'),
-      9: StepDetails(icon: Icons.lightbulb_outline_rounded, title: 'Skills', subtitle: 'Your expertise'),
-      10: StepDetails(icon: Icons.verified_outlined, title: 'Certificates', subtitle: 'Credentials'),
-      11: StepDetails(icon: Icons.group_outlined, title: 'References', subtitle: 'Recommendations'),
-      12: StepDetails(icon: Icons.check_circle_outline_rounded, title: 'Review', subtitle: 'Final check'),
+      4: StepDetails(icon: Icons.flag_outlined, title: 'Nationality', subtitle: 'Your origin'), // <- added
+      5: StepDetails(icon: Icons.lock_outline_rounded, title: 'Password', subtitle: 'Secure access'),
+      6: StepDetails(icon: Icons.family_restroom_outlined, title: 'Details', subtitle: 'Personal info'),
+      7: StepDetails(icon: Icons.camera_alt_outlined, title: 'Photo', subtitle: 'Your face'),
+      8: StepDetails(icon: Icons.school_outlined, title: 'Education', subtitle: 'Academic background'),
+      9: StepDetails(icon: Icons.work_outline_rounded, title: 'Experience', subtitle: 'Career history'),
+      10: StepDetails(icon: Icons.lightbulb_outline_rounded, title: 'Skills', subtitle: 'Your expertise'),
+      11: StepDetails(icon: Icons.verified_outlined, title: 'Certificates', subtitle: 'Credentials'),
+      12: StepDetails(icon: Icons.group_outlined, title: 'References', subtitle: 'Recommendations'),
+      13: StepDetails(icon: Icons.check_circle_outline_rounded, title: 'Review', subtitle: 'Final check'),
     };
+
+    // Recruiter steps keep nationality at 4 as before
     _recruiterSteps = {
       0: StepDetails(icon: Icons.person_outline_rounded, title: 'Role', subtitle: 'Choose your path'),
       1: StepDetails(icon: Icons.badge_outlined, title: 'Name', subtitle: 'Your identity'),
@@ -119,9 +126,11 @@ class _JobSeekerSignUpScreenState extends State<JobSeekerSignUpScreen> with Tick
   void _updateStepsForRole() {
     setState(() {
       if (role == 'Recruiter') {
+        // recruiter uses indices 0..6
         _totalSteps = 6;
       } else {
-        _totalSteps = 12;
+        // job seeker uses indices 0..13 (we added nationality so highest index is 13)
+        _totalSteps = 13;
       }
       if (_step > _totalSteps) _step = _totalSteps;
     });
@@ -145,94 +154,83 @@ class _JobSeekerSignUpScreenState extends State<JobSeekerSignUpScreen> with Tick
   }
 
   bool _validateCurrentStep() {
-    if (role == 'Recruiter') {
-      switch (_step) {
-        case 1:
-          if (_nameController.text.trim().isEmpty) {
-            _showSnack('Please enter your full name', isError: true);
-            return false;
-          }
-          return true;
-        case 2:
-          if (!_emailController.text.contains('@')) {
-            _showSnack('Please enter a valid email address', isError: true);
-            return false;
-          }
-          return true;
-        case 3:
-          if (_phoneController.text.trim().isEmpty || _phoneController.text.trim().length < 7) {
-            _showSnack('Please enter a valid phone number', isError: true);
-            return false;
-          }
-          return true;
-        case 4:
-          if (_nationalityController.text.trim().isEmpty) {
-            _showSnack('Please enter your nationality', isError: true);
-            return false;
-          }
-          return true;
-        case 5:
-          if (_passwordController.text.length < 6) {
-            _showSnack('Password must be at least 6 characters', isError: true);
-            return false;
-          }
-          if (_passwordController.text != _confirmController.text) {
-            _showSnack('Passwords do not match', isError: true);
-            return false;
-          }
-          return true;
-        default:
-          return true;
-      }
-    } else {
-      switch (_step) {
-        case 1:
-          if (_nameController.text.trim().isEmpty) {
-            _showSnack('Please enter your full name', isError: true);
-            return false;
-          }
-          return true;
-        case 2:
-          if (!_emailController.text.contains('@')) {
-            _showSnack('Please enter a valid email address', isError: true);
-            return false;
-          }
-          return true;
-        case 3:
-          if (_phoneController.text.trim().isEmpty || _phoneController.text.trim().length < 7) {
-            _showSnack('Please enter a valid phone number', isError: true);
-            return false;
-          }
-          return true;
-        case 4:
-          if (_passwordController.text.length < 6) {
-            _showSnack('Password must be at least 6 characters', isError: true);
-            return false;
-          }
-          if (_passwordController.text != _confirmController.text) {
-            _showSnack('Passwords do not match', isError: true);
-            return false;
-          }
-          return true;
-        case 5:
-          if (_dob == null) {
-            _showSnack('Please select your date of birth', isError: true);
-            return false;
-          }
-          if (_fatherController.text.trim().isEmpty) {
-            _showSnack('Please enter father\'s name', isError: true);
-            return false;
-          }
-          return true;
-        case 6:
-          if (_imageDataUrl == null) {
-            _showSnack('Please upload a profile image (max 2 MB)', isError: true);
-            return false;
-          }
-          return true;
-        default:
-          return true;
-      }
+    // pick the map that contains the step metadata (title/subtitle)
+    final stepsMap = (role == 'Recruiter') ? _recruiterSteps : _jobSeekerSteps;
+    final stepDetails = stepsMap[_step];
+    final stepTitle = (stepDetails?.title ?? '').toString().toLowerCase();
+
+    debugPrint('Validating step index=$_step title="$stepTitle" role=$role');
+
+    // fallback: if no title available, allow progression (safe default)
+    if (stepTitle.isEmpty) return true;
+
+    switch (stepTitle) {
+      case 'name':
+        if (_nameController.text.trim().isEmpty) {
+          _showSnack('Please enter your full name', isError: true);
+          return false;
+        }
+        return true;
+
+      case 'email':
+        if (!_emailController.text.contains('@')) {
+          _showSnack('Please enter a valid email address', isError: true);
+          return false;
+        }
+        return true;
+
+      case 'phone':
+        if (_phoneController.text.trim().isEmpty || _phoneController.text.trim().length < 7) {
+          _showSnack('Please enter a valid phone number', isError: true);
+          return false;
+        }
+        return true;
+
+      case 'password':
+        if (_passwordController.text.length < 6) {
+          _showSnack('Password must be at least 6 characters', isError: true);
+          return false;
+        }
+        if (_passwordController.text != _confirmController.text) {
+          _showSnack('Passwords do not match', isError: true);
+          return false;
+        }
+        return true;
+
+      case 'nationality':
+      // This will now run when the user is on the dedicated nationality step (index 4)
+        if (_nationalityController.text.trim().isEmpty) {
+          _showSnack('Please enter your nationality', isError: true);
+          return false;
+        }
+        return true;
+
+      case 'details':
+      case 'personal':
+      case 'personal information':
+      // job seeker 'Details' step -> dob + father name validations
+        if (_dob == null) {
+          _showSnack('Please select your date of birth', isError: true);
+          return false;
+        }
+        if (_fatherController.text.trim().isEmpty) {
+          _showSnack('Please enter father\'s name', isError: true);
+          return false;
+        }
+        return true;
+
+      case 'photo':
+      case 'photo upload':
+      case 'image':
+        if (_imageDataUrl == null) {
+          _showSnack('Please upload a profile image (max 2 MB)', isError: true);
+          return false;
+        }
+        return true;
+
+    // other steps (education, experience, skills... ) — allow by default or extend as needed
+      default:
+        return true;
     }
   }
 
@@ -374,7 +372,6 @@ class _JobSeekerSignUpScreenState extends State<JobSeekerSignUpScreen> with Tick
       return stepBuilder.getRecruiterStep(_step);
     }
     return stepBuilder.getJobSeekerStep(_step);
-
   }
 
   Future<void> _register() async {
@@ -409,7 +406,9 @@ class _JobSeekerSignUpScreenState extends State<JobSeekerSignUpScreen> with Tick
     );
 
     if (success) {
-      _showSnack('Registration successful! Welcome aboard! 🎉');
+      _showSnack('Registration successful! Procced to Login! 🎉');
+      Future.delayed(Durations.medium2);
+      context.go('/login');
     }
   }
 

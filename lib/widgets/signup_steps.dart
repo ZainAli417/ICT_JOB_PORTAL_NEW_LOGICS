@@ -273,13 +273,7 @@ class SignUpSteps {
           ),
           const SizedBox(height: 16),
 
-          // 2. Nationality Field (New Entry)
-          SignUpWidgets.elegantTextField(
-            controller: nationalityController,
-            label: 'Nationality',
-            icon: Icons.flag_outlined, // Appropriate icon for nationality
-          ),
-          const SizedBox(height: 16),
+          // NOTE: Nationality removed from here because it's now its own dedicated step (index 4)
 
           // 3. Date of Birth Picker (Unchanged)
           GestureDetector(
@@ -829,7 +823,6 @@ class SignUpSteps {
         const SizedBox(height: 16),
 
         // --- Pagination Dots (Optional, but highly recommended) ---
-        // --- Pagination Dots ---
         Center(
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,

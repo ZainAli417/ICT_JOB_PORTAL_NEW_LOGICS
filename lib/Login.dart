@@ -6,7 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
-import '../../Constant/Header_Nav.dart';
+import 'Constant/Header_Nav.dart';
 import 'login_provider.dart';
 
 class JobSeekerLoginScreen extends StatefulWidget {
@@ -101,24 +101,24 @@ class _JobSeekerLoginScreenState extends State<JobSeekerLoginScreen>
     provider.clearError();
 
     try {
+      final normalizedEmail = _email.text.trim().toLowerCase();
+
       final success = await provider.login(
-        email: _email.text.trim(),
+        context: context,
+        email: normalizedEmail,
         password: _password.text,
-        expectedRole: _role == 'Job Seeker' ? 'Job_Seeker' : 'Recruiter',
+        expectedRole: _role == 'Job Seeker' ? 'Job Seeker' : 'Recruiter',
       );
 
       if (!mounted) return;
 
       if (success) {
-        await provider.updateLastLogin();
         _snack('Welcome back! 🎉');
-        Future.delayed(const Duration(milliseconds: 500), () {
-          if (mounted) Navigator.of(context).pushReplacementNamed('/dashboard');
-        });
       } else {
         _snack(provider.errorMessage ?? 'Invalid credentials', error: true);
       }
     } catch (e) {
+      debugPrint('Login exception: $e');
       _snack('Connection error. Please try again', error: true);
     }
   }
@@ -600,40 +600,50 @@ class _JobSeekerLoginScreenState extends State<JobSeekerLoginScreen>
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
+                     Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            gradient: const LinearGradient(
+                              colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
+                            ),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Icon(
+                            Icons.waving_hand_rounded,
+                            color: Colors.white,
+                            size: 28,
+                          ),
                         ),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: const Icon(
-                        Icons.waving_hand_rounded,
-                        color: Colors.white,
-                        size: 24,
-                      ),
+                        const SizedBox(width: 16),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Welcome Back!',
+                              style: GoogleFonts.poppins(
+                                fontSize: 32,
+                                fontWeight: FontWeight.w700,
+                                color: const Color(0xFF1F2937),
+                                letterSpacing: -0.5,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Sign in to continue your journey',
+                              style: GoogleFonts.poppins(
+                                color: const Color(0xFF6B7280),
+                                fontSize: 15,
+                                fontWeight: FontWeight.w400,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 24),
-                    Text(
-                      'Welcome Back!',
-                      style: GoogleFonts.poppins(
-                        fontSize: 36,
-                        fontWeight: FontWeight.w700,
-                        color: const Color(0xFF1F2937),
-                        letterSpacing: -1,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Sign in to continue your journey',
-                      style: GoogleFonts.poppins(
-                        color: const Color(0xFF6B7280),
-                        fontSize: 16,
-                        fontWeight: FontWeight.w400,
-                      ),
-                    ),
-                    const SizedBox(height: 40),
+                    const SizedBox(height: 20),
 
                     // Role selector
                     Container(
@@ -771,7 +781,7 @@ class _JobSeekerLoginScreenState extends State<JobSeekerLoginScreen>
                               color: const Color(0xFF1F2937),
                             ),
                             decoration: InputDecoration(
-                              hintText: '••••••••',
+                              hintText: '********',
                               hintStyle: GoogleFonts.poppins(
                                 color: const Color(0xFF9CA3AF),
                               ),
@@ -858,6 +868,15 @@ class _JobSeekerLoginScreenState extends State<JobSeekerLoginScreen>
                                   ),
                                 ],
                               ),
+
+
+
+
+
+
+
+
+
                               child: ElevatedButton(
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: Colors.transparent,
@@ -881,7 +900,7 @@ class _JobSeekerLoginScreenState extends State<JobSeekerLoginScreen>
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
                                     Text(
-                                      'Sign In',
+                                      'Log In',
                                       style: GoogleFonts.poppins(
                                         fontWeight: FontWeight.w600,
                                         fontSize: 16,
@@ -897,6 +916,9 @@ class _JobSeekerLoginScreenState extends State<JobSeekerLoginScreen>
                               ),
                             );
                           }),
+
+
+
                         ],
                       ),
                     ),
