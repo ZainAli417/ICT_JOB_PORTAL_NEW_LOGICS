@@ -14,19 +14,18 @@ import 'widgets/signup_steps.dart';
 import 'widgets/signup_widgets.dart';
 import 'Signup_Provider.dart';
 
-class JobSeekerSignUpScreen extends StatefulWidget {
-  const JobSeekerSignUpScreen({Key? key}) : super(key: key);
+class SignUp_Screen extends StatefulWidget {
+  const SignUp_Screen({Key? key}) : super(key: key);
 
   @override
-  State<JobSeekerSignUpScreen> createState() => _JobSeekerSignUpScreenState();
+  State<SignUp_Screen> createState() => _SignUp_ScreenState();
 }
 
-class _JobSeekerSignUpScreenState extends State<JobSeekerSignUpScreen> with TickerProviderStateMixin {
+class _SignUp_ScreenState extends State<SignUp_Screen> with TickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
   late AnimationController _fadeController;
   late Animation<double> _fadeAnimation;
   int _step = 0;
-  // Note: this value will be set properly in _updateStepsForRole()
   int _totalSteps = 13;
   late PageController _reviewPageController;
   int _currentReviewPage = 0;
@@ -65,6 +64,10 @@ class _JobSeekerSignUpScreenState extends State<JobSeekerSignUpScreen> with Tick
   final secondaryColor = const Color(0xFF8B5CF6);
   final accentColor = const Color(0xFFEC4899);
 
+  // Scroll controllers for desktop/mobile form areas
+  final ScrollController _desktopFormScrollController = ScrollController();
+  final ScrollController _mobileFormScrollController = ScrollController();
+
   @override
   void initState() {
     super.initState();
@@ -73,13 +76,12 @@ class _JobSeekerSignUpScreenState extends State<JobSeekerSignUpScreen> with Tick
     _fadeController.forward();
     _reviewPageController = PageController();
 
-    // --- JOB SEEKER STEPS: nationality is now a dedicated step at index 4 ---
     _jobSeekerSteps = {
       0: StepDetails(icon: Icons.person_outline_rounded, title: 'Role', subtitle: 'Choose your path'),
       1: StepDetails(icon: Icons.badge_outlined, title: 'Name', subtitle: 'Your identity'),
       2: StepDetails(icon: Icons.mail_outline_rounded, title: 'Email', subtitle: 'Stay connected'),
       3: StepDetails(icon: Icons.phone_outlined, title: 'Phone', subtitle: 'Contact info'),
-      4: StepDetails(icon: Icons.flag_outlined, title: 'Nationality', subtitle: 'Your origin'), // <- added
+      4: StepDetails(icon: Icons.flag_outlined, title: 'Nationality', subtitle: 'Your origin'),
       5: StepDetails(icon: Icons.lock_outline_rounded, title: 'Password', subtitle: 'Secure access'),
       6: StepDetails(icon: Icons.family_restroom_outlined, title: 'Details', subtitle: 'Personal info'),
       7: StepDetails(icon: Icons.camera_alt_outlined, title: 'Photo', subtitle: 'Your face'),
@@ -91,7 +93,6 @@ class _JobSeekerSignUpScreenState extends State<JobSeekerSignUpScreen> with Tick
       13: StepDetails(icon: Icons.check_circle_outline_rounded, title: 'Review', subtitle: 'Final check'),
     };
 
-    // Recruiter steps keep nationality at 4 as before
     _recruiterSteps = {
       0: StepDetails(icon: Icons.person_outline_rounded, title: 'Role', subtitle: 'Choose your path'),
       1: StepDetails(icon: Icons.badge_outlined, title: 'Name', subtitle: 'Your identity'),
@@ -103,8 +104,6 @@ class _JobSeekerSignUpScreenState extends State<JobSeekerSignUpScreen> with Tick
     };
     _updateStepsForRole();
   }
-  int _currentPage = 0; // The current index of the card being viewed
-  final PageController _pageController = PageController(); // Controls the PageView
 
   @override
   void dispose() {
@@ -118,18 +117,17 @@ class _JobSeekerSignUpScreenState extends State<JobSeekerSignUpScreen> with Tick
     _confirmController.dispose();
     _fatherController.dispose();
     _skillController.dispose();
-    _pageController.dispose();
-
+    _fadeController?.dispose();
+    _desktopFormScrollController.dispose();
+    _mobileFormScrollController.dispose();
     super.dispose();
   }
 
   void _updateStepsForRole() {
     setState(() {
       if (role == 'Recruiter') {
-        // recruiter uses indices 0..6
         _totalSteps = 6;
       } else {
-        // job seeker uses indices 0..13 (we added nationality so highest index is 13)
         _totalSteps = 13;
       }
       if (_step > _totalSteps) _step = _totalSteps;
@@ -142,6 +140,10 @@ class _JobSeekerSignUpScreenState extends State<JobSeekerSignUpScreen> with Tick
       setState(() => _step++);
       _fadeController.reset();
       _fadeController.forward();
+
+      // After changing step, animate scroll to top for form panel (desktop + mobile)
+      _desktopFormScrollController.animateTo(0, duration: const Duration(milliseconds: 300), curve: Curves.easeOut);
+      _mobileFormScrollController.animateTo(0, duration: const Duration(milliseconds: 300), curve: Curves.easeOut);
     }
   }
 
@@ -150,18 +152,17 @@ class _JobSeekerSignUpScreenState extends State<JobSeekerSignUpScreen> with Tick
       setState(() => _step--);
       _fadeController.reset();
       _fadeController.forward();
+
+      _desktopFormScrollController.animateTo(0, duration: const Duration(milliseconds: 300), curve: Curves.easeOut);
+      _mobileFormScrollController.animateTo(0, duration: const Duration(milliseconds: 300), curve: Curves.easeOut);
     }
   }
 
   bool _validateCurrentStep() {
-    // pick the map that contains the step metadata (title/subtitle)
     final stepsMap = (role == 'Recruiter') ? _recruiterSteps : _jobSeekerSteps;
     final stepDetails = stepsMap[_step];
     final stepTitle = (stepDetails?.title ?? '').toString().toLowerCase();
 
-    debugPrint('Validating step index=$_step title="$stepTitle" role=$role');
-
-    // fallback: if no title available, allow progression (safe default)
     if (stepTitle.isEmpty) return true;
 
     switch (stepTitle) {
@@ -171,21 +172,18 @@ class _JobSeekerSignUpScreenState extends State<JobSeekerSignUpScreen> with Tick
           return false;
         }
         return true;
-
       case 'email':
         if (!_emailController.text.contains('@')) {
           _showSnack('Please enter a valid email address', isError: true);
           return false;
         }
         return true;
-
       case 'phone':
         if (_phoneController.text.trim().isEmpty || _phoneController.text.trim().length < 7) {
           _showSnack('Please enter a valid phone number', isError: true);
           return false;
         }
         return true;
-
       case 'password':
         if (_passwordController.text.length < 6) {
           _showSnack('Password must be at least 6 characters', isError: true);
@@ -196,19 +194,15 @@ class _JobSeekerSignUpScreenState extends State<JobSeekerSignUpScreen> with Tick
           return false;
         }
         return true;
-
       case 'nationality':
-      // This will now run when the user is on the dedicated nationality step (index 4)
         if (_nationalityController.text.trim().isEmpty) {
           _showSnack('Please enter your nationality', isError: true);
           return false;
         }
         return true;
-
       case 'details':
       case 'personal':
       case 'personal information':
-      // job seeker 'Details' step -> dob + father name validations
         if (_dob == null) {
           _showSnack('Please select your date of birth', isError: true);
           return false;
@@ -218,7 +212,6 @@ class _JobSeekerSignUpScreenState extends State<JobSeekerSignUpScreen> with Tick
           return false;
         }
         return true;
-
       case 'photo':
       case 'photo upload':
       case 'image':
@@ -227,8 +220,6 @@ class _JobSeekerSignUpScreenState extends State<JobSeekerSignUpScreen> with Tick
           return false;
         }
         return true;
-
-    // other steps (education, experience, skills... ) — allow by default or extend as needed
       default:
         return true;
     }
@@ -240,10 +231,7 @@ class _JobSeekerSignUpScreenState extends State<JobSeekerSignUpScreen> with Tick
       SnackBar(
         content: Row(
           children: [
-            Icon(
-              isError ? Icons.error_outline_rounded : Icons.check_circle_outline_rounded,
-              color: Colors.white,
-            ),
+            Icon(isError ? Icons.error_outline_rounded : Icons.check_circle_outline_rounded, color: Colors.white),
             const SizedBox(width: 12),
             Expanded(child: Text(msg, style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.w500))),
           ],
@@ -368,10 +356,7 @@ class _JobSeekerSignUpScreenState extends State<JobSeekerSignUpScreen> with Tick
       ),
     );
 
-    if (role == 'Recruiter') {
-      return stepBuilder.getRecruiterStep(_step);
-    }
-    return stepBuilder.getJobSeekerStep(_step);
+    return (role == 'Recruiter') ? stepBuilder.getRecruiterStep(_step) : stepBuilder.getJobSeekerStep(_step);
   }
 
   Future<void> _register() async {
@@ -407,9 +392,39 @@ class _JobSeekerSignUpScreenState extends State<JobSeekerSignUpScreen> with Tick
 
     if (success) {
       _showSnack('Registration successful! Procced to Login! 🎉');
-      Future.delayed(Durations.medium2);
+      Future.delayed(const Duration(milliseconds: 700));
       context.go('/login');
     }
+  }
+
+  // Helper that builds the form panel with adaptive, animated sizing and scrolling
+  Widget _buildAdaptiveFormPanel({required Widget child, required double maxHeight, required bool isMobile}) {
+    // For desktop we use the desktop controller; for mobile the mobile controller
+    final controller = isMobile ? _mobileFormScrollController : _desktopFormScrollController;
+
+    return SafeArea(
+      child: AnimatedSize(
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+        child: ConstrainedBox(
+          constraints: BoxConstraints(minHeight: maxHeight),
+          child: Scrollbar(
+            thumbVisibility: true,
+            controller: controller,
+            child: SingleChildScrollView(
+              controller: controller,
+              padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 28),
+              child: ConstrainedBox(
+                constraints: BoxConstraints(minHeight: maxHeight - 32),
+                child: IntrinsicHeight(
+                  child: child,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
   }
 
   @override
@@ -418,14 +433,18 @@ class _JobSeekerSignUpScreenState extends State<JobSeekerSignUpScreen> with Tick
       backgroundColor: Colors.grey.shade50,
       body: Column(
         children: [
-          const HeaderNav(), // fixed at top
+          const HeaderNav(),
           Expanded(
-            // give LayoutBuilder a bounded height from Expanded
             child: LayoutBuilder(
               builder: (context, constraints) {
-                if (constraints.maxWidth < 700) {
-                  // Mobile: allow scrolling for the whole form content
-                  return SingleChildScrollView(
+                final maxWidth = constraints.maxWidth;
+                final maxHeight = constraints.maxHeight;
+
+                // Mobile layout (narrow)
+                if (maxWidth < 700) {
+                  return _buildAdaptiveFormPanel(
+                    isMobile: true,
+                    maxHeight: maxHeight,
                     child: SignUpWidgets.buildFormContent(
                       context: context,
                       isStacked: true,
@@ -441,16 +460,20 @@ class _JobSeekerSignUpScreenState extends State<JobSeekerSignUpScreen> with Tick
                       onNext: (_step == _totalSteps) ? _register : _next,
                     ),
                   );
-                } else {
-                  // Desktop: two-column Row — no outer scroll (each panel can scroll internally)
-                  return Row(
-                    children: [
-                      Expanded(
-                        flex: 5,
-                        child: SignUpWidgets.buildLeftPanel(primaryColor, secondaryColor, accentColor),
-                      ),
-                      Expanded(
-                        flex: 7,
+                }
+
+                // Desktop/tablet: two-column layout. Left panel fixed, right panel adaptive/scrollable.
+                return Row(
+                  children: [
+                    Expanded(
+                      flex: 5,
+                      child: SignUpWidgets.buildLeftPanel(primaryColor, secondaryColor, accentColor),
+                    ),
+                    Expanded(
+                      flex: 7,
+                      child: _buildAdaptiveFormPanel(
+                        isMobile: false,
+                        maxHeight: maxHeight,
                         child: SignUpWidgets.buildFormContent(
                           context: context,
                           isStacked: false,
@@ -466,9 +489,9 @@ class _JobSeekerSignUpScreenState extends State<JobSeekerSignUpScreen> with Tick
                           onNext: (_step == _totalSteps) ? _register : _next,
                         ),
                       ),
-                    ],
-                  );
-                }
+                    ),
+                  ],
+                );
               },
             ),
           ),

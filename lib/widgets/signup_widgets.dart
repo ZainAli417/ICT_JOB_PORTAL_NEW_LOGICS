@@ -323,13 +323,12 @@ class SignUpWidgets {
   }) {
     final currentSteps = role == 'Job Seeker' ? jobSeekerSteps : recruiterSteps;
 
-    return
-     Container(
+    return Container(
       color: Colors.grey.shade50,
       child: Center(
         child: SingleChildScrollView(
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 30),
+            padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 20),
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 650),
               child: Column(
@@ -337,22 +336,45 @@ class SignUpWidgets {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   if (isStacked) ...[
-                    Text('Create Account', style: GoogleFonts.poppins(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.grey.shade800)),
+                    Text(
+                      'Create Account',
+                      style: GoogleFonts.poppins(
+                        fontSize: 32,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.grey.shade800,
+                      ),
+                    ),
                     const SizedBox(height: 8),
-                    Text('Start your journey with us today', style: GoogleFonts.poppins(fontSize: 15, color: Colors.grey.shade600)),
+                    Text(
+                      'Start your journey with us today',
+                      style: GoogleFonts.poppins(
+                        fontSize: 15,
+                        color: Colors.grey.shade600,
+                      ),
+                    ),
                     const SizedBox(height: 32),
                   ],
-                  buildProgressBar(context, step, totalSteps, currentSteps, primaryColor),
+                  buildProgressBar(
+                    context,
+                    step,
+                    totalSteps,
+                    currentSteps,
+                    primaryColor,
+                  ),
                   const SizedBox(height: 35),
-                  SizedBox(
-                    height:450,
-                    child: FadeTransition(
-                      opacity: fadeAnimation,
-                      child: Form(key: ValueKey<int>(step), child: stepContent),
+
+                  // Wrap only the form content in FadeTransition with flexible height
+                  FadeTransition(
+                    opacity: fadeAnimation,
+                    child: Form(
+                      key: ValueKey<int>(step),
+                      child: stepContent,
                     ),
                   ),
-                  const SizedBox(height: 30),
 
+                  const SizedBox(height: 20),
+
+                  // Navigation buttons outside the form
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -362,10 +384,18 @@ class SignUpWidgets {
                           child: TextButton.icon(
                             onPressed: onBack,
                             icon: const Icon(Icons.arrow_back_rounded),
-                            label: Text('Back', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+                            label: Text(
+                              'Back',
+                              style: GoogleFonts.poppins(
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
                             style: TextButton.styleFrom(
                               foregroundColor: Colors.grey.shade700,
-                              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 24,
+                                vertical: 16,
+                              ),
                             ),
                           ),
                         )
@@ -378,19 +408,34 @@ class SignUpWidgets {
                           style: ElevatedButton.styleFrom(
                             backgroundColor: primaryColor,
                             foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 18),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 40,
+                              vertical: 18,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
                             elevation: 0,
                           ),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Text(
-                                step == totalSteps ? 'Complete Registration' : 'Continue',
-                                style: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 15),
+                                step == totalSteps
+                                    ? 'Complete Registration'
+                                    : 'Continue',
+                                style: GoogleFonts.poppins(
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 15,
+                                ),
                               ),
                               const SizedBox(width: 8),
-                              Icon(step == totalSteps ? Icons.check_circle_rounded : Icons.arrow_forward_rounded, size: 20),
+                              Icon(
+                                step == totalSteps
+                                    ? Icons.check_circle_rounded
+                                    : Icons.arrow_forward_rounded,
+                                size: 20,
+                              ),
                             ],
                           ),
                         ),
@@ -402,8 +447,8 @@ class SignUpWidgets {
             ),
           ),
         ),
-
-    ));
+      ),
+    );
   }
 
   static Widget buildProgressBar(BuildContext context, int step, int totalSteps, Map<int, StepDetails> steps, Color primaryColor) {

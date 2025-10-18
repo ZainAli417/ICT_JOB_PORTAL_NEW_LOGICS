@@ -44,6 +44,16 @@ class SignUpSteps {
   final PageController reviewPageController;
   final int currentReviewPage;
   final ValueChanged<int> onReviewPageChanged;
+  Gradient get _recruiterGradient =>   LinearGradient(
+    colors: [
+       const Color(0xFFF59E0B).withOpacity(0.12),
+      const Color(0xFFEC4899).withOpacity(0.12),
+    ],
+  );
+
+  Color get _recruiterBorderColor => const Color(0xFFF59E0B); // 0xFFF59E0B @ 30%
+
+  Color get _recruiterAccentColor => const Color.fromRGBO(236, 72, 153, 1); // solid accent (0xFFEC4899)
   SignUpSteps({
     required this.role,
     required this.nameController,
@@ -158,6 +168,7 @@ class SignUpSteps {
   }
 
   Widget _roleCard(String title, String subtitle, IconData icon, bool selected, Color color) {
+    final bool isRecruiter = title == 'Recruiter';
     return MouseRegion(
       cursor: SystemMouseCursors.click,
       child: GestureDetector(
@@ -167,23 +178,24 @@ class SignUpSteps {
           curve: Curves.easeInOut,
           padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
-            gradient: selected ? LinearGradient(colors: [color.withOpacity(0.15), color.withOpacity(0.05)]) : null,
-            color: selected ? null : Colors.white,
+            // use recruiter gradient when recruiter and selected
+            gradient: isRecruiter && selected ? _recruiterGradient : (selected ? LinearGradient(colors: [color.withOpacity(0.15), color.withOpacity(0.05)]) : null),
+            color: (isRecruiter && selected) ? null : (selected ? null : Colors.white),
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: selected ? color : Colors.grey.shade200, width: 2),
-            boxShadow: selected
-                ? [BoxShadow(color: color.withOpacity(0.3), blurRadius: 20, offset: const Offset(0, 8))]
-                : [BoxShadow(color: Colors.grey.shade200, blurRadius: 10, offset: const Offset(0, 4))],
+            border: Border.all(
+              color: isRecruiter && selected ? _recruiterBorderColor : (selected ? color : Colors.grey.shade200),
+              width: 2,
+            ),
           ),
           child: Row(
             children: [
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: selected ? color.withOpacity(0.2) : Colors.grey.shade100,
+                  color: selected ? (isRecruiter ? _recruiterAccentColor.withOpacity(0.2) : color.withOpacity(0.2)) : Colors.grey.shade100,
                   borderRadius: BorderRadius.circular(16),
                 ),
-                child: Icon(icon, color: selected ? color : Colors.grey.shade600, size: 32),
+                child: Icon(icon, color: selected ? (isRecruiter ? _recruiterAccentColor : color) : Colors.grey.shade600, size: 32),
               ),
               const SizedBox(width: 20),
               Expanded(
@@ -199,7 +211,10 @@ class SignUpSteps {
               if (selected)
                 Container(
                   padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+                  decoration: BoxDecoration(
+                    color: isRecruiter ? _recruiterAccentColor : color,
+                    shape: BoxShape.circle,
+                  ),
                   child: const Icon(Icons.check_rounded, color: Colors.white, size: 20),
                 ),
             ],
@@ -775,7 +790,7 @@ class SignUpSteps {
 
         // --- Paginator/Carousel Area ---
         SizedBox(
-          height: 300, // Give the PageView a constrained height
+          height: 400, // Give the PageView a constrained height
           child: Stack(
             alignment: Alignment.center,
             children: [
@@ -820,7 +835,7 @@ class SignUpSteps {
             ],
           ),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 20),
 
         // --- Pagination Dots (Optional, but highly recommended) ---
         Center(

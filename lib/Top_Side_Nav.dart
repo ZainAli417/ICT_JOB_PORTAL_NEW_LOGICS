@@ -1,4 +1,4 @@
-// top_nav.dart
+// top_nav_styled.dart
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -31,6 +31,9 @@ class MainLayoutState extends State<MainLayout> {
   final Color _hoverColor = Color(0xFFF1F5F9);
   bool _isDarkMode = false;
   int? _activeMenu;
+
+  // local hover state for the Recruiter CTA
+  bool _isRecruiterHovered = false;
 
   Color get _iconColor => _isDarkMode ? Colors.grey.shade400 : _textSecondary;
   Color get _iconHoverBg => _isDarkMode ? Colors.grey.shade800 : _hoverColor;
@@ -93,12 +96,9 @@ class MainLayoutState extends State<MainLayout> {
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
       child: Row(
         children: [
-          // Logo
-          Image.asset(
-            'images/logo_main.png',
-            height: 60, // was fontSize: 20, so roughly similar visual height
-            fit: BoxFit.cover,
-          ),
+          // MAHA SERVICES block (replicated styling from your HeaderNav)
+          _MahaServicesLogo(),
+
           const Spacer(),
 
           // Navigation Items
@@ -209,6 +209,11 @@ class MainLayoutState extends State<MainLayout> {
 
           const SizedBox(width: 16),
 
+          // MAJOR CTA: For Recruiters (uses amber -> pink subtle gradient styling from your saved prefs)
+          _buildRecruiterCTA(),
+
+          const SizedBox(width: 16),
+
           _buildProfileMenu(primaryColor, initials),
           const SizedBox(width: 16),
 
@@ -224,6 +229,9 @@ class MainLayoutState extends State<MainLayout> {
       onTap: () => _showLogoutDialog(context),
     );
   }
+
+
+
   Widget _buildNavItem({
     required IconData icon,
     required String label,
@@ -232,40 +240,60 @@ class MainLayoutState extends State<MainLayout> {
   }) {
     final primaryColor = Theme.of(context).primaryColor;
     final unselectedColor = const Color(0xFF5C738A);
+    final indigo = const Color(0xFF6366F1);
 
-    return MouseRegion(
-      cursor: SystemMouseCursors.click,
-      child: GestureDetector(
-        onTap: onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 150),
-          curve: Curves.easeOutSine,
-          height: 40,
-          padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-          decoration: BoxDecoration(
-            color: isActive ? primaryColor.withOpacity(0.1) : Colors.transparent,
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                icon,
-                color: isActive ? primaryColor : unselectedColor,
-                size: 25,
-              ),
-              const SizedBox(width: 6),
-              Text(
-                label,
-                style: GoogleFonts.poppins(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
-                  color: isActive ? primaryColor : unselectedColor,
+    // local hover notifier so we don't change widget-level state
+    final hover = ValueNotifier<bool>(false);
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 4),
+      child: ValueListenableBuilder<bool>(
+        valueListenable: hover,
+        builder: (context, isHovered, _) {
+          final showHighlight = isHovered || isActive;
+          return MouseRegion(
+            cursor: SystemMouseCursors.click,
+            onEnter: (_) => hover.value = true,
+            onExit: (_) => hover.value = false,
+            child: GestureDetector(
+              onTap: onTap,
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                curve: Curves.easeOutSine,
+                height: 40,
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: showHighlight ? indigo.withOpacity(0.08) : Colors.transparent,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: showHighlight ? indigo.withOpacity(0.18) : Colors.transparent,
+                    width: showHighlight ? 1 : 0,
+                  ),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      icon,
+                      color: showHighlight ? indigo : unselectedColor,
+                      size: 25,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      label,
+                      style: GoogleFonts.poppins(
+                        fontSize: 16,
+                        // stronger weight on hover/active like your HeaderNav nav links
+                        fontWeight: showHighlight ? FontWeight.w600 : FontWeight.w500,
+                        color: showHighlight ? const Color(0xFF1F2937) : unselectedColor,
+                      ),
+                    ),
+                  ],
                 ),
               ),
-            ],
-          ),
-        ),
+            ),
+          );
+        },
       ),
     );
   }
@@ -415,6 +443,63 @@ class MainLayoutState extends State<MainLayout> {
     );
   }
 
+  // Lightweight recruiter CTA replicating the "For Recruiters" styling you memorized
+  Widget _buildRecruiterCTA() {
+    return MouseRegion(
+      onEnter: (_) => setState(() => _isRecruiterHovered = true),
+      onExit: (_) => setState(() => _isRecruiterHovered = false),
+      cursor: SystemMouseCursors.click,
+      child: GestureDetector(
+        onTap: () => context.go('/recruiter-signup'),
+        child: AnimatedScale(
+          scale: _isRecruiterHovered ? 1.03 : 1.0,
+          duration: const Duration(milliseconds: 180),
+          curve: Curves.easeOut,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+            decoration: BoxDecoration(
+              // subtle light overlay + amber->pink icon gradient like your saved style
+              color: _isRecruiterHovered ? Color(0xFFFDF7F0) : Colors.transparent,
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(
+                color: const Color(0xFFF59E0B).withOpacity(0.25),
+                width: 1.2,
+              ),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFFF59E0B), Color(0xFFEC4899)],
+                    ),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: const Icon(
+                    Icons.business_center_rounded,
+                    size: 16,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Text(
+                  'For Recruiters',
+                  style: GoogleFonts.poppins(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 14,
+                    color: const Color(0xFF1F2937),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   void _showQuickLinks(BuildContext context) => print('Showing Quick Links menu');
   void _showHelpCenter(BuildContext context) => print('Showing Help Center');
 
@@ -494,6 +579,54 @@ class _HorizontalLogoutButtonState extends State<_HorizontalLogoutButton> {
           ),
         ),
       ),
+    );
+  }
+}
+
+
+// Lightweight MAHA SERVICES logo widget (replicated look from your HeaderNav but static so it fits easily here)
+class _MahaServicesLogo extends StatelessWidget {
+  const _MahaServicesLogo({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Container(
+          width: 48,
+          height: 48,
+          decoration: BoxDecoration(
+            color: const Color(0xFF6366F1),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: const Icon(Icons.auto_awesome_outlined, color: Colors.white, size: 26),
+        ),
+        const SizedBox(width: 14),
+        Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Maha Services',
+              style: GoogleFonts.poppins(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF1E293B),
+                letterSpacing: 0.4,
+              ),
+            ),
+            Text(
+              'Professional Excellence',
+              style: GoogleFonts.poppins(
+                fontSize: 10,
+                fontWeight: FontWeight.w300,
+                color: Color(0xFF1E293B).withOpacity(0.6),
+                letterSpacing: 1.0,
+              ),
+            ),
+          ],
+        ),
+      ],
     );
   }
 }

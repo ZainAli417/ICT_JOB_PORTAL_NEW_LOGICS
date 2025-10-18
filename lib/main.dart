@@ -54,6 +54,7 @@ void main() async {
         ChangeNotifierProvider(create: (_) => JS_TopNavProvider()),
         ChangeNotifierProvider(create: (_) => ProfileProvider()),
         ChangeNotifierProvider(create: (_) => AuthNotifier()),
+
         ChangeNotifierProvider(create: (_) => R_TopNavProvider()),
         ChangeNotifierProvider(create: (_) => JobPostingProvider()),
         ChangeNotifierProvider(create: (_) => JobSeekerProvider()),
@@ -73,7 +74,8 @@ class JobPortalApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp.router(
-      title: 'Hire Flow',
+
+      title: 'Maha Services',
       debugShowCheckedModeBanner: false,
       routerConfig: router,
       theme: ThemeData(

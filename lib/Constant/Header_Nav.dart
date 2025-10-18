@@ -144,7 +144,7 @@ class _HeaderNavState extends State<HeaderNav> with TickerProviderStateMixin {
 
         // Recruiter CTA with gradient (kept visual interest but no header shadow)
         _AnimatedButton(
-          onPressed: () => context.go('/recruiter-signup'),
+          onPressed: () => context.go('/register'),
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
             decoration: BoxDecoration(
