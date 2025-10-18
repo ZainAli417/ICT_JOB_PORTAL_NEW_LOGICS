@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../Constant/Profile_Sidebar.dart';
-import '../../Top_Side_Nav.dart';
+import 'JS_Top_Bar.dart';
 import 'Profile_Provider.dart';
 
 class ProfileScreen extends StatefulWidget {

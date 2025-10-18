@@ -1,34 +1,39 @@
-// top_nav.dart
+// top_nav_styled.dart
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:job_portal/Screens/Recruiter/sidebar_provider.dart';
+import 'package:job_portal/Screens/Recruiter/R_Initials_provider.dart';
 import 'package:provider/provider.dart';
 
-class Recruiter_MainLayout extends StatefulWidget {
+import 'JS_Initials_provider.dart';
+
+class MainLayout extends StatefulWidget {
   final Widget child;
   final int activeIndex;
   @override
   final Key? key;
 
-  const Recruiter_MainLayout({
+  const MainLayout({
     this.key,
     required this.child,
     required this.activeIndex,
   }) : super(key: key);
 
   @override
-  State<Recruiter_MainLayout> createState() => _Recruiter_MainLayoutState();
+  State<MainLayout> createState() => MainLayoutState();
 }
 
-class _Recruiter_MainLayoutState extends State<Recruiter_MainLayout> {
+class MainLayoutState extends State<MainLayout> {
   final Color _textPrimary = Color(0xFF1E293B);
   final Color _textSecondary = Color(0xFF64748B);
   final Color _borderColor = Color(0xFFE2E8F0);
   final Color _hoverColor = Color(0xFFF1F5F9);
   bool _isDarkMode = false;
   int? _activeMenu;
+
+  // local hover state for the Recruiter CTA
+  bool _isRecruiterHovered = false;
 
   Color get _iconColor => _isDarkMode ? Colors.grey.shade400 : _textSecondary;
   Color get _iconHoverBg => _isDarkMode ? Colors.grey.shade800 : _hoverColor;
@@ -45,7 +50,7 @@ class _Recruiter_MainLayoutState extends State<Recruiter_MainLayout> {
 
   Widget _buildScaffold(BuildContext context) {
     final primaryColor = Theme.of(context).primaryColor;
-    final initials = context.watch<R_TopNavProvider>().initials;
+    final initials = context.watch<JS_TopNavProvider>().initials;
 
     return Scaffold(
       backgroundColor: Color(0xFFFAFAFA),
@@ -91,12 +96,9 @@ class _Recruiter_MainLayoutState extends State<Recruiter_MainLayout> {
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
       child: Row(
         children: [
-          // Logo
-          Image.asset(
-            'images/logo_main.png',
-            height:60, // was fontSize: 20, so roughly similar visual height
-            fit: BoxFit.cover,
-          ),
+          // MAHA SERVICES block (replicated styling from your HeaderNav)
+          _MahaServicesLogo(),
+
           const Spacer(),
 
           // Navigation Items
@@ -105,58 +107,53 @@ class _Recruiter_MainLayoutState extends State<Recruiter_MainLayout> {
             label: 'Dashboard',
             isActive: widget.activeIndex == 0,
             onTap: () {
-              if (widget.activeIndex != 0) context.go('/recruiter-dashboard');
+              if (widget.activeIndex != 0) {
+                context.go('/dashboard');
+              }
             },
+
           ),
-  _buildNavItem(
-            icon: Icons.post_add_rounded,
-            label: 'Post A Job',
+          const SizedBox(width: 16),
+
+          _buildNavItem(
+            icon: Icons.person_outline,
+            label: 'Profile',
             isActive: widget.activeIndex == 1,
             onTap: () {
-              if (widget.activeIndex != 1) context.go('/job-posting');
+              if (widget.activeIndex != 1) {
+                context.go('/profile');
+              }
             },
           ),
-
-
           const SizedBox(width: 16),
 
           _buildNavItem(
-            icon: Icons.file_copy,
-            label: 'View Applications',
+
+            icon: Icons.work_history_outlined,
+            label: 'Job Application',
             isActive: widget.activeIndex == 2,
             onTap: () {
-              if (widget.activeIndex != 2) context.go('/view-applications');
-            },
-          ),
-          const SizedBox(width: 16),
-
-          _buildNavItem(
-            icon: Icons.broadcast_on_home_rounded,
-            label: 'Interviews',
-            isActive: widget.activeIndex == 3,
-            onTap: () {
-              if (widget.activeIndex != 3) context.go('/interviews');
+              if (widget.activeIndex != 2) {
+                context.go('/saved');
+              }
             },
           ),
           const SizedBox(width: 16),
 
           _buildNavItem(
             icon: Icons.notifications_none,
-            label: 'Settings',
-            isActive: widget.activeIndex == 4,
+            label: 'Job Alerts',
+            isActive: widget.activeIndex == 3,
             onTap: () {
-              if (widget.activeIndex != 4) context.go('/settings');
+              if (widget.activeIndex != 3) {
+                context.go('/alerts');
+              }
             },
+
           ),
 
-          const SizedBox(width: 32),
 
-          // Action Buttons
-          _buildPrimaryActionButton(
-            text: 'Post a Job',
-            icon: Icons.add_circle_outline_rounded,
-            onPressed: () => print('Navigate to Post Job page'),
-          ),
+
 
           const SizedBox(width: 16),
 
@@ -212,6 +209,11 @@ class _Recruiter_MainLayoutState extends State<Recruiter_MainLayout> {
 
           const SizedBox(width: 16),
 
+          // MAJOR CTA: For Recruiters (uses amber -> pink subtle gradient styling from your saved prefs)
+          _buildRecruiterCTA(),
+
+          const SizedBox(width: 16),
+
           _buildProfileMenu(primaryColor, initials),
           const SizedBox(width: 16),
 
@@ -227,6 +229,9 @@ class _Recruiter_MainLayoutState extends State<Recruiter_MainLayout> {
       onTap: () => _showLogoutDialog(context),
     );
   }
+
+
+
   Widget _buildNavItem({
     required IconData icon,
     required String label,
@@ -235,62 +240,64 @@ class _Recruiter_MainLayoutState extends State<Recruiter_MainLayout> {
   }) {
     final primaryColor = Theme.of(context).primaryColor;
     final unselectedColor = const Color(0xFF5C738A);
+    final indigo = const Color(0xFF6366F1);
 
-    return MouseRegion(
-      cursor: SystemMouseCursors.click,
-      child: GestureDetector(
-        onTap: onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 150),
-          curve: Curves.easeInOut,
-          height: 35,
-          padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-          decoration: BoxDecoration(
-            color: isActive ? primaryColor.withOpacity(0.1) : Colors.transparent,
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                icon,
-                color: isActive ? primaryColor : unselectedColor,
-                size: 25,
-              ),
-              const SizedBox(width: 6),
-              Text(
-                label,
-                style: GoogleFonts.inter(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                  color: isActive ? primaryColor : unselectedColor,
+    // local hover notifier so we don't change widget-level state
+    final hover = ValueNotifier<bool>(false);
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 4),
+      child: ValueListenableBuilder<bool>(
+        valueListenable: hover,
+        builder: (context, isHovered, _) {
+          final showHighlight = isHovered || isActive;
+          return MouseRegion(
+            cursor: SystemMouseCursors.click,
+            onEnter: (_) => hover.value = true,
+            onExit: (_) => hover.value = false,
+            child: GestureDetector(
+              onTap: onTap,
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                curve: Curves.easeOutSine,
+                height: 40,
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: showHighlight ? indigo.withOpacity(0.08) : Colors.transparent,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: showHighlight ? indigo.withOpacity(0.18) : Colors.transparent,
+                    width: showHighlight ? 1 : 0,
+                  ),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      icon,
+                      color: showHighlight ? indigo : unselectedColor,
+                      size: 25,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      label,
+                      style: GoogleFonts.poppins(
+                        fontSize: 16,
+                        // stronger weight on hover/active like your HeaderNav nav links
+                        fontWeight: showHighlight ? FontWeight.w600 : FontWeight.w500,
+                        color: showHighlight ? const Color(0xFF1F2937) : unselectedColor,
+                      ),
+                    ),
+                  ],
                 ),
               ),
-            ],
-          ),
-        ),
+            ),
+          );
+        },
       ),
     );
   }
 
-  Widget _buildPrimaryActionButton({
-    required String text,
-    required IconData icon,
-    required VoidCallback onPressed,
-  }) {
-    return ElevatedButton.icon(
-      onPressed: onPressed,
-      icon: Icon(icon, size: 18),
-      label: Text(text),
-      style: ElevatedButton.styleFrom(
-        foregroundColor: Colors.white,
-        backgroundColor: Theme.of(context).primaryColor,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        textStyle: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 14),
-      ),
-    );
-  }
 
   Widget _buildIconButton({
     required String tooltip,
@@ -343,7 +350,7 @@ class _Recruiter_MainLayoutState extends State<Recruiter_MainLayout> {
                     constraints: const BoxConstraints(minWidth: 18, minHeight: 18),
                     child: Text(
                       badge.toString(),
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.poppins(
                         fontSize: 10,
                         fontWeight: FontWeight.bold,
                         color: Colors.white,
@@ -373,8 +380,8 @@ class _Recruiter_MainLayoutState extends State<Recruiter_MainLayout> {
           radius: 18,
           backgroundColor: primaryColor,
           child: Text(
-            initials.isNotEmpty ? initials : 'RC',
-            style: GoogleFonts.inter(
+            initials.isNotEmpty ? initials : 'JS',
+            style: GoogleFonts.poppins(
               fontSize: 14,
               fontWeight: FontWeight.w600,
               color: Colors.white,
@@ -383,6 +390,7 @@ class _Recruiter_MainLayoutState extends State<Recruiter_MainLayout> {
         ),
       ),
       itemBuilder: (context) => [
+        _buildPopupMenuItem('Profile', Icons.person_outline_rounded, () => context.go('/profile')),
         _buildPopupMenuItem('Settings', Icons.settings_outlined, () => context.go('/')),
         _buildPopupMenuItem('Help', Icons.help_outline_rounded, () {}),
         const PopupMenuDivider(),
@@ -397,7 +405,7 @@ class _Recruiter_MainLayoutState extends State<Recruiter_MainLayout> {
                 child: Text(
                   'Logout',
                   overflow: TextOverflow.ellipsis,
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.poppins(
                     fontSize: 14,
                     fontWeight: FontWeight.w500,
                     color: Colors.red,
@@ -423,7 +431,7 @@ class _Recruiter_MainLayoutState extends State<Recruiter_MainLayout> {
             child: Text(
               title,
               overflow: TextOverflow.ellipsis,
-              style: GoogleFonts.inter(
+              style: GoogleFonts.poppins(
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
                 color: isDestructive ? Colors.red.shade500 : _textPrimary,
@@ -431,6 +439,63 @@ class _Recruiter_MainLayoutState extends State<Recruiter_MainLayout> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  // Lightweight recruiter CTA replicating the "For Recruiters" styling you memorized
+  Widget _buildRecruiterCTA() {
+    return MouseRegion(
+      onEnter: (_) => setState(() => _isRecruiterHovered = true),
+      onExit: (_) => setState(() => _isRecruiterHovered = false),
+      cursor: SystemMouseCursors.click,
+      child: GestureDetector(
+        onTap: () => context.go('/recruiter-signup'),
+        child: AnimatedScale(
+          scale: _isRecruiterHovered ? 1.03 : 1.0,
+          duration: const Duration(milliseconds: 180),
+          curve: Curves.easeOut,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+            decoration: BoxDecoration(
+              // subtle light overlay + amber->pink icon gradient like your saved style
+              color: _isRecruiterHovered ? Color(0xFFFDF7F0) : Colors.transparent,
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(
+                color: const Color(0xFFF59E0B).withOpacity(0.25),
+                width: 1.2,
+              ),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFFF59E0B), Color(0xFFEC4899)],
+                    ),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: const Icon(
+                    Icons.business_center_rounded,
+                    size: 16,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Text(
+                  'For Recruiters',
+                  style: GoogleFonts.poppins(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 14,
+                    color: const Color(0xFF1F2937),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -443,8 +508,8 @@ class _Recruiter_MainLayoutState extends State<Recruiter_MainLayout> {
       context: context,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text('Confirm Logout', style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
-        content: Text('Are you sure you want to logout?', style: GoogleFonts.inter(fontWeight: FontWeight.w500)),
+        title: Text('Confirm Logout', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+        content: Text('Are you sure you want to logout?', style: GoogleFonts.poppins(fontWeight: FontWeight.w500)),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
@@ -514,6 +579,54 @@ class _HorizontalLogoutButtonState extends State<_HorizontalLogoutButton> {
           ),
         ),
       ),
+    );
+  }
+}
+
+
+// Lightweight MAHA SERVICES logo widget (replicated look from your HeaderNav but static so it fits easily here)
+class _MahaServicesLogo extends StatelessWidget {
+  const _MahaServicesLogo({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Container(
+          width: 48,
+          height: 48,
+          decoration: BoxDecoration(
+            color: const Color(0xFF6366F1),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: const Icon(Icons.auto_awesome_outlined, color: Colors.white, size: 26),
+        ),
+        const SizedBox(width: 14),
+        Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Maha Services',
+              style: GoogleFonts.poppins(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF1E293B),
+                letterSpacing: 0.4,
+              ),
+            ),
+            Text(
+              'Professional Excellence',
+              style: GoogleFonts.poppins(
+                fontSize: 10,
+                fontWeight: FontWeight.w300,
+                color: Color(0xFF1E293B).withOpacity(0.6),
+                letterSpacing: 1.0,
+              ),
+            ),
+          ],
+        ),
+      ],
     );
   }
 }

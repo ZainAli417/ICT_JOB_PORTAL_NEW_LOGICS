@@ -4,7 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:fl_chart/fl_chart.dart';
-import '../../Top_Side_Nav.dart';
+import 'JS_Top_Bar.dart';
 import 'List_applied_jobs_provider.dart';
 
 class SmoothScrollBehavior extends MaterialScrollBehavior {

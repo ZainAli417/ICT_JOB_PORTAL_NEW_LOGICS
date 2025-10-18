@@ -2,10 +2,10 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
-import 'package:job_portal/Screens/Recruiter/recruiter_Sidebar.dart';
+import 'package:job_portal/Screens/Recruiter/R_Top_Bar.dart';
 import 'package:provider/provider.dart';
 
-import '../../Top_Side_Nav.dart';
+import '../Job_Seeker/JS_Top_Bar.dart';
 import 'LIst_of_Applicants_provider.dart';
 
 class SmoothScrollBehavior extends MaterialScrollBehavior {

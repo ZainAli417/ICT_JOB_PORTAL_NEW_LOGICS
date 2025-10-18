@@ -243,6 +243,7 @@ class SignUpProvider extends ChangeNotifier {
         try {
           await _firestore.collection('users').add({
             'name': name,
+            'uid':uid,
             'email': sanitizedEmail,
             'role': sanitizedRole,
             'created_at': now,

@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:job_portal/Constant/recruiter_AI.dart';
 import 'package:job_portal/Screens/Recruiter/post_a_job_form.dart';
 import 'package:job_portal/Screens/Recruiter/Recruiter_Available_jobs.dart';
-import 'package:job_portal/Screens/Recruiter/recruiter_Sidebar.dart';
+import 'package:job_portal/Screens/Recruiter/R_Top_Bar.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -283,7 +283,7 @@ class _JobPostingScreenState extends State<JobPostingScreen>
 
 
 /* import 'package:flutter/material.dart';
-import 'package:job_portal/Screens/Recruiter/recruiter_Sidebar.dart';
+import 'package:job_portal/Screens/Recruiter/R_Top_Bar.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../Constant/recruiter_AI.dart';
