@@ -115,17 +115,39 @@ class _ListAppliedJobsScreenState extends State<ListAppliedJobsScreen>
 
   @override
   Widget build(BuildContext context) {
+    const double topBarHeight = 120.0;
+
     return ScrollConfiguration(
       behavior: SmoothScrollBehavior(),
-      child: MainLayout(
-        activeIndex: 2,
-        child: FadeTransition(
-          opacity: _fadeAnimation,
-          child: _buildContent(context),
+      child: SizedBox.expand(
+        child: Stack(
+          children: [
+            // Main content area sits below the top bar.
+            Positioned.fill(
+              top: topBarHeight,
+              child: FadeTransition(
+                opacity: _fadeAnimation,
+                child: _buildContent(context), // unchanged: contains ChangeNotifierProvider + Scaffold
+              ),
+            ),
+
+            // Top navigation bar overlay (MainLayout used as the bar)
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              height: topBarHeight,
+              child: MainLayout(
+                activeIndex: 3,
+                child: const SizedBox.shrink(),
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
+
 
   Widget _buildContent(BuildContext context) {
     return ChangeNotifierProvider<ListAppliedJobsProvider>(

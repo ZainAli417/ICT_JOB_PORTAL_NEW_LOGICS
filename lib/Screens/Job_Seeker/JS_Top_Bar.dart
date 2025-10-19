@@ -1,12 +1,14 @@
-// top_nav_styled.dart
+// Modern Glassmorphic Top Navigation - Matching Dashboard Gradients
+import 'dart:math' as math;
+import 'dart:ui';
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:job_portal/Screens/Job_Seeker/JS_Initials_provider.dart';
 import 'package:job_portal/Screens/Recruiter/R_Initials_provider.dart';
 import 'package:provider/provider.dart';
-
-import 'JS_Initials_provider.dart';
 
 class MainLayout extends StatefulWidget {
   final Widget child;
@@ -21,285 +23,449 @@ class MainLayout extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  State<MainLayout> createState() => MainLayoutState();
+  State<MainLayout> createState() => _MainLayoutState();
 }
 
-class MainLayoutState extends State<MainLayout> {
-  final Color _textPrimary = Color(0xFF1E293B);
-  final Color _textSecondary = Color(0xFF64748B);
-  final Color _borderColor = Color(0xFFE2E8F0);
-  final Color _hoverColor = Color(0xFFF1F5F9);
+class _MainLayoutState extends State<MainLayout>
+    with TickerProviderStateMixin {
   bool _isDarkMode = false;
   int? _activeMenu;
+  late AnimationController _shimmerController;
+  late AnimationController _particleController;
 
-  // local hover state for the Recruiter CTA
-  bool _isRecruiterHovered = false;
 
-  Color get _iconColor => _isDarkMode ? Colors.grey.shade400 : _textSecondary;
-  Color get _iconHoverBg => _isDarkMode ? Colors.grey.shade800 : _hoverColor;
-  Color get _appBarBg => _isDarkMode ? Color(0xFF1E1E1E) : Color(0xFFF4F4F4);
-  Color get _appBarBorder => _isDarkMode ? Colors.grey.shade800 : _borderColor;
+  @override
+  void initState() {
+    super.initState();
+    _shimmerController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 3),
+    )..repeat();
+
+    _particleController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 20),
+    )..repeat();
+  }
+
+  @override
+  void dispose() {
+    _shimmerController.dispose();
+    _particleController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider<R_TopNavProvider>(
-      create: (_) => R_TopNavProvider(),
+
+    return ChangeNotifierProvider<JS_TopNavProvider>(
+      create: (_) => JS_TopNavProvider(),
       child: RepaintBoundary(child: _buildScaffold(context)),
     );
   }
 
   Widget _buildScaffold(BuildContext context) {
-    final primaryColor = Theme.of(context).primaryColor;
     final initials = context.watch<JS_TopNavProvider>().initials;
 
     return Scaffold(
-      backgroundColor: Color(0xFFFAFAFA),
-      body: Column(
+      backgroundColor: _isDarkMode
+          ? const Color(0xFF0A0E27)
+          : const Color(0xFFFFFFFF),
+      body: Stack(
         children: [
-          _buildHeaderTopBar(primaryColor, initials),
-          Expanded(
-            child: AnimatedSwitcher(
-              duration: const Duration(milliseconds: 300),
-              transitionBuilder: (child, animation) {
-                return FadeTransition(
-                  opacity: animation,
-                  child: SlideTransition(
-                    position: Tween<Offset>(
-                      begin: const Offset(0.0, 0.1),
-                      end: Offset.zero,
-                    ).animate(animation),
-                    child: child,
-                  ),
-                );
-              },
-              child: widget.child,
+          // Animated gradient background
+
+          Column(
+            children: [
+              RepaintBoundary(
+                child: _buildModernGlassmorphicHeader(initials),
+              ),
+              Expanded(
+                child: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 400),
+                  transitionBuilder: (child, animation) {
+                    return FadeTransition(
+                      opacity: animation,
+                      child: SlideTransition(
+                        position: Tween<Offset>(
+                          begin: const Offset(0.0, 0.03),
+                          end: Offset.zero,
+                        ).animate(CurvedAnimation(
+                          parent: animation,
+                          curve: Curves.easeOutCubic,
+                        )),
+                        child: child,
+                      ),
+                    );
+                  },
+                  child: widget.child,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAnimatedBackground() {
+    return AnimatedBuilder(
+      animation: _particleController,
+      builder: (context, child) {
+        return Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: _isDarkMode
+                  ? [
+                const Color(0xFF0A0E27),
+                const Color(0xFF1A1F3A),
+                const Color(0xFF2D1B4E),
+              ]
+                  : [
+                const Color(0xFFF0F4FF),
+                const Color(0xFFE8F0FE),
+                const Color(0xFFF5F7FA),
+              ],
+              stops: [
+                0.0,
+                0.5 + math.sin(_particleController.value * 2 * math.pi) * 0.1,
+                1.0,
+              ],
             ),
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 
-  Widget _buildHeaderTopBar(Color primaryColor, String initials) {
+  Widget _buildModernGlassmorphicHeader(String initials) {
+    final primaryColor = Theme.of(context).primaryColor;
+
     return Container(
       height: 80,
+      margin: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: _appBarBg,
-        borderRadius: const BorderRadius.only(
-          bottomLeft: Radius.circular(16),
-          bottomRight: Radius.circular(16),
-        ),
-        border: Border(
-          bottom: BorderSide(color: _appBarBorder, width: 1),
-        ),
-      ),
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-      child: Row(
-        children: [
-          // MAHA SERVICES block (replicated styling from your HeaderNav)
-          _MahaServicesLogo(),
-
-          const Spacer(),
-
-          // Navigation Items
-          _buildNavItem(
-            icon: Icons.dashboard_outlined,
-            label: 'Dashboard',
-            isActive: widget.activeIndex == 0,
-            onTap: () {
-              if (widget.activeIndex != 0) {
-                context.go('/dashboard');
-              }
-            },
-
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: _isDarkMode
+                ? Colors.black.withOpacity(0.7)
+                : const Color(0xFF6366F1).withOpacity(0.5),
+            blurRadius: 32,
+            offset: const Offset(0, 8),
+            spreadRadius: -4,
           ),
-          const SizedBox(width: 16),
-
-          _buildNavItem(
-            icon: Icons.person_outline,
-            label: 'Profile',
-            isActive: widget.activeIndex == 1,
-            onTap: () {
-              if (widget.activeIndex != 1) {
-                context.go('/profile');
-              }
-            },
-          ),
-          const SizedBox(width: 16),
-
-          _buildNavItem(
-
-            icon: Icons.work_history_outlined,
-            label: 'Job Application',
-            isActive: widget.activeIndex == 2,
-            onTap: () {
-              if (widget.activeIndex != 2) {
-                context.go('/saved');
-              }
-            },
-          ),
-          const SizedBox(width: 16),
-
-          _buildNavItem(
-            icon: Icons.notifications_none,
-            label: 'Job Alerts',
-            isActive: widget.activeIndex == 3,
-            onTap: () {
-              if (widget.activeIndex != 3) {
-                context.go('/alerts');
-              }
-            },
-
-          ),
-
-
-
-
-          const SizedBox(width: 16),
-
-          _buildIconButton(
-            tooltip: 'Quick Links',
-            icon: Icons.apps_rounded,
-            onPressed: () => _showQuickLinks(context),
-            isActive: _activeMenu == 2,
-          ),
-
-          const SizedBox(width: 8),
-
-          _buildIconButton(
-            tooltip: 'Notifications',
-            icon: Icons.notifications_none_rounded,
-            activeIcon: Icons.notifications_rounded,
-            onPressed: () => setState(() => _activeMenu = 0),
-            badge: 3,
-            isActive: _activeMenu == 0,
-          ),
-
-          const SizedBox(width: 8),
-
-          _buildIconButton(
-            tooltip: 'Messages',
-            icon: Icons.chat_bubble_outline_rounded,
-            activeIcon: Icons.chat_bubble_rounded,
-            onPressed: () => setState(() => _activeMenu = 1),
-            isActive: _activeMenu == 1,
-          ),
-
-          VerticalDivider(
-            color: _appBarBorder,
-            width: 24,
-            thickness: 1,
-            indent: 10,
-            endIndent: 10,
-          ),
-
-          _buildIconButton(
-            tooltip: 'Help & Support',
-            icon: Icons.help_outline_rounded,
-            onPressed: () => _showHelpCenter(context),
-          ),
-
-          const SizedBox(width: 8),
-
-          _buildIconButton(
-            tooltip: _isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode',
-            icon: _isDarkMode ? Icons.light_mode_outlined : Icons.dark_mode_outlined,
-            onPressed: () => setState(() => _isDarkMode = !_isDarkMode),
-          ),
-
-          const SizedBox(width: 16),
-
-          // MAJOR CTA: For Recruiters (uses amber -> pink subtle gradient styling from your saved prefs)
-          _buildRecruiterCTA(),
-
-          const SizedBox(width: 16),
-
-          _buildProfileMenu(primaryColor, initials),
-          const SizedBox(width: 16),
-
-          _buildLogoutButton(),
-
-
         ],
       ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(24),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+          child: Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: _isDarkMode
+                    ? [
+                  Colors.white.withOpacity(0.08),
+                  Colors.white.withOpacity(0.04),
+                ]
+                    : [
+                  Colors.white.withOpacity(0.85),
+                  Colors.white.withOpacity(0.65),
+                ],
+              ),
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(
+                color: _isDarkMode
+                    ? Colors.white.withOpacity(0.15)
+                    : Colors.white.withOpacity(0.6),
+                width: 1.5,
+              ),
+            ),
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+            child: Row(
+              children: [
+                _buildEnhancedLogo(),
+                const SizedBox(width: 60),
+                Expanded(
+
+
+                  child: Row(
+                    children: [
+                      _buildModernNavItem(
+                        icon: Icons.dashboard_rounded,
+                        label: 'Dashboard',
+                        isActive: widget.activeIndex == 0,
+                        onTap: () {
+                          if (widget.activeIndex != 0) {
+                            context.go('/dashboard');
+                          }
+                        },
+                      ),
+                      const SizedBox(width: 16),
+                      _buildModernNavItem(
+                        icon: Icons.auto_awesome_outlined,
+                        label: 'AI Tools',
+                        isActive: widget.activeIndex == 1,
+                        onTap: () {
+                          if (widget.activeIndex != 1) {
+                            context.go('/ai-tools');
+                          }
+                        },
+                      ),
+                      const SizedBox(width: 16),
+                      _buildModernNavItem(
+                        icon: Icons.post_add_rounded,
+                        label: 'Profile',
+                        isActive: widget.activeIndex == 2,
+                        onTap: () {
+                          if (widget.activeIndex != 2) context.go('/profile');
+                        },
+                      ),
+                      const SizedBox(width: 16),
+                      _buildModernNavItem(
+                        icon: Icons.description_rounded,
+                        label: 'Job Application',
+                        isActive: widget.activeIndex == 3,
+                        onTap: () {
+                          if (widget.activeIndex != 3) {
+                            context.go('/applied-jobs');
+                          }
+                        },
+                      ),
+                      const SizedBox(width: 16),
+                      _buildModernNavItem(
+                        icon: Icons.video_call_rounded,
+                        label: 'Job Alerts',
+                        isActive: widget.activeIndex == 4,
+                        onTap: () {
+                          if (widget.activeIndex != 4) context.go('/alerts');
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+                
+                const SizedBox(width: 16),
+                _buildGlassmorphicIconButton(
+                  tooltip: 'Quick Links',
+                  icon: Icons.apps_rounded,
+                  onPressed: () => _showQuickLinks(context),
+                  isActive: _activeMenu == 0,
+                ),
+                const SizedBox(width: 12),
+                _buildGlassmorphicIconButton(
+                  tooltip: 'Notifications',
+                  icon: Icons.notifications_none_rounded,
+                  activeIcon: Icons.notifications_rounded,
+                  onPressed: () =>
+                      setState(() => _activeMenu = _activeMenu == 0 ? null : 0),
+                  badge: 3,
+                  isActive: _activeMenu == 1,
+                ),
+                const SizedBox(width: 12),
+                _buildGlassmorphicIconButton(
+                  tooltip: 'Messages',
+                  icon: Icons.chat_bubble_outline_rounded,
+                  activeIcon: Icons.chat_bubble_rounded,
+                  onPressed: () =>
+                      setState(() => _activeMenu = _activeMenu == 1 ? null : 1),
+                  isActive: _activeMenu == 2,
+                ),
+                Container(
+                  height: 40,
+                  width: 1,
+                  margin: const EdgeInsets.symmetric(horizontal: 14),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Colors.transparent,
+                        _isDarkMode
+                            ? Colors.white.withOpacity(0.2)
+                            : Colors.grey.withOpacity(0.3),
+                        Colors.transparent,
+                      ],
+                    ),
+                  ),
+                ),
+                _buildGlassmorphicIconButton(
+                  tooltip: _isDarkMode ? 'Light Mode' : 'Dark Mode',
+                  icon: _isDarkMode
+                      ? Icons.light_mode_rounded
+                      : Icons.dark_mode_rounded,
+                  onPressed: () => setState(() => _isDarkMode = !_isDarkMode),
+                ),
+                const SizedBox(width: 16),
+                _buildProfileMenu(primaryColor,initials),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
-  Widget _buildLogoutButton() {
-    return _HorizontalLogoutButton(
-      onTap: () => _showLogoutDialog(context),
+
+  Widget _buildEnhancedLogo() {
+    return Row(
+      children: [
+        AnimatedBuilder(
+          animation: _shimmerController,
+          builder: (context, child) {
+            return Container(
+              width: 52,
+              height: 52,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    const Color(0xFF6366F1),
+                    const Color(0xFF8B5CF6),
+                    const Color(0xFF6366F1),
+                  ],
+                  stops: [
+                    0.0,
+                    _shimmerController.value,
+                    1.0,
+                  ],
+                ),
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF6366F1).withOpacity(0.4),
+                    blurRadius: 16,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: const Icon(
+                Icons.auto_awesome_rounded,
+                color: Colors.white,
+                size: 28,
+              ),
+            );
+          },
+        ),
+        const SizedBox(width: 14),
+        Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            ShaderMask(
+              shaderCallback: (bounds) => const LinearGradient(
+                colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
+              ).createShader(bounds),
+              child: Text(
+                'Maha Services',
+                style: GoogleFonts.poppins(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.white,
+                  letterSpacing: -0.5,
+                ),
+              ),
+            ),
+            Text(
+              'Professional Excellence',
+              style: GoogleFonts.poppins(
+                fontSize: 10,
+                fontWeight: FontWeight.w500,
+                color: _isDarkMode
+                    ? Colors.white.withOpacity(0.5)
+                    : Colors.black54,
+                letterSpacing: 1.5,
+              ),
+            ),
+          ],
+        ),
+      ],
     );
   }
 
-
-
-  Widget _buildNavItem({
+  Widget _buildModernNavItem({
     required IconData icon,
     required String label,
     required bool isActive,
     required VoidCallback onTap,
   }) {
-    final primaryColor = Theme.of(context).primaryColor;
-    final unselectedColor = const Color(0xFF5C738A);
-    final indigo = const Color(0xFF6366F1);
+    return _ModernHoverNavItem(
+      icon: icon,
+      label: label,
+      isActive: isActive,
+      onTap: onTap,
+      isDarkMode: _isDarkMode,
+    );
+  }
 
-    // local hover notifier so we don't change widget-level state
-    final hover = ValueNotifier<bool>(false);
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 4),
-      child: ValueListenableBuilder<bool>(
-        valueListenable: hover,
-        builder: (context, isHovered, _) {
-          final showHighlight = isHovered || isActive;
-          return MouseRegion(
-            cursor: SystemMouseCursors.click,
-            onEnter: (_) => hover.value = true,
-            onExit: (_) => hover.value = false,
-            child: GestureDetector(
-              onTap: onTap,
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                curve: Curves.easeOutSine,
-                height: 40,
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+  Widget _buildGlowingActionButton({
+    required String text,
+    required IconData icon,
+    required VoidCallback onPressed,
+  }) {
+    return RepaintBoundary(
+      child: MouseRegion(
+        cursor: SystemMouseCursors.click,
+        child: GestureDetector(
+          onTap: onPressed,
+          child: AnimatedBuilder(
+            animation: _shimmerController,
+            builder: (context, child) {
+              return Container(
+                padding:
+                const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
                 decoration: BoxDecoration(
-                  color: showHighlight ? indigo.withOpacity(0.08) : Colors.transparent,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(
-                    color: showHighlight ? indigo.withOpacity(0.18) : Colors.transparent,
-                    width: showHighlight ? 1 : 0,
+                  gradient: const LinearGradient(
+                    colors: [
+                      Color(0xFF6366F1),
+                      Color(0xFF8B5CF6),
+                    ],
                   ),
+                  borderRadius: BorderRadius.circular(14),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF6366F1).withOpacity(0.4),
+                      blurRadius: 20,
+                      offset: const Offset(0, 6),
+                      spreadRadius: -2,
+                    ),
+                    BoxShadow(
+                      color: const Color(0xFF8B5CF6).withOpacity(0.2),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(
-                      icon,
-                      color: showHighlight ? indigo : unselectedColor,
-                      size: 25,
-                    ),
+                    Icon(icon, size: 18, color: Colors.white),
                     const SizedBox(width: 8),
                     Text(
-                      label,
+                      text,
                       style: GoogleFonts.poppins(
-                        fontSize: 16,
-                        // stronger weight on hover/active like your HeaderNav nav links
-                        fontWeight: showHighlight ? FontWeight.w600 : FontWeight.w500,
-                        color: showHighlight ? const Color(0xFF1F2937) : unselectedColor,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
+                        color: Colors.white,
+                        letterSpacing: 0.3,
                       ),
                     ),
                   ],
                 ),
-              ),
-            ),
-          );
-        },
+              );
+            },
+          ),
+        ),
       ),
     );
   }
 
-
-  Widget _buildIconButton({
+  Widget _buildGlassmorphicIconButton({
     required String tooltip,
     required IconData icon,
     IconData? activeIcon,
@@ -322,40 +488,82 @@ class MainLayoutState extends State<MainLayout> {
               InkWell(
                 onTap: onPressed,
                 onHover: (value) => hoverProvider.value = value,
-                borderRadius: BorderRadius.circular(12),
-                child: Container(
-                  padding: const EdgeInsets.all(8),
+                borderRadius: BorderRadius.circular(14),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 250),
+                  curve: Curves.easeOutCubic,
+                  padding: const EdgeInsets.all(11),
                   decoration: BoxDecoration(
-                    color: isHighlighted ? _iconHoverBg : Colors.transparent,
-                    borderRadius: BorderRadius.circular(12),
+                    gradient: isHighlighted
+                        ? LinearGradient(
+                      colors: _isDarkMode
+                          ? [
+                        Colors.white.withOpacity(0.15),
+                        Colors.white.withOpacity(0.08),
+                      ]
+                          : [
+                        const Color(0xFF6366F1).withOpacity(0.12),
+                        const Color(0xFF8B5CF6).withOpacity(0.06),
+                      ],
+                    )
+                        : null,
+                    borderRadius: BorderRadius.circular(14),
+                    border: isHighlighted
+                        ? Border.all(
+                      color: _isDarkMode
+                          ? Colors.white.withOpacity(0.2)
+                          : const Color(0xFF6366F1).withOpacity(0.3),
+                      width: 1.5,
+                    )
+                        : null,
                   ),
                   child: Icon(
                     isActive ? (activeIcon ?? icon) : icon,
-                    color: isActive ? Theme.of(context).primaryColor : _iconColor,
-                    size: 24,
+                    color: isActive
+                        ? const Color(0xFF6366F1)
+                        : (_isDarkMode
+                        ? Colors.white.withOpacity(0.7)
+                        : const Color(0xFF64748B)),
+                    size: 22,
                   ),
                 ),
               ),
               if (badge != null && badge > 0)
                 Positioned(
-                  right: -2,
-                  top: -2,
+                  right: 2,
+                  top: 2,
                   child: Container(
-                    padding: const EdgeInsets.all(2),
+                    padding: const EdgeInsets.all(5),
                     decoration: BoxDecoration(
-                      color: Colors.red.shade500,
-                      shape: BoxShape.circle,
-                      border: Border.all(color: _appBarBg, width: 2),
-                    ),
-                    constraints: const BoxConstraints(minWidth: 18, minHeight: 18),
-                    child: Text(
-                      badge.toString(),
-                      style: GoogleFonts.poppins(
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFFFF6B6B), Color(0xFFEE5A6F)],
                       ),
-                      textAlign: TextAlign.center,
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: _isDarkMode ? Color(0xFF1A1F3A) : Colors.white,
+                        width: 2,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.red.withOpacity(0.5),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    constraints:
+                    const BoxConstraints(minWidth: 20, minHeight: 20),
+                    child: Center(
+                      child: Text(
+                        badge > 99 ? '99+' : badge.toString(),
+                        style: GoogleFonts.poppins(
+                          fontSize: 9,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                          height: 1,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
                     ),
                   ),
                 ),
@@ -374,13 +582,13 @@ class MainLayoutState extends State<MainLayout> {
         padding: const EdgeInsets.all(2),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: _borderColor, width: 2),
+          border: Border.all(color: Color(0xFFE2E8F0), width: 2),
         ),
         child: CircleAvatar(
           radius: 18,
           backgroundColor: primaryColor,
           child: Text(
-            initials.isNotEmpty ? initials : 'JS',
+            initials.isNotEmpty ? initials : 'RC',
             style: GoogleFonts.poppins(
               fontSize: 14,
               fontWeight: FontWeight.w600,
@@ -390,13 +598,13 @@ class MainLayoutState extends State<MainLayout> {
         ),
       ),
       itemBuilder: (context) => [
-        _buildPopupMenuItem('Profile', Icons.person_outline_rounded, () => context.go('/profile')),
-        _buildPopupMenuItem('Settings', Icons.settings_outlined, () => context.go('/')),
+        _buildPopupMenuItem('Profile', Icons.person_outline_rounded, () => context.go('/NA')),
+        _buildPopupMenuItem('Settings', Icons.settings_outlined, () => context.go('/NA')),
         _buildPopupMenuItem('Help', Icons.help_outline_rounded, () {}),
         const PopupMenuDivider(),
         PopupMenuItem<String>(
           value: 'logout',
-          onTap: () => _showLogoutDialog(context),
+          onTap: () => _showModernLogoutDialog(context),
           child: Row(
             children: [
               Icon(Icons.logout_rounded, size: 18, color: Colors.red.shade500),
@@ -425,7 +633,7 @@ class MainLayoutState extends State<MainLayout> {
       onTap: onTap,
       child: Row(
         children: [
-          Icon(icon, size: 18, color: isDestructive ? Colors.red.shade500 : _textSecondary),
+          Icon(icon, size: 18, color: isDestructive ? Colors.red.shade500 : Color(0xFF64748B)),
           const SizedBox(width: 12),
           Flexible(
             child: Text(
@@ -434,7 +642,7 @@ class MainLayoutState extends State<MainLayout> {
               style: GoogleFonts.poppins(
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
-                color: isDestructive ? Colors.red.shade500 : _textPrimary,
+                color: isDestructive ? Colors.red.shade500 : Color(0xFF1E293B),
               ),
             ),
           ),
@@ -443,53 +651,260 @@ class MainLayoutState extends State<MainLayout> {
     );
   }
 
-  // Lightweight recruiter CTA replicating the "For Recruiters" styling you memorized
-  Widget _buildRecruiterCTA() {
-    return MouseRegion(
-      onEnter: (_) => setState(() => _isRecruiterHovered = true),
-      onExit: (_) => setState(() => _isRecruiterHovered = false),
-      cursor: SystemMouseCursors.click,
-      child: GestureDetector(
-        onTap: () => context.go('/recruiter-signup'),
-        child: AnimatedScale(
-          scale: _isRecruiterHovered ? 1.03 : 1.0,
-          duration: const Duration(milliseconds: 180),
-          curve: Curves.easeOut,
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
-            decoration: BoxDecoration(
-              // subtle light overlay + amber->pink icon gradient like your saved style
-              color: _isRecruiterHovered ? Color(0xFFFDF7F0) : Colors.transparent,
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(
-                color: const Color(0xFFF59E0B).withOpacity(0.25),
-                width: 1.2,
+
+
+
+
+
+  void _showQuickLinks(BuildContext context) =>
+      print('Showing Quick Links menu');
+
+  void _showModernLogoutDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      barrierColor: Colors.black54,
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+        elevation: 0,
+        backgroundColor: Colors.transparent,
+        child: Container(
+          padding: const EdgeInsets.all(32),
+          constraints: const BoxConstraints(maxWidth: 420),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: _isDarkMode
+                  ? [
+                const Color(0xFF1E293B),
+                const Color(0xFF0F172A),
+              ]
+                  : [
+                Colors.white,
+                Colors.grey.shade50,
+              ],
+            ),
+            borderRadius: BorderRadius.circular(28),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.2),
+                blurRadius: 40,
+                offset: const Offset(0, 20),
               ),
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      Colors.red.shade400,
+                      Colors.red.shade600,
+                    ],
+                  ),
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.red.withOpacity(0.4),
+                      blurRadius: 20,
+                      offset: const Offset(0, 8),
+                    ),
+                  ],
+                ),
+                child: const Icon(Icons.logout_rounded,
+                    size: 36, color: Colors.white),
+              ),
+              const SizedBox(height: 24),
+              Text(
+                'Confirm Logout',
+                style: GoogleFonts.poppins(
+                  fontSize: 24,
+                  fontWeight: FontWeight.w600,
+                  color: _isDarkMode ? Colors.white : const Color(0xFF1E293B),
+                ),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'Are you sure you want to logout from your account?',
+                textAlign: TextAlign.center,
+                style: GoogleFonts.poppins(
+                  fontSize: 14,
+                  color: _isDarkMode
+                      ? Colors.white.withOpacity(0.7)
+                      : const Color(0xFF64748B),
+                  height: 1.5,
+                ),
+              ),
+              const SizedBox(height: 32),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        side: BorderSide(
+                          color: _isDarkMode
+                              ? Colors.white.withOpacity(0.2)
+                              : Colors.grey.shade300,
+                        ),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14)),
+                      ),
+                      child: Text(
+                        'Cancel',
+                        style: GoogleFonts.poppins(
+                          fontWeight: FontWeight.w600,
+                          color: _isDarkMode
+                              ? Colors.white
+                              : const Color(0xFF64748B),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () async {
+                        await FirebaseAuth.instance.signOut();
+                        context.pushReplacement('/');
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red.shade600,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14)),
+                        elevation: 0,
+                        shadowColor: Colors.red.withOpacity(0.4),
+                      ),
+                      child: Text(
+                        'Logout',
+                        style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ModernHoverNavItem extends StatefulWidget {
+  final IconData icon;
+  final String label;
+  final bool isActive;
+  final VoidCallback onTap;
+  final bool isDarkMode;
+
+  const _ModernHoverNavItem({
+    required this.icon,
+    required this.label,
+    required this.isActive,
+    required this.onTap,
+    required this.isDarkMode,
+  });
+
+  @override
+  State<_ModernHoverNavItem> createState() => _ModernHoverNavItemState();
+}
+
+class _ModernHoverNavItemState extends State<_ModernHoverNavItem>
+    with AutomaticKeepAliveClientMixin {
+  bool _isHovering = false;
+
+  @override
+  bool get wantKeepAlive => true;
+
+  @override
+  Widget build(BuildContext context) {
+    super.build(context);
+    final isHighlighted = widget.isActive || _isHovering;
+
+    return RepaintBoundary(
+      child: MouseRegion(
+        cursor: SystemMouseCursors.click,
+        onEnter: (_) {
+          if (!_isHovering) setState(() => _isHovering = true);
+        },
+        onExit: (_) {
+          if (_isHovering) setState(() => _isHovering = false);
+        },
+        child: GestureDetector(
+          onTap: widget.onTap,
+          behavior: HitTestBehavior.translucent,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 250),
+            curve: Curves.easeOutCubic,
+            height: 48,
+            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+            decoration: BoxDecoration(
+              gradient: isHighlighted
+                  ? LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: widget.isDarkMode
+                    ? [
+                  Colors.white.withOpacity(0.15),
+                  Colors.white.withOpacity(0.08),
+                ]
+                    : [
+                  const Color(0xFF6366F1).withOpacity(0.15),
+                  const Color(0xFF8B5CF6).withOpacity(0.08),
+                ],
+              )
+                  : null,
+              borderRadius: BorderRadius.circular(14),
+              border: isHighlighted
+                  ? Border.all(
+                color: widget.isDarkMode
+                    ? Colors.white.withOpacity(0.25)
+                    : const Color(0xFF6366F1).withOpacity(0.35),
+                width: 1.5,
+              )
+                  : null,
+              boxShadow: isHighlighted
+                  ? [
+                BoxShadow(
+                  color: const Color(0xFF6366F1).withOpacity(0.15),
+                  blurRadius: 12,
+                  offset: const Offset(0, 4),
+                ),
+              ]
+                  : null,
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Container(
-                  padding: const EdgeInsets.all(6),
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFFF59E0B), Color(0xFFEC4899)],
-                    ),
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: const Icon(
-                    Icons.business_center_rounded,
-                    size: 16,
-                    color: Colors.white,
-                  ),
+                Icon(
+                  widget.icon,
+                  color: isHighlighted
+                      ? const Color(0xFF6366F1)
+                      : (widget.isDarkMode
+                      ? Colors.white.withOpacity(0.7)
+                      : const Color(0xFF64748B)),
+                  size: 20,
                 ),
                 const SizedBox(width: 10),
                 Text(
-                  'For Recruiters',
+                  widget.label,
                   style: GoogleFonts.poppins(
-                    fontWeight: FontWeight.w600,
                     fontSize: 14,
-                    color: const Color(0xFF1F2937),
+                    fontWeight: isHighlighted ? FontWeight.w600 : FontWeight.w500,
+                    color: isHighlighted
+                        ? const Color(0xFF6366F1)
+                        : (widget.isDarkMode
+                        ? Colors.white.withOpacity(0.7)
+                        : const Color(0xFF64748B)),
+                    letterSpacing: 0.2,
                   ),
                 ),
               ],
@@ -497,136 +912,6 @@ class MainLayoutState extends State<MainLayout> {
           ),
         ),
       ),
-    );
-  }
-
-  void _showQuickLinks(BuildContext context) => print('Showing Quick Links menu');
-  void _showHelpCenter(BuildContext context) => print('Showing Help Center');
-
-  void _showLogoutDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text('Confirm Logout', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
-        content: Text('Are you sure you want to logout?', style: GoogleFonts.poppins(fontWeight: FontWeight.w500)),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () async {
-              await FirebaseAuth.instance.signOut();
-              context.pushReplacement('/');
-            },
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Logout'),
-          ),
-        ],
-      ),
-    );
-  }
-}
-/// Horizontal logout button for the top navigation bar
-class _HorizontalLogoutButton extends StatefulWidget {
-  final VoidCallback onTap;
-
-  const _HorizontalLogoutButton({
-    required this.onTap,
-  });
-
-  @override
-  State<_HorizontalLogoutButton> createState() => _HorizontalLogoutButtonState();
-}
-
-class _HorizontalLogoutButtonState extends State<_HorizontalLogoutButton> {
-  bool _isHovered = false;
-
-  @override
-  Widget build(BuildContext context) {
-    final unselectedColor = Color(0xFFFAFAFA);
-
-    Color bgColor() {
-      if (_isHovered) return Colors.red.shade50;
-      return Colors.transparent;
-    }
-
-    Color iconColor() {
-      if (_isHovered) return Colors.red.shade600;
-      return unselectedColor;
-    }
-
-    return MouseRegion(
-      cursor: SystemMouseCursors.click,
-      onEnter: (_) => setState(() => _isHovered = true),
-      onExit: (_) => setState(() => _isHovered = false),
-      child: GestureDetector(
-        behavior: HitTestBehavior.translucent,
-        onTap: widget.onTap,
-        child: AnimatedContainer(
-          duration: Duration(milliseconds: 150),
-          height: 40,
-          width: 40,
-          decoration: BoxDecoration(
-            color: bgColor(),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Icon(
-            Icons.logout_rounded,
-            color: iconColor(),
-            size: 20,
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-
-// Lightweight MAHA SERVICES logo widget (replicated look from your HeaderNav but static so it fits easily here)
-class _MahaServicesLogo extends StatelessWidget {
-  const _MahaServicesLogo({Key? key}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Container(
-          width: 48,
-          height: 48,
-          decoration: BoxDecoration(
-            color: const Color(0xFF6366F1),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: const Icon(Icons.auto_awesome_outlined, color: Colors.white, size: 26),
-        ),
-        const SizedBox(width: 14),
-        Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Maha Services',
-              style: GoogleFonts.poppins(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-                color: Color(0xFF1E293B),
-                letterSpacing: 0.4,
-              ),
-            ),
-            Text(
-              'Professional Excellence',
-              style: GoogleFonts.poppins(
-                fontSize: 10,
-                fontWeight: FontWeight.w300,
-                color: Color(0xFF1E293B).withOpacity(0.6),
-                letterSpacing: 1.0,
-              ),
-            ),
-          ],
-        ),
-      ],
     );
   }
 }

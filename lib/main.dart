@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
 import 'Constant/Forget Password Provider.dart';
+import 'Constant/cv_analysis_provider.dart';
 import 'Screens/Job_Seeker/List_applied_jobs_provider.dart';
 import 'Screens/Job_Seeker/Profile_Provider.dart';
 import 'Screens/Job_Seeker/job_seeker_provider.dart';
@@ -54,6 +55,7 @@ void main() async {
         ChangeNotifierProvider(create: (_) => JS_TopNavProvider()),
         ChangeNotifierProvider(create: (_) => ProfileProvider()),
         ChangeNotifierProvider(create: (_) => AuthNotifier()),
+        ChangeNotifierProvider(create: (_) => CVAnalyzerBackendProvider()),
 
         ChangeNotifierProvider(create: (_) => R_TopNavProvider()),
         ChangeNotifierProvider(create: (_) => JobPostingProvider()),

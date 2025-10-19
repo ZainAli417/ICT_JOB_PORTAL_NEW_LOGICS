@@ -2451,7 +2451,7 @@ class _LandingPageState extends State<LandingPage> with TickerProviderStateMixin
             ],
           ),
           child: const Icon(
-              Icons.join_left_outlined, color: Colors.white, size: 28),
+              Icons.auto_awesome_outlined, color: Colors.white, size: 28),
         ),
         const SizedBox(height: 20),
         Text(

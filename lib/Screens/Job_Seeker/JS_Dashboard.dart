@@ -1,11 +1,11 @@
-// JS_Dashboard.dart - Enhanced Version with Smooth, Web‑Friendly Scrolling
+// JS_Dashboard.dart - Enhanced Version with Smooth, Web-Friendly Scrolling
 import 'dart:async';
-
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import '../../Constant/cv_analysis.dart';
 import 'JS_Top_Bar.dart';
 import 'job_seeker_provider.dart';
 import 'Job_seeker_Available_jobs.dart';
@@ -120,35 +120,136 @@ class _JobSeekerDashboardState extends State<JobSeekerDashboard>
   }
 
   Widget _buildDashboardContent(BuildContext context) {
+    // Responsive 3-column main layout:
     return Padding(
-      padding: const EdgeInsets.all(24),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Left Column - Main Content
-          Expanded(
-            flex: 3, // This remains, assuming it's inside a Row or Column.
+      padding: const EdgeInsets.all(12),
+      child: LayoutBuilder(builder: (context, constraints) {
+        final maxW = constraints.maxWidth;
+        final isDesktop = maxW > 1100;
+        final isTablet = maxW > 760 && maxW <= 1100;
+        final isMobile = maxW <= 760;
+
+        if (isDesktop) {
+          return Column(
+            children: [
+              // Header above the 3-column layout
+              _buildWelcomeSection(),
+              const SizedBox(height: 16),
+
+              // The 3 columns themselves fill remaining space
+              Expanded(
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Center column: main content (jobs list)
+                    Expanded(
+                      flex: 3,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const SizedBox(height: 16),
+                          Expanded(
+                            child: Consumer<JobSeekerProvider>(
+                              builder: (context, provider, _) {
+                                return StreamBuilder<List<Map<String, dynamic>>>(
+                                  stream: provider.publicJobsStream(),
+                                  builder: (context, snapshot) {
+                                    if (snapshot.connectionState ==
+                                        ConnectionState.waiting) {
+                                      return const Center(
+                                          child: CircularProgressIndicator());
+                                    }
+
+                                    if (snapshot.hasError) {
+                                      return Center(
+                                        child: Text(
+                                          'Error loading jobs: ${snapshot.error}',
+                                          textAlign: TextAlign.center,
+                                        ),
+                                      );
+                                    }
+
+                                    final jobs = snapshot.data ?? [];
+                                    if (jobs.isEmpty) {
+                                      return Center(
+                                        child: Column(
+                                          mainAxisAlignment: MainAxisAlignment.center,
+                                          children: [
+                                            Icon(Icons.work_outline_rounded,
+                                                size: 80,
+                                                color: Colors.grey.shade400),
+                                            const SizedBox(height: 16),
+                                            const Text(
+                                              'No jobs available right now.\nPlease check back later.',
+                                              textAlign: TextAlign.center,
+                                            ),
+                                          ],
+                                        ),
+                                      );
+                                    }
+
+                                    return LiveJobsForSeeker(jobs: jobs);
+                                  },
+                                );
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    const SizedBox(width: 20),
+
+                    // Right column: AI Assistant (and potential extras)
+                    Expanded(
+                      flex: 1,
+                      child: Column(
+                        children: [
+                          Expanded(
+                            flex: 3,
+                            child: _EnhancedAIAssistant(
+                              messageController: _messageController,
+                              messageFocusNode: _messageFocusNode,
+                              isMessageFocused: _isMessageFocused,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          );
+        }
+
+       else {
+          // Mobile: single column stacked top-to-bottom
+          return SingleChildScrollView(
+            physics: const BouncingScrollPhysics(),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Widgets that stay at the top
                 _buildWelcomeSection(),
-                const SizedBox(height: 5),
-                //_buildStatsGrid(),
-               // const SizedBox(height: 20), // A little more space
-
-                // The list, which will now scroll and fill the available space
-                Expanded(
+                const SizedBox(height: 12),
+                // Filters collapsed into a compact horizontal chips row
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                ),
+                const SizedBox(height: 8),
+                // Jobs list
+                SizedBox(
+                  height: 600,
                   child: Consumer<JobSeekerProvider>(
                     builder: (context, provider, _) {
                       return StreamBuilder<List<Map<String, dynamic>>>(
                         stream: provider.publicJobsStream(),
                         builder: (context, snapshot) {
-                          // --- No changes to your state handling logic ---
-                          if (snapshot.connectionState == ConnectionState.waiting) {
-                            return const Center(child: CircularProgressIndicator());
+                          if (snapshot.connectionState ==
+                              ConnectionState.waiting) {
+                            return const Center(
+                                child: CircularProgressIndicator());
                           }
-
                           if (snapshot.hasError) {
                             return Center(
                               child: Text(
@@ -157,7 +258,6 @@ class _JobSeekerDashboardState extends State<JobSeekerDashboard>
                               ),
                             );
                           }
-
                           final jobs = snapshot.data ?? [];
                           if (jobs.isEmpty) {
                             return Center(
@@ -175,31 +275,26 @@ class _JobSeekerDashboardState extends State<JobSeekerDashboard>
                               ),
                             );
                           }
-
-                          // --- Return the list directly ---
-                          // It will be scrollable if LiveJobsForSeeker uses a ListView.
                           return LiveJobsForSeeker(jobs: jobs);
                         },
                       );
                     },
                   ),
                 ),
+                const SizedBox(height: 12),
+                _EnhancedAIAssistant(
+                  messageController: _messageController,
+                  messageFocusNode: _messageFocusNode,
+                  isMessageFocused: _isMessageFocused,
+                ),
+                const SizedBox(height: 12),
               ],
             ),
-          ),
-          const SizedBox(width: 24),
+          );
+        }
 
-          // Right Column - AI Assistant
-          Expanded(
-            flex: 1,
-            child: _EnhancedAIAssistant(
-              messageController: _messageController,
-              messageFocusNode: _messageFocusNode,
-              isMessageFocused: _isMessageFocused,
-            ),
-          ),
-        ],
-      ),
+
+      }),
     );
   }
 
@@ -230,46 +325,11 @@ class _JobSeekerDashboardState extends State<JobSeekerDashboard>
     );
   }
 
-  Widget _buildStatsGrid() {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        return Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: const [
-            _EnhancedStatCard(
-              icon: Icons.visibility_outlined,
-              value: '1,250',
-              label: 'Profile Views',
-              iconColor: Color(0xFF6366F1),
-              bgColor: Color(0xFFF0F0FF),
-            ),
-            _EnhancedStatCard(
-              icon: Icons.send_outlined,
-              value: '25',
-              label: 'Applications',
-              iconColor: Color(0xFF10B981),
-              bgColor: Color(0xFFF0FDF4),
-            ),
-            _EnhancedStatCard(
-              icon: Icons.bookmark_outline,
-              value: '12',
-              label: 'Saved Jobs',
-              iconColor: Color(0xFFF59E0B),
-              bgColor: Color(0xFFFFFBEB),
-            ),
-            _EnhancedStatCard(
-              icon: Icons.notifications_none_outlined,
-              value: '5',
-              label: 'Job Alerts',
-              iconColor: Color(0xFF8B5CF6),
-              bgColor: Color(0xFFF5F3FF),
-            ),
-          ],
-        );
-      },
-    );
-  }
 }
+
+
+
+
 
 
 
@@ -333,19 +393,19 @@ class _EnhancedStatCardState extends State<_EnhancedStatCard>
           return Transform.scale(
             scale: _scaleAnimation.value,
             child: Container(
-              width: 200,
-              padding: const EdgeInsets.all(15),
+              width: 180,
+              padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(12),
                 boxShadow: [
                   BoxShadow(
-                    color: widget.iconColor.withOpacity(0.1),
+                    color: widget.iconColor.withOpacity(0.08),
                     blurRadius: 8 + _elevationAnimation.value,
                     offset: Offset(0, 2 + _elevationAnimation.value / 2),
                   ),
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
+                    color: Colors.black.withOpacity(0.03),
                     blurRadius: 1,
                     offset: const Offset(0, 1),
                   ),
@@ -376,16 +436,16 @@ class _EnhancedStatCardState extends State<_EnhancedStatCard>
 
   Widget _buildIconContainer() {
     return Container(
-      height: 60,
-      width: 60,
+      height: 46,
+      width: 46,
       decoration: BoxDecoration(
         color: widget.bgColor,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(10),
       ),
       child: Icon(
         widget.icon,
         color: widget.iconColor,
-        size: 30,
+        size: 22,
       ),
     );
   }
@@ -394,7 +454,7 @@ class _EnhancedStatCardState extends State<_EnhancedStatCard>
     return Text(
       widget.value,
       style: GoogleFonts.inter(
-        fontSize: 24,
+        fontSize: 18,
         fontWeight: FontWeight.w700,
         color: const Color(0xFF1A1A1A),
         letterSpacing: -0.5,
@@ -406,7 +466,7 @@ class _EnhancedStatCardState extends State<_EnhancedStatCard>
     return Text(
       widget.label,
       style: GoogleFonts.inter(
-        fontSize: 14,
+        fontSize: 12,
         fontWeight: FontWeight.w500,
         color: const Color(0xFF6B7280),
         letterSpacing: -0.1,
@@ -415,7 +475,6 @@ class _EnhancedStatCardState extends State<_EnhancedStatCard>
   }
 
   void _onHover(bool isHovered) {
-    setState(() {});
     if (isHovered) {
       _hoverController.forward();
     } else {
@@ -424,9 +483,7 @@ class _EnhancedStatCardState extends State<_EnhancedStatCard>
   }
 }
 
-
-
-
+/// AI Assistant and helper components (unchanged functional behavior)
 class _EnhancedAIAssistant extends StatefulWidget {
   final TextEditingController messageController;
   final FocusNode messageFocusNode;
@@ -500,36 +557,36 @@ class _EnhancedAIAssistantState extends State<_EnhancedAIAssistant>
             cloudWhite.withOpacity(0.95),
           ],
         ),
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(14),
         border: Border.all(
-          color: skyBlue.withOpacity(0.15),
-          width: 1.5,
+          color: skyBlue.withOpacity(0.12),
+          width: 1.2,
         ),
         boxShadow: [
           BoxShadow(
-            color: airForceBlue.withOpacity(0.08),
-            blurRadius: 32,
-            offset: const Offset(0, 12),
+            color: airForceBlue.withOpacity(0.06),
+            blurRadius: 24,
+            offset: const Offset(0, 10),
             spreadRadius: -4,
           ),
           BoxShadow(
-            color: skyBlue.withOpacity(0.05),
-            blurRadius: 16,
+            color: skyBlue.withOpacity(0.04),
+            blurRadius: 10,
             offset: const Offset(0, 4),
           ),
         ],
       ),
       child: Padding(
-        padding: const EdgeInsets.all(32),
+        padding: const EdgeInsets.all(18),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _buildAIHeader(),
-            const SizedBox(height: 28),
+            const SizedBox(height: 18),
             _buildMessageInput(),
-            const SizedBox(height: 36),
+            const SizedBox(height: 22),
             _buildQuickActions(),
-            const SizedBox(height: 28),
+            const SizedBox(height: 18),
             _buildProfileAnalysisSection(),
           ],
         ),
@@ -544,22 +601,22 @@ class _EnhancedAIAssistantState extends State<_EnhancedAIAssistant>
         Row(
           children: [
             Container(
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
                 color: skyBlue.withOpacity(0.08),
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: skyBlue.withOpacity(0.2),
+                  color: skyBlue.withOpacity(0.18),
                   width: 1,
                 ),
               ),
               child: const Icon(
                 Icons.chat_outlined,
                 color: airForceBlue,
-                size: 24,
+                size: 20,
               ),
             ),
-            const SizedBox(width: 16),
+            const SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -567,25 +624,25 @@ class _EnhancedAIAssistantState extends State<_EnhancedAIAssistant>
                   Text(
                     'AI Career Assistant',
                     style: GoogleFonts.inter(
-                      fontSize: 24,
+                      fontSize: 18,
                       fontWeight: FontWeight.w800,
                       color: jetBlack,
                       letterSpacing: -0.5,
-                      height: 1.2,
+                      height: 1.1,
                     ),
                   ),
                   const SizedBox(height: 4),
                   Row(
                     children: [
                       Container(
-                        width: 8,
-                        height: 8,
+                        width: 7,
+                        height: 7,
                         decoration: BoxDecoration(
                           color: successGreen,
                           shape: BoxShape.circle,
                           boxShadow: [
                             BoxShadow(
-                              color: successGreen.withOpacity(0.3),
+                              color: successGreen.withOpacity(0.25),
                               blurRadius: 4,
                               spreadRadius: 1,
                             ),
@@ -596,7 +653,7 @@ class _EnhancedAIAssistantState extends State<_EnhancedAIAssistant>
                       Text(
                         'Online & Ready',
                         style: GoogleFonts.inter(
-                          fontSize: 12,
+                          fontSize: 11,
                           fontWeight: FontWeight.w600,
                           color: successGreen,
                           letterSpacing: -0.1,
@@ -609,14 +666,14 @@ class _EnhancedAIAssistantState extends State<_EnhancedAIAssistant>
             ),
           ],
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 12),
         Container(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: skyBlue.withOpacity(0.08),
-            borderRadius: BorderRadius.circular(16),
+            color: skyBlue.withOpacity(0.06),
+            borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: skyBlue.withOpacity(0.2),
+              color: skyBlue.withOpacity(0.12),
               width: 1,
             ),
           ),
@@ -625,18 +682,18 @@ class _EnhancedAIAssistantState extends State<_EnhancedAIAssistant>
               Icon(
                 Icons.lightbulb_outline_rounded,
                 color: skyBlue,
-                size: 20,
+                size: 18,
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 10),
               Expanded(
                 child: Text(
                   'Ask me about your profile, career goals, or job search strategy.',
                   style: GoogleFonts.inter(
-                    fontSize: 14,
+                    fontSize: 13,
                     fontWeight: FontWeight.w500,
-                    color: steelGray,
+                    color: Colors.grey.shade700,
                     letterSpacing: -0.1,
-                    height: 1.4,
+                    height: 1.35,
                   ),
                 ),
               ),
@@ -659,27 +716,21 @@ class _EnhancedAIAssistantState extends State<_EnhancedAIAssistant>
         borderRadius: BorderRadius.circular(28),
         color: isFocused ? Colors.white : Colors.grey[50],
         border: Border.all(
-          color: isFocused ? skyBlue.withOpacity(0.8) : steelGray.withOpacity(0.15),
-          width: isFocused ? 2.5 : 1,
+          color: isFocused ? skyBlue.withOpacity(0.8) : Colors.grey.withOpacity(0.2),
+          width: isFocused ? 2.0 : 1,
         ),
         boxShadow: isFocused
             ? [
           BoxShadow(
-            color: skyBlue.withOpacity(0.2),
-            blurRadius: 25,
-            offset: const Offset(0, 10),
-            spreadRadius: -3,
-          ),
-          BoxShadow(
-            color: skyBlue.withOpacity(0.12),
-            blurRadius: 15,
-            offset: const Offset(0, 6),
+            color: skyBlue.withOpacity(0.08),
+            blurRadius: 18,
+            offset: const Offset(0, 8),
           ),
         ]
             : [
           BoxShadow(
-            color: jetBlack.withOpacity(0.04),
-            blurRadius: 12,
+            color: Colors.black.withOpacity(0.02),
+            blurRadius: 6,
             offset: const Offset(0, 2),
           ),
         ],
@@ -690,7 +741,7 @@ class _EnhancedAIAssistantState extends State<_EnhancedAIAssistant>
           children: [
             // Attachment button
             _buildAttachmentButton(),
-            const SizedBox(width: 12),
+            const SizedBox(width: 10),
 
             // Text input field
             Expanded(
@@ -701,11 +752,11 @@ class _EnhancedAIAssistantState extends State<_EnhancedAIAssistant>
                 ),
                 child: TextField(
                   controller: widget.messageController,
-                 // focusNode: widget.messageFocusNode,
+                  // focusNode: widget.messageFocusNode,
                   maxLines: null,
                   textCapitalization: TextCapitalization.sentences,
                   style: GoogleFonts.inter(
-                    fontSize: 16,
+                    fontSize: 14,
                     fontWeight: FontWeight.w500,
                     color: jetBlack,
                     height: 1.4,
@@ -714,9 +765,9 @@ class _EnhancedAIAssistantState extends State<_EnhancedAIAssistant>
                     hintText: 'Type your message ...',
                     filled: false,
                     hintStyle: GoogleFonts.inter(
-                      fontSize: 14,
+                      fontSize: 13,
                       fontWeight: FontWeight.w400,
-                      color: steelGray.withOpacity(0.6),
+                      color: Colors.grey.shade600,
                     ),
                     border: InputBorder.none,
                     isDense: true,
@@ -740,7 +791,7 @@ class _EnhancedAIAssistantState extends State<_EnhancedAIAssistant>
   Widget _buildAttachmentButton() {
     return AnimatedContainer(
       duration: const Duration(milliseconds: 200),
-      margin: const EdgeInsets.symmetric(vertical: 8),
+      margin: const EdgeInsets.symmetric(vertical: 6),
       child: Material(
         color: Colors.transparent,
         borderRadius: BorderRadius.circular(20),
@@ -751,8 +802,8 @@ class _EnhancedAIAssistantState extends State<_EnhancedAIAssistant>
             padding: const EdgeInsets.all(8),
             child: Icon(
               Icons.attach_file_rounded,
-              color: steelGray.withOpacity(0.7),
-              size: 22,
+              color: Colors.grey.shade600,
+              size: 20,
             ),
           ),
         ),
@@ -769,26 +820,22 @@ class _EnhancedAIAssistantState extends State<_EnhancedAIAssistant>
       curve: Curves.easeInOut,
       margin: const EdgeInsets.all(6),
       child: Material(
-        color: hasText
-            ? skyBlue
-            : (isFocused ? skyBlue.withOpacity(0.1) : steelGray.withOpacity(0.15)),
+        color: hasText ? skyBlue : (isFocused ? skyBlue.withOpacity(0.1) : Colors.grey.shade200),
         borderRadius: BorderRadius.circular(24),
         elevation: hasText ? 2 : 0,
-        shadowColor: skyBlue.withOpacity(0.3),
+        shadowColor: skyBlue.withOpacity(0.18),
         child: InkWell(
           borderRadius: BorderRadius.circular(24),
           onTap: hasText ? _handleSendMessage : _handleVoiceInput,
           child: Container(
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.all(10),
             child: AnimatedSwitcher(
               duration: const Duration(milliseconds: 200),
               child: Icon(
                 hasText ? Icons.send_rounded : Icons.mic_rounded,
                 key: ValueKey(hasText),
-                color: hasText
-                    ? Colors.white
-                    : (isFocused ? skyBlue : steelGray.withOpacity(0.8)),
-                size: 20,
+                color: hasText ? Colors.white : (isFocused ? skyBlue : Colors.grey.shade700),
+                size: 18,
               ),
             ),
           ),
@@ -797,20 +844,18 @@ class _EnhancedAIAssistantState extends State<_EnhancedAIAssistant>
     );
   }
 
-// Additional helper methods to implement
   void _handleAttachment() {
     // Implement attachment functionality
-    // Show bottom sheet with options: Camera, Gallery, Files, etc.
   }
 
   void _handleVoiceInput() {
     // Implement voice input functionality
-    // Start voice recording
   }
 
   void _handleSendMessage() {
-    // Your existing send message implementation
+    // Implement send message logic or keep existing
   }
+
   Widget _buildQuickActions() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -818,7 +863,7 @@ class _EnhancedAIAssistantState extends State<_EnhancedAIAssistant>
         Text(
           'Quick Actions',
           style: GoogleFonts.inter(
-            fontSize: 16,
+            fontSize: 14,
             fontWeight: FontWeight.w700,
             color: jetBlack,
             letterSpacing: -0.2,
@@ -827,84 +872,37 @@ class _EnhancedAIAssistantState extends State<_EnhancedAIAssistant>
         const SizedBox(height: 12),
         Row(
           children: [
-            Expanded(child: _buildQuickActionCard(
-              icon: Icons.work_outline_rounded,
-              title: 'Job Match',
-              subtitle: 'Find roles',
-              color: successGreen,
-            )),
-            const SizedBox(width: 12),
-            Expanded(child: _buildQuickActionCard(
-              icon: Icons.trending_up_rounded,
-              title: 'Skill Gap',
-              subtitle: 'Analyze',
-              color: accentGold,
-            )),
-            const SizedBox(width: 12),
-            Expanded(child: _buildQuickActionCard(
-              icon: Icons.article_outlined,
-              title: 'Resume',
-              subtitle: 'Optimize',
-              color: skyBlue,
-            )),
+            Expanded(
+              child: _quickActionTile(Icons.work_outline_rounded, 'Job Match'),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: _quickActionTile(Icons.trending_up_rounded, 'Skill Gap'),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: _quickActionTile(Icons.article_outlined, 'Resume'),
+            ),
           ],
         ),
       ],
     );
   }
 
-  Widget _buildQuickActionCard({
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    required Color color,
-  }) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(16),
-        onTap: () {
-          // TODO: Implement quick action
-        },
-        child: Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: color.withOpacity(0.08),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: color.withOpacity(0.2),
-              width: 1,
-            ),
-          ),
-          child: Column(
-            children: [
-              Icon(
-                icon,
-                color: color,
-                size: 24,
-              ),
-              const SizedBox(height: 8),
-              Text(
-                title,
-                style: GoogleFonts.inter(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: jetBlack,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              Text(
-                subtitle,
-                style: GoogleFonts.inter(
-                  fontSize: 10,
-                  fontWeight: FontWeight.w500,
-                  color: steelGray,
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ],
-          ),
-        ),
+  Widget _quickActionTile(IconData icon, String label) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 10),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: Colors.grey.shade100),
+      ),
+      child: Column(
+        children: [
+          Icon(icon, size: 20, color: Colors.grey.shade800),
+          const SizedBox(height: 8),
+          Text(label, style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600)),
+        ],
       ),
     );
   }
@@ -919,14 +917,14 @@ class _EnhancedAIAssistantState extends State<_EnhancedAIAssistant>
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [successGreen, successGreen.withOpacity(0.8)],
+                  colors: [const Color(0xFF07B67C), const Color(0xFF07B67C).withOpacity(0.85)],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
-                borderRadius: BorderRadius.circular(14),
+                borderRadius: BorderRadius.circular(12),
                 boxShadow: [
                   BoxShadow(
-                    color: successGreen.withOpacity(0.25),
+                    color: const Color(0xFF07B67C).withOpacity(0.18),
                     blurRadius: 8,
                     offset: const Offset(0, 4),
                   ),
@@ -935,10 +933,10 @@ class _EnhancedAIAssistantState extends State<_EnhancedAIAssistant>
               child: const Icon(
                 Icons.analytics_rounded,
                 color: Colors.white,
-                size: 22,
+                size: 20,
               ),
             ),
-            const SizedBox(width: 16),
+            const SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -946,19 +944,19 @@ class _EnhancedAIAssistantState extends State<_EnhancedAIAssistant>
                   Text(
                     'Profile Analysis',
                     style: GoogleFonts.inter(
-                      fontSize: 20,
+                      fontSize: 16,
                       fontWeight: FontWeight.w800,
-                      color: jetBlack,
+                      color: const Color(0xFF0F172A),
                       letterSpacing: -0.3,
-                      height: 1.2,
+                      height: 1.1,
                     ),
                   ),
                   Text(
                     'AI-powered insights & recommendations',
                     style: GoogleFonts.inter(
-                      fontSize: 13,
+                      fontSize: 12,
                       fontWeight: FontWeight.w500,
-                      color: steelGray,
+                      color: Colors.grey.shade600,
                       letterSpacing: -0.1,
                     ),
                   ),
@@ -967,7 +965,7 @@ class _EnhancedAIAssistantState extends State<_EnhancedAIAssistant>
             ),
           ],
         ),
-        const SizedBox(height: 20),
+        const SizedBox(height: 12),
         _buildAnalyzeButton(),
       ],
     );
@@ -981,93 +979,37 @@ class _EnhancedAIAssistantState extends State<_EnhancedAIAssistant>
           scale: _isAnalyzing ? _pulseAnimation.value : 1.0,
           child: SizedBox(
             width: double.infinity,
-            height: 56,
+            height: 48,
             child: ElevatedButton(
               style: ElevatedButton.styleFrom(
-                backgroundColor: _isAnalyzing
-                    ? steelGray.withOpacity(0.7)
-                    : airForceBlue,
+                backgroundColor: _isAnalyzing ? Colors.grey.shade600 : const Color(0xFF1B365D),
                 elevation: _isAnalyzing ? 0 : 8,
-                shadowColor: airForceBlue.withOpacity(0.3),
+                shadowColor: const Color(0xFF1B365D).withOpacity(0.28),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(12),
                 ),
               ),
               onPressed: _isAnalyzing ? null : _handleAnalyzeProfile,
               child: _isAnalyzing
-                  ? _buildAnalyzingContent()
-                  : _buildAnalyzeContent(),
+                  ? Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation(Colors.white)),
+                  ),
+                  const SizedBox(width: 10),
+                  Text('Analyzing...', style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
+                ],
+              )
+                  : Text('Analyze My Profile', style: GoogleFonts.inter(fontWeight: FontWeight.w700)),
             ),
           ),
         );
       },
     );
   }
-
-  Widget _buildAnalyzeContent() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Container(
-          padding: const EdgeInsets.all(4),
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.2),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: const Icon(
-            Icons.auto_awesome_rounded,
-            color: Colors.white,
-            size: 20,
-          ),
-        ),
-        const SizedBox(width: 12),
-        Text(
-          'Analyze My Profile',
-          style: GoogleFonts.inter(
-            fontSize: 16,
-            fontWeight: FontWeight.w700,
-            color: Colors.white,
-            letterSpacing: -0.2,
-          ),
-        ),
-        const SizedBox(width: 8),
-        Icon(
-          Icons.arrow_forward_rounded,
-          color: Colors.white,
-          size: 18,
-        ),
-      ],
-    );
-  }
-
-  Widget _buildAnalyzingContent() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        SizedBox(
-          width: 20,
-          height: 20,
-          child: CircularProgressIndicator(
-            strokeWidth: 2.5,
-            valueColor: AlwaysStoppedAnimation<Color>(
-              Colors.white.withOpacity(0.9),
-            ),
-          ),
-        ),
-        const SizedBox(width: 16),
-        Text(
-          'Analyzing Profile...',
-          style: GoogleFonts.inter(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-            color: Colors.white.withOpacity(0.9),
-            letterSpacing: -0.1,
-          ),
-        ),
-      ],
-    );
-  }
-
 
   void _handleAnalyzeProfile() async {
     setState(() {
@@ -1077,7 +1019,7 @@ class _EnhancedAIAssistantState extends State<_EnhancedAIAssistant>
     _shimmerController.repeat();
 
     // Simulate analysis delay
-    await Future.delayed(const Duration(seconds: 4));
+    await Future.delayed(const Duration(seconds: 3));
 
     if (mounted) {
       setState(() {

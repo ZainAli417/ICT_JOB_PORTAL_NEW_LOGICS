@@ -32,6 +32,7 @@ class _Recruiter_MainLayoutState extends State<Recruiter_MainLayout>
   late AnimationController _shimmerController;
   late AnimationController _particleController;
 
+
   @override
   void initState() {
     super.initState();
@@ -55,6 +56,7 @@ class _Recruiter_MainLayoutState extends State<Recruiter_MainLayout>
 
   @override
   Widget build(BuildContext context) {
+
     return ChangeNotifierProvider<R_TopNavProvider>(
       create: (_) => R_TopNavProvider(),
       child: RepaintBoundary(child: _buildScaffold(context)),
@@ -138,6 +140,8 @@ class _Recruiter_MainLayoutState extends State<Recruiter_MainLayout>
   }
 
   Widget _buildModernGlassmorphicHeader(String initials) {
+    final primaryColor = Theme.of(context).primaryColor;
+
     return Container(
       height: 80,
       margin: const EdgeInsets.all(16),
@@ -286,7 +290,7 @@ class _Recruiter_MainLayoutState extends State<Recruiter_MainLayout>
                   onPressed: () => setState(() => _isDarkMode = !_isDarkMode),
                 ),
                 const SizedBox(width: 16),
-                _buildModernProfileMenu(initials),
+                _buildProfileMenu(primaryColor,initials),
               ],
             ),
           ),
@@ -558,138 +562,87 @@ class _Recruiter_MainLayoutState extends State<Recruiter_MainLayout>
     );
   }
 
-  Widget _buildModernProfileMenu(String initials) {
+  Widget _buildProfileMenu(Color primaryColor, String initials) {
     return PopupMenuButton<String>(
-      offset: const Offset(0, 16),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
-      ),
-      elevation: 0,
-      color: Colors.transparent,
-      child: MouseRegion(
-        cursor: SystemMouseCursors.click,
-        child: Container(
-          padding: const EdgeInsets.all(3),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
-            gradient: const LinearGradient(
-              colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: const Color(0xFF6366F1).withOpacity(0.4),
-                blurRadius: 16,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          child: Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
+      offset: const Offset(0, 8),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Container(
+        padding: const EdgeInsets.all(2),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: Color(0xFFE2E8F0), width: 2),
+        ),
+        child: CircleAvatar(
+          radius: 18,
+          backgroundColor: primaryColor,
+          child: Text(
+            initials.isNotEmpty ? initials : 'RC',
+            style: GoogleFonts.poppins(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
               color: Colors.white,
-              borderRadius: BorderRadius.circular(14),
-            ),
-            child: Text(
-              initials.isNotEmpty ? initials : 'RC',
-              style: GoogleFonts.poppins(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: const Color(0xFF6366F1),
-              ),
             ),
           ),
         ),
       ),
       itemBuilder: (context) => [
-        _buildGlassmorphicMenuItem(
-            'Settings', Icons.settings_rounded, () => context.go('/settings')),
-        _buildGlassmorphicMenuItem('Profile', Icons.person_rounded, () {}),
-        _buildGlassmorphicMenuItem('Help', Icons.help_rounded, () {}),
-        const PopupMenuDivider(height: 1),
+        _buildPopupMenuItem('Profile', Icons.person_outline_rounded, () => context.go('/NA')),
+        _buildPopupMenuItem('Settings', Icons.settings_outlined, () => context.go('/NA')),
+        _buildPopupMenuItem('Help', Icons.help_outline_rounded, () {}),
+        const PopupMenuDivider(),
         PopupMenuItem<String>(
           value: 'logout',
           onTap: () => _showModernLogoutDialog(context),
-          child: Container(
-            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  Colors.red.shade50,
-                  Colors.red.shade100.withOpacity(0.5),
-                ],
-              ),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Colors.red.shade100,
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Icon(Icons.logout_rounded,
-                      size: 18, color: Colors.red.shade700),
-                ),
-                const SizedBox(width: 12),
-                Text(
+          child: Row(
+            children: [
+              Icon(Icons.logout_rounded, size: 18, color: Colors.red.shade500),
+              const SizedBox(width: 12),
+              Flexible(
+                child: Text(
                   'Logout',
+                  overflow: TextOverflow.ellipsis,
                   style: GoogleFonts.poppins(
                     fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.red.shade700,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.red,
                   ),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ],
     );
   }
 
-  PopupMenuItem<String> _buildGlassmorphicMenuItem(
-      String title, IconData icon, VoidCallback onTap) {
+  PopupMenuItem<String> _buildPopupMenuItem(String title, IconData icon, VoidCallback onTap, {bool isDestructive = false}) {
     return PopupMenuItem<String>(
       value: title.toLowerCase(),
       onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-        decoration: BoxDecoration(
-          color: _isDarkMode
-              ? Colors.white.withOpacity(0.05)
-              : Colors.grey.shade50,
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    const Color(0xFF6366F1).withOpacity(0.1),
-                    const Color(0xFF8B5CF6).withOpacity(0.05),
-                  ],
-                ),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Icon(icon, size: 18, color: const Color(0xFF64748B)),
-            ),
-            const SizedBox(width: 12),
-            Text(
+      child: Row(
+        children: [
+          Icon(icon, size: 18, color: isDestructive ? Colors.red.shade500 : Color(0xFF64748B)),
+          const SizedBox(width: 12),
+          Flexible(
+            child: Text(
               title,
+              overflow: TextOverflow.ellipsis,
               style: GoogleFonts.poppins(
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
-                color: const Color(0xFF1E293B),
+                color: isDestructive ? Colors.red.shade500 : Color(0xFF1E293B),
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
+
+
+
+
+
 
   void _showQuickLinks(BuildContext context) =>
       print('Showing Quick Links menu');

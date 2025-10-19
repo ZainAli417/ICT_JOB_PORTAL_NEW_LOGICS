@@ -54,91 +54,96 @@ class _RecruiterDashboardState extends State<RecruiterDashboard>
 
   @override
   Widget build(BuildContext context) {
+     return Recruiter_MainLayout(
+      activeIndex: 0,
+      child: Stack(
+          children: [
+            FadeTransition(
+              opacity: _fade,
+              child: SlideTransition(
+                position: _slide,
+                child: _buildDashboardContent(context),
+        ),
+      ),
+      ]
+          ),
+    );
+  }
+  Widget _buildDashboardContent(BuildContext context) {
     final isMobile = MediaQuery.of(context).size.width < 768;
     final screenWidth = MediaQuery.of(context).size.width;
 
-    return Recruiter_MainLayout(
-      activeIndex: 0,
-      child: FadeTransition(
-        opacity: _fade,
-        child: SlideTransition(
-          position: _slide,
-          child: Scaffold(
-            backgroundColor: Colors.transparent,
-            appBar: _buildAppBar(context),
-            body: ChangeNotifierProvider(
-              create: (_) => RecruiterProvider2(),
-              builder: (context, _) {
-                final prov = Provider.of<RecruiterProvider2>(context);
+    return        Scaffold(
+      backgroundColor: Colors.white,
+      appBar: _buildAppBar(context),
+      body: ChangeNotifierProvider(
+        create: (_) => RecruiterProvider2(),
+        builder: (context, _) {
+          final prov = Provider.of<RecruiterProvider2>(context);
+          if (isMobile) {
+            return SingleChildScrollView(
+              child: Column(
+                children: [
+                  _buildSearchAndFilters(prov, isMobile, screenWidth),
+                  Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: prov.loading
+                        ? _buildLoadingState()
+                        : _buildCandidatesSection(prov, isMobile),
+                  ),
+                  if (prov.candidates.isNotEmpty)
+                    _buildBottomActionBar(prov, isMobile),
+                ],
+              ),
+            );
+          }
 
-                if (isMobile) {
-                  return SingleChildScrollView(
+          // Desktop Layout - Side by Side
+          return Container(
+            color: Colors.white,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Left Sidebar - Filters
+                Container(
+                  width: 320,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    border: Border(
+                      right: BorderSide(
+                        color: Colors.grey.shade200,
+                        width: 1,
+                      ),
+                    ),
+                  ),
+                  child: _buildSearchAndFilters(prov, isMobile, screenWidth),
+                ),
+                // Right Content Area
+                Expanded(
+                  child: Container(
+                    color: Colors.white,
                     child: Column(
-
                       children: [
-                        _buildSearchAndFilters(prov, isMobile, screenWidth),
-                        Padding(
-                          padding: const EdgeInsets.all(16),
-                          child: prov.loading
-                              ? _buildLoadingState()
-                              : _buildCandidatesSection(prov, isMobile),
+                        Expanded(
+                          child: SingleChildScrollView(
+                            child: Padding(
+                              padding: const EdgeInsets.all(32),
+                              child: prov.loading
+                                  ? _buildLoadingState()
+                                  : _buildCandidatesSection(prov, isMobile),
+                            ),
+                          ),
                         ),
                         if (prov.candidates.isNotEmpty)
                           _buildBottomActionBar(prov, isMobile),
                       ],
                     ),
-                  );
-                }
-
-                // Desktop Layout - Side by Side
-                return Container(
-                  color: Colors.white,
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Left Sidebar - Filters
-                      Container(
-                        width: 320,
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          border: Border(
-                            right: BorderSide(
-                              color: Colors.grey.shade200,
-                              width: 1,
-                            ),
-                          ),
-                        ),
-                        child: _buildSearchAndFilters(prov, isMobile, screenWidth),
-                      ),
-                      // Right Content Area
-                      Expanded(
-                        child: Container(
-                          color: Colors.white,
-                          child: Column(
-                            children: [
-                              Expanded(
-                                child: SingleChildScrollView(
-                                  child: Padding(
-                                    padding: const EdgeInsets.all(32),
-                                    child: prov.loading
-                                        ? _buildLoadingState()
-                                        : _buildCandidatesSection(prov, isMobile),
-                                  ),
-                                ),
-                              ),
-                              if (prov.candidates.isNotEmpty)
-                                _buildBottomActionBar(prov, isMobile),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
                   ),
-                );
-              },
+                ),
+              ],
             ),
-          ),
-        ),
+          );
+        },
       ),
     );
   }
@@ -380,6 +385,7 @@ class _RecruiterDashboardState extends State<RecruiterDashboard>
             color: Colors.grey.shade500,
             fontWeight: FontWeight.w400,
           ),
+          filled: false,
           border: InputBorder.none,
           prefixIcon: Container(
             padding: const EdgeInsets.all(12),
@@ -437,6 +443,7 @@ class _RecruiterDashboardState extends State<RecruiterDashboard>
               fontWeight: FontWeight.w500,
             ),
           ),
+
         ))
             .toList(),
         onChanged: (v) {
@@ -447,6 +454,7 @@ class _RecruiterDashboardState extends State<RecruiterDashboard>
           }
         },
         decoration: InputDecoration(
+          filled: false,
           contentPadding:
           const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           border: InputBorder.none,
@@ -497,6 +505,7 @@ class _RecruiterDashboardState extends State<RecruiterDashboard>
           if (v != null) prov.setSortOption(v);
         },
         decoration: InputDecoration(
+          filled: false,
           contentPadding:
           const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           border: InputBorder.none,

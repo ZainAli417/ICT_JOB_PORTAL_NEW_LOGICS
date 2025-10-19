@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../Constant/Profile_Sidebar.dart';
+import 'JS_Dashboard.dart';
 import 'JS_Top_Bar.dart';
 import 'Profile_Provider.dart';
 
@@ -120,55 +121,121 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
       _tabController.animateTo(_tabController.index + 1);
     }
   }
+// Replace your current build with this only
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (_) => ProfileProvider(),
-      child: MainLayout(
-        activeIndex: 1,
-        child: FadeTransition(
-          opacity: _fadeAnimation,
-          child: Container(
-            color: Colors.grey.shade50,
-            padding: const EdgeInsets.all(24),
-            child: Consumer<ProfileProvider>(
-              builder: (context, provider, _) {
-                if (provider.errorMessage.isNotEmpty) {
-                  WidgetsBinding.instance.addPostFrameCallback((_) {
-                    if (mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(provider.errorMessage),
-                          backgroundColor: Colors.red,
-                          action: SnackBarAction(
-                            label: 'Retry',
-                            textColor: Colors.white,
-                            onPressed: () => provider.forceReload(),
-                          ),
-                        ),
-                      );
-                    }
-                  });
-                }
+    const double topBarHeight = 120.0;
 
-                return provider.isLoading
-                    ? _buildLoadingState()
-                    : Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(flex: 3, child: _buildMainContent(provider)),
-                    const SizedBox(width: 32),
-                    Flexible(child: ProfileSidebar(provider: provider)),
-                  ],
-                );
-              },
-            ),
+    return ScrollConfiguration(
+      behavior: SmoothScrollBehavior(),
+      child: ChangeNotifierProvider(
+        create: (_) => ProfileProvider(),
+        child: SizedBox.expand(
+          child: Stack(
+            children: [
+              // Main content area sits under the top bar (starts below topBarHeight)
+              Positioned.fill(
+                top: topBarHeight,
+                // IMPORTANT: Scaffold provides the Material ancestor TabBar needs
+                child: Scaffold(
+                  // Keep transparent so the top bar overlay remains visible
+                  backgroundColor: Colors.transparent,
+                  // We don't use AppBar here because MainLayout is the topbar overlay
+                  body: FadeTransition(
+                    opacity: _fadeAnimation,
+                    child: SlideTransition(
+                      position: Tween<Offset>(
+                        begin: const Offset(0, 0.03),
+                        end: Offset.zero,
+                      ).animate(CurvedAnimation(parent: _animController, curve: Curves.easeOut)),
+                      child: _buildProfileContent(context),
+                    ),
+                  ),
+                ),
+              ),
+
+              // Top navigation bar (MainLayout used as the bar)
+              Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
+                height: topBarHeight,
+                child: MainLayout(
+                  activeIndex: 2,
+                  child: const SizedBox.shrink(),
+                ),
+              ),
+            ],
           ),
         ),
       ),
     );
   }
 
+  Widget _buildProfileContent(BuildContext context) {
+    return Container(
+      color: Colors.white,
+      padding: const EdgeInsets.all(24),
+      child: Consumer<ProfileProvider>(
+        builder: (context, provider, _) {
+          // show error snackbar once via post frame callback (keeps behavior same as before)
+          if (provider.errorMessage.isNotEmpty) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(provider.errorMessage),
+                    backgroundColor: Colors.red,
+                    action: SnackBarAction(
+                      label: 'Retry',
+                      textColor: Colors.white,
+                      onPressed: () => provider.forceReload(),
+                    ),
+                  ),
+                );
+              }
+            });
+          }
+
+          // Loading state preserved
+          if (provider.isLoading) {
+            return _buildLoadingState();
+          }
+
+          // Main layout mirrors the Dashboard structure:
+          // Left: main content (header, tabs, expandable list area)
+          // Right: sidebar (ProfileSidebar)
+          return Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Left column — main content
+              Expanded(
+                flex: 3,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Top header (keeps your existing header builder)
+                    _buildHeader(),
+                    const SizedBox(height: 32),
+                    // Tab bar (keeps existing tab bar)
+                    _buildTabBar(),
+                    const SizedBox(height: 24),
+                    // Expands to fill remaining vertical space similar to Dashboard
+                    Expanded(child: _buildTabContent(provider)),
+                  ],
+                ),
+              ),
+
+              const SizedBox(width: 32),
+
+              // Right column — sidebar
+              Flexible(child: ProfileSidebar(provider: provider)),
+            ],
+          );
+        },
+      ),
+    );
+  }
   Widget _buildLoadingState() {
     return Center(
       child: Column(
@@ -186,19 +253,6 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildMainContent(ProfileProvider prov) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _buildHeader(),
-        const SizedBox(height: 32),
-        _buildTabBar(),
-        const SizedBox(height: 24),
-        Expanded(child: _buildTabContent(prov)),
-      ],
     );
   }
 

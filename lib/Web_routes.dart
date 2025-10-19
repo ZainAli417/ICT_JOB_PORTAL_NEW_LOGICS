@@ -7,6 +7,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 import 'Constant/CV_Generator.dart';
 import 'Constant/Forget Password.dart';
+import 'Constant/cv_analysis.dart';
 import 'Screens/Job_Seeker/JS_Profile.dart';
 import 'Login.dart';
 import 'Sign Up.dart';
@@ -345,7 +346,8 @@ bool _isJobSeekerPath(String? path) {
   return p.startsWith('/dashboard') ||
       p.startsWith('/profile') ||
       p.startsWith('/download-cv') ||
-      p.startsWith('/saved');
+      p.startsWith('/ai-tools') ||
+      p.startsWith('/applied-jobs');
 }
 
 bool _isPublicPath(String? path) {
@@ -479,6 +481,13 @@ final GoRouter router = GoRouter(
         context: context,
         state: state,
       ),
+    ),   GoRoute(
+      path: '/ai-tools',
+      pageBuilder: (context, state) => _buildPageWithAnimation(
+        child: const CVAnalysisScreen(),
+        context: context,
+        state: state,
+      ),
     ),
     GoRoute(
       path: '/profile',
@@ -489,7 +498,7 @@ final GoRouter router = GoRouter(
       ),
     ),
     GoRoute(
-      path: '/saved',
+      path: '/applied-jobs',
       pageBuilder: (context, state) => _buildPageWithAnimation(
         child: ListAppliedJobsScreen(),
         context: context,
