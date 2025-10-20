@@ -356,24 +356,24 @@ class _CVAnalysisScreenState extends State<CVAnalysisScreen>
   }
   Widget _buildFileUploadCard() {
     return Container(
-      padding: const EdgeInsets.all(12), // reduced
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [Colors.indigo.shade50, Colors.blue.shade50],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(14), // slightly tighter
+        borderRadius: BorderRadius.circular(14),
         border: Border.all(color: Colors.blue.shade200, width: 1.8),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min, // important to avoid extra vertical space
+        mainAxisSize: MainAxisSize.min,
         children: [
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(8), // reduced
+                padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
                   color: Colors.blue.shade600,
                   borderRadius: BorderRadius.circular(10),
@@ -385,7 +385,7 @@ class _CVAnalysisScreenState extends State<CVAnalysisScreen>
                 child: Text(
                   'Upload CV',
                   style: GoogleFonts.poppins(
-                    fontSize: 16, // reduced
+                    fontSize: 16,
                     fontWeight: FontWeight.w600,
                     color: Colors.blue.shade900,
                   ),
@@ -393,7 +393,9 @@ class _CVAnalysisScreenState extends State<CVAnalysisScreen>
               ),
             ],
           ),
-          const SizedBox(height: 10), // reduced
+          const SizedBox(height: 10),
+
+          // If file selected — show compact info row
           if (_pickedFile != null) ...[
             Container(
               padding: const EdgeInsets.all(10),
@@ -404,30 +406,14 @@ class _CVAnalysisScreenState extends State<CVAnalysisScreen>
               ),
               child: Row(
                 children: [
-                  Icon(_getFileIcon(), color: _getFileColor(), size: 22), // slightly smaller
+                  Icon(_getFileIcon(), color: _getFileColor(), size: 22),
                   const SizedBox(width: 10),
                   Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          _pickedFile!.name,
-                          style: GoogleFonts.poppins(
-                            fontWeight: FontWeight.w600,
-                            fontSize: 12, // reduced
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          _formatFileSize(_pickedFile!.size),
-                          style: GoogleFonts.poppins(
-                            fontSize: 11,
-                            color: Colors.grey.shade600,
-                          ),
-                        ),
-                      ],
+                    child: Text(
+                      _pickedFile!.name,
+                      style: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 12),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
                   IconButton(
@@ -441,62 +427,67 @@ class _CVAnalysisScreenState extends State<CVAnalysisScreen>
               ),
             ),
           ] else ...[
-            InkWell(
-              onTap: _pickFile,
-              child: Center(
-                child: Container(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
+            // --- Modified Row Layout ---
+            Row(
+              children: [
+                Expanded(
+                  flex: 3,
+                  child: InkWell(
+                    onTap: _pickFile,
                     borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: Colors.blue.shade300, width: 1.6),
-                  ),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.file_upload_outlined, size: 32, color: Colors.blue.shade600), // smaller
-                      const SizedBox(height: 6),
-                      Text(
-                        'Click to browse',
-                        style: GoogleFonts.poppins(
-                          fontWeight: FontWeight.w600,
-                          color: Colors.blue.shade700,
-                        ),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: Colors.blue.shade300, width: 1.6),
                       ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'PDF, DOC, DOCX (Max 2MB)',
-                        style: GoogleFonts.poppins(
-                          fontSize: 10,
-                          color: Colors.grey.shade600,
-                        ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.file_upload_outlined, size: 30, color: Colors.blue.shade600),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Click to browse Pdf,Doc,Docx',
+                            style: GoogleFonts.poppins(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 13,
+                              color: Colors.blue.shade700,
+                            ),
+                          ),
+                        ],
                       ),
-                    ],
+                    ),
                   ),
                 ),
-              ),
+                const SizedBox(width: 10),
+                Expanded(
+                  flex: 2,
+                  child: SizedBox(
+                    height: 44,
+                    child: ElevatedButton.icon(
+                      onPressed: _pickFile,
+                      icon: const Icon(Icons.folder_open, size: 16),
+                      label: Text(
+                        'Choose File',
+                        style: GoogleFonts.poppins(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 14,
+                        ),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.blue.shade600,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ],
-          const SizedBox(height: 10),
-          SizedBox(
-            width: double.infinity,
-            height: 40, // slightly smaller button
-            child: ElevatedButton.icon(
-              onPressed: _pickFile,
-              icon: const Icon(Icons.folder_open, size: 16),
-              label: Text(
-                _pickedFile == null ? 'Choose File' : 'Change File',
-                style: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 14),
-              ),
-              style: ElevatedButton.styleFrom(
-                minimumSize: const Size.fromHeight(40),
-                backgroundColor: Colors.blue.shade600,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-              ),
-            ),
-          ),
         ],
       ),
     );
