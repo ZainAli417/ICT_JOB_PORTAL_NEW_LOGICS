@@ -363,7 +363,6 @@ class RecruiterProvider2 extends ChangeNotifier {
     return null;
   }
 
-  /// Send selected candidates to admin - OPTIMIZED with batch writes
   Future<String?> sendSelectedCandidatesToAdmin({String? notes}) async {
     if (selectedUids.isEmpty) {
       debugPrint('⚠️ No candidates selected');
@@ -379,77 +378,83 @@ class RecruiterProvider2 extends ChangeNotifier {
     final recruiterId = recruiter.uid;
     final recruiterEmail = recruiter.email ?? '';
 
-    final selected = _candidates
-        .where((c) => selectedUids.contains(c.uid))
-        .toList();
-
+    // Resolve selected candidate objects from loaded candidates
+    final selected = _candidates.where((c) => selectedUids.contains(c.uid)).toList();
     if (selected.isEmpty) {
       debugPrint('⚠️ Selected UIDs not found in candidates list');
       return null;
     }
 
-    debugPrint('📤 Sending ${selected.length} candidates to admin');
+    debugPrint('📤 Preparing to send ${selected.length} candidates to admin');
 
-    final now = FieldValue.serverTimestamp();
+    // Prepare candidate metadata and ids
+    final List<String> candidateIds = [];
+    final List<Map<String, dynamic>> candidateMaps = [];
 
-    // Prepare candidate data with CV URLs
-    final candidateMaps = selected.map((c) {
-      final cvUrl = _extractCvUrlFromProfile(c.profile) ?? '';
-      return <String, dynamic>{
-        'uid': c.uid,
-        'name': c.name,
-        'email': c.email,
-        'phone': c.phone,
-        'nationality': c.nationality,
-        'picture_url': c.pictureUrl,
-        'cv_url': cvUrl,
-      };
-    }).toList();
+    for (final c in selected) {
+      try {
+        // Ensure we have latest profile for CV extraction (fetch if missing)
+        Map<String, dynamic>? profile = c.profile;
+        if (profile == null) {
+          profile = await fetchProfile(c.uid);
+        }
+
+        final cvUrl = _extractCvUrlFromProfile(profile) ?? '';
+
+        candidateIds.add(c.uid);
+        candidateMaps.add(<String, dynamic>{
+          'name': c.name,
+          'email': c.email,
+          'phone': c.phone,
+          'nationality': c.nationality,
+          'picture_url': c.pictureUrl,
+          'cv_url': cvUrl,
+        });
+      } catch (e) {
+        debugPrint('⚠️ Error preparing candidate ${c.uid}: $e');
+      }
+    }
+
+    if (candidateIds.isEmpty) {
+      debugPrint('⚠️ No candidate data prepared after processing');
+      return null;
+    }
 
     try {
-      final requestsRoot = _firestore
-          .collection('Admin')
-          .doc('Recruiter_Requests')
-          .collection('requests');
+      final now = FieldValue.serverTimestamp();
 
-      final requestDoc = requestsRoot.doc();
-      final batch = _firestore.batch();
+      // -> CREATE A TOP-LEVEL REQUEST DOC (auto ID) (NOT nested under recruiterId)
+      final requestsCol = _firestore.collection('recruiter_requests');
+      final requestDoc = requestsCol.doc(); // auto id
 
-      // Create main request document
-      final requestData = {
+      final requestData = <String, dynamic>{
         'request_id': requestDoc.id,
         'recruiter_id': recruiterId,
         'recruiter_email': recruiterEmail,
         'created_at': now,
-        'notes': notes?.trim() ?? '',
-        'total_candidates': candidateMaps.length,
-        'status': 'pending',
+        'notes': (notes ?? '').trim(),
+        'total_candidates': candidateIds.length,
+        'status': 'pending', // pending / reviewed / accepted / rejected
+        // store candidate ids for quick reference and indexing
+        'candidate_ids': candidateIds,
+        // optional: store a lightweight snapshot of candidate metadata (avoid very large payloads)
         'candidates': candidateMaps,
       };
-      batch.set(requestDoc, requestData);
 
-      // Add individual candidate documents in subcollection
-      final candidatesCol = requestDoc.collection('candidates');
-      for (final candidateData in candidateMaps) {
-        final candDoc = candidatesCol.doc(candidateData['uid'] as String);
-        batch.set(candDoc, {
-          ...candidateData,
-          'request_id': requestDoc.id,
-          'added_at': now,
-        });
-      }
+      // Single write is enough here; use a batch if you plan additional writes atomically
+      await requestDoc.set(requestData);
 
-      await batch.commit();
-      debugPrint('✅ Request created: ${requestDoc.id}');
+      debugPrint('✅ Request created at recruiter_requests/${requestDoc.id}');
 
+      // Clear selection after successful commit
       clearSelection();
+
       return requestDoc.id;
     } catch (e) {
       debugPrint('❌ sendSelectedCandidatesToAdmin error: $e');
       return null;
     }
   }
-
   /// Refresh candidates data
   Future<void> refresh() async {
     debugPrint('🔄 Refreshing candidates...');

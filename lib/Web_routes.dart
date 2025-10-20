@@ -8,6 +8,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'Constant/CV_Generator.dart';
 import 'Constant/Forget Password.dart';
 import 'Constant/cv_analysis.dart';
+import 'Screens/Admin/admin_dashbaord.dart';
+import 'Screens/Admin/admin_login.dart';
 import 'Screens/Job_Seeker/JS_Profile.dart';
 import 'Login.dart';
 import 'Sign Up.dart';
@@ -20,7 +22,7 @@ import 'Constant/Splash.dart';
 import 'Screens/Recruiter/Post_A_Job_Dashboard.dart';
 import 'Screens/Recruiter/Recruiter_dashboard.dart';
 
-/// Enhanced RoleService with proper Firestore querying for your database structure
+/// Enhanced RoleService with admin detection and caching
 class RoleService {
   static final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
@@ -29,211 +31,195 @@ class RoleService {
   static const Duration _cacheExpiry = Duration(minutes: 5);
   static final Map<String, DateTime> _cacheTimestamps = {};
 
-  /// Clears the role cache (useful after logout)
   static void clearCache() {
     _roleCache.clear();
     _cacheTimestamps.clear();
   }
 
-  /// Main method to determine user role with multiple fallback strategies
   static Future<String?> getUserRole(String uid) async {
-    // Check cache first
+    // Cache check
     if (_roleCache.containsKey(uid)) {
       final timestamp = _cacheTimestamps[uid];
       if (timestamp != null && DateTime.now().difference(timestamp) < _cacheExpiry) {
-        print('RoleService: Using cached role for $uid: ${_roleCache[uid]}');
+        debugPrint('RoleService: using cached role for $uid: ${_roleCache[uid]}');
         return _roleCache[uid];
       }
     }
 
     try {
-      // Strategy 1: Check Firebase Auth custom claims (fastest if set)
-      final customRole = await _checkCustomClaims();
-      if (customRole != null) {
-        _cacheRole(uid, customRole);
-        return customRole;
+      // 1) Custom claims (fastest)
+      final custom = await _checkCustomClaims();
+      if (custom != null) {
+        _cacheRole(uid, custom);
+        return custom;
       }
 
-      // Strategy 2: Check recruiter collection with user_data map field
+      // 2) Admin collection (check admins first so admin users are detected)
+      final adminRole = await _checkAdminCollection(uid);
+      if (adminRole != null) {
+        _cacheRole(uid, adminRole);
+        return adminRole;
+      }
+
+      // 3) Recruiter collection
       final recruiterRole = await _checkRecruiterCollection(uid);
       if (recruiterRole != null) {
         _cacheRole(uid, recruiterRole);
         return recruiterRole;
       }
 
-      // Strategy 3: Check job_seeker collection with user_data map field
+      // 4) Job seeker collection
       final jobSeekerRole = await _checkJobSeekerCollection(uid);
       if (jobSeekerRole != null) {
         _cacheRole(uid, jobSeekerRole);
         return jobSeekerRole;
       }
 
-      // Strategy 4: Query users collection with auto-generated IDs
+      // 5) Users collection lookup (if you store role here)
       final usersRole = await _checkUsersCollection(uid);
       if (usersRole != null) {
         _cacheRole(uid, usersRole);
         return usersRole;
       }
 
-      // No role found
-      print('RoleService: No role found for uid: $uid');
+      debugPrint('RoleService: no role found for $uid');
       return null;
-
     } catch (e, st) {
-      print('RoleService.getUserRole ERROR: $e');
-      print('Stack trace: $st');
+      debugPrint('RoleService.getUserRole ERROR: $e\n$st');
       return null;
     }
   }
 
-  /// Normalize role to lowercase for consistency
   static String? _normalizeRole(String? role) {
     if (role == null) return null;
-    final normalized = role.toLowerCase().trim();
-    // Map common variations to standard values
-    if (normalized == 'recruiter') return 'recruiter';
-    if (normalized == 'job_seeker' || normalized == 'jobseeker' || normalized == 'job seeker') {
+    final normalized = role.toString().toLowerCase().trim();
+    if (normalized == 'recruiter' || normalized == 'employer') return 'recruiter';
+    if (normalized == 'job_seeker' || normalized == 'jobseeker' || normalized == 'job seeker' || normalized == 'candidate') {
       return 'job_seeker';
     }
-    return null; // Invalid role
+    if (normalized == 'admin' || normalized == 'administrator' || normalized == 'superadmin') return 'admin';
+    return null;
   }
 
-  /// Check Firebase Auth custom claims
   static Future<String?> _checkCustomClaims() async {
     try {
       final user = FirebaseAuth.instance.currentUser;
       if (user != null) {
-        final idTokenResult = await user.getIdTokenResult(true);
-        final claims = idTokenResult.claims;
+        final idToken = await user.getIdTokenResult(true);
+        final claims = idToken.claims;
         if (claims != null && claims['role'] != null) {
           final role = _normalizeRole(claims['role'].toString());
           if (role != null) {
-            print('RoleService: Found role in custom claims: $role');
+            debugPrint('RoleService: found role in custom claims: $role');
             return role;
           }
         }
       }
     } catch (e) {
-      print('RoleService: Custom claims check failed: $e');
+      debugPrint('RoleService: custom claims check failed: $e');
     }
     return null;
   }
 
-  /// Check recruiter/{uid} document with user_data map field
-  /// Structure: recruiter/{uid} -> { user_data: { role, email, name } }
-  static Future<String?> _checkRecruiterCollection(String uid) async {
+  static Future<String?> _checkAdminCollection(String uid) async {
     try {
-      print('RoleService: Checking recruiter/$uid');
-      final doc = await _firestore.collection('recruiter').doc(uid).get();
-
+      debugPrint('RoleService: checking admins/$uid');
+      final doc = await _firestore.collection('admins').doc(uid).get();
       if (doc.exists) {
         final data = doc.data();
         if (data != null) {
-          // Check if user_data is a map field
+          final direct = _normalizeRole(data['role']?.toString());
+          if (direct == 'admin') return 'admin';
+          if (data.containsKey('role') == false) {
+            // If doc exists in admins collection, assume admin (conservative)
+            return 'admin';
+          }
+        } else {
+          // doc exists but no data: still treat as admin
+          return 'admin';
+        }
+      }
+    } catch (e) {
+      debugPrint('RoleService: admin collection check failed: $e');
+    }
+    return null;
+  }
+
+  static Future<String?> _checkRecruiterCollection(String uid) async {
+    try {
+      debugPrint('RoleService: checking recruiter/$uid');
+      final doc = await _firestore.collection('recruiter').doc(uid).get();
+      if (doc.exists) {
+        final data = doc.data();
+        if (data != null) {
           if (data['user_data'] is Map) {
             final userData = data['user_data'] as Map<String, dynamic>;
             final rawRole = userData['role']?.toString();
             final role = _normalizeRole(rawRole);
-            if (role == 'recruiter') {
-              print('RoleService: Found recruiter role in user_data map (raw: $rawRole, normalized: $role)');
-              return 'recruiter';
-            }
+            if (role == 'recruiter') return 'recruiter';
           }
-
-          // Check if role is directly on the document
           final directRole = _normalizeRole(data['role']?.toString());
-          if (directRole == 'recruiter') {
-            print('RoleService: Found recruiter role directly on document');
-            return 'recruiter';
-          }
-
-          // If document exists under recruiter collection, assume recruiter
-          print('RoleService: Document exists in recruiter collection, assuming recruiter role');
+          if (directRole == 'recruiter') return 'recruiter';
+          // If exists in recruiter collection, treat as recruiter.
           return 'recruiter';
         }
       }
     } catch (e) {
-      print('RoleService: Recruiter collection check failed: $e');
+      debugPrint('RoleService: recruiter collection check failed: $e');
     }
     return null;
   }
 
-  /// Check job_seeker/{uid} document with user_data map field
-  /// Structure: job_seeker/{uid} -> { user_data: { role, email, name } }
   static Future<String?> _checkJobSeekerCollection(String uid) async {
     try {
-      print('RoleService: Checking job_seeker/$uid');
+      debugPrint('RoleService: checking job_seeker/$uid');
       final doc = await _firestore.collection('job_seeker').doc(uid).get();
-
       if (doc.exists) {
         final data = doc.data();
         if (data != null) {
-          // Check if user_data is a map field
           if (data['user_data'] is Map) {
             final userData = data['user_data'] as Map<String, dynamic>;
             final rawRole = userData['role']?.toString();
             final role = _normalizeRole(rawRole);
-            if (role == 'job_seeker') {
-              print('RoleService: Found job_seeker role in user_data map (raw: $rawRole, normalized: $role)');
-              return 'job_seeker';
-            }
+            if (role == 'job_seeker') return 'job_seeker';
           }
-
-          // Check if role is directly on the document
           final directRole = _normalizeRole(data['role']?.toString());
-          if (directRole == 'job_seeker') {
-            print('RoleService: Found job_seeker role directly on document');
-            return 'job_seeker';
-          }
-
-          // If document exists under job_seeker collection, assume job_seeker
-          print('RoleService: Document exists in job_seeker collection, assuming job_seeker role');
+          if (directRole == 'job_seeker') return 'job_seeker';
           return 'job_seeker';
         }
       }
     } catch (e) {
-      print('RoleService: Job seeker collection check failed: $e');
+      debugPrint('RoleService: job seeker collection check failed: $e');
     }
     return null;
   }
 
-  /// Query users collection with auto-generated IDs
-  /// Structure: users/{autoId} -> { uid, role, email, name }
   static Future<String?> _checkUsersCollection(String uid) async {
     try {
-      print('RoleService: Querying users collection for uid: $uid');
-      final querySnapshot = await _firestore
-          .collection('users')
-          .where('uid', isEqualTo: uid)
-          .limit(1)
-          .get();
-
-      if (querySnapshot.docs.isNotEmpty) {
-        final doc = querySnapshot.docs.first;
-        final data = doc.data();
+      debugPrint('RoleService: querying users collection for uid=$uid');
+      final qs = await _firestore.collection('users').where('uid', isEqualTo: uid).limit(1).get();
+      if (qs.docs.isNotEmpty) {
+        final data = qs.docs.first.data();
         final rawRole = data['role']?.toString();
         final role = _normalizeRole(rawRole);
-
         if (role != null) {
-          print('RoleService: Found role in users collection (raw: $rawRole, normalized: $role)');
           return role;
         }
       }
     } catch (e) {
-      print('RoleService: Users collection query failed: $e');
+      debugPrint('RoleService: users collection query failed: $e');
     }
     return null;
   }
 
-  /// Cache the role for performance
   static void _cacheRole(String uid, String role) {
     _roleCache[uid] = role;
     _cacheTimestamps[uid] = DateTime.now();
-    print('RoleService: Cached role for $uid: $role');
+    debugPrint('RoleService: cached role for $uid: $role');
   }
 }
 
-/// AuthNotifier: Manages authentication state and role resolution
+/// AuthNotifier: manages auth & role resolution for GoRouter refresh
 class AuthNotifier extends ChangeNotifier {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   StreamSubscription<User?>? _authSubscription;
@@ -245,17 +231,16 @@ class AuthNotifier extends ChangeNotifier {
   AuthNotifier() {
     _authSubscription = _auth.authStateChanges().listen(_onAuthStateChanged);
 
-    final currentUser = _auth.currentUser;
-    if (currentUser != null) {
-      _resolveRoleFor(currentUser.uid);
+    final cur = _auth.currentUser;
+    if (cur != null) {
+      _resolveRoleFor(cur.uid);
     } else {
       roleResolved = true;
     }
   }
 
   Future<void> _onAuthStateChanged(User? user) async {
-    if (_isResolving) return; // Prevent concurrent resolutions
-
+    if (_isResolving) return;
     _isResolving = true;
     roleResolved = false;
 
@@ -274,47 +259,42 @@ class AuthNotifier extends ChangeNotifier {
   }
 
   Future<void> _resolveRoleFor(String uid) async {
-    print('AuthNotifier: Resolving role for $uid');
-
+    debugPrint('AuthNotifier: resolving role for $uid');
     try {
       userRole = await RoleService.getUserRole(uid);
 
-      // Retry once if role is null (handle transient network issues)
+      // Retry once on null (transient network)
       if (userRole == null) {
-        print('AuthNotifier: First attempt returned null, retrying...');
+        debugPrint('AuthNotifier: retrying role lookup for $uid');
         await Future.delayed(const Duration(milliseconds: 500));
         userRole = await RoleService.getUserRole(uid);
       }
 
       if (userRole == null) {
-        print('AuthNotifier: Role resolution failed, signing out user');
-        // Sign out user if no role found (prevents unauthorized access)
+        debugPrint('AuthNotifier: role resolution failed (null role) for $uid — user will be logged out');
         try {
-          await _auth.signOut();
+          await _auth.signOut(); // defensive: prevent unknown-role users from remaining signed in
         } catch (e) {
-          print('AuthNotifier: Sign out failed: $e');
+          debugPrint('AuthNotifier: signOut failed: $e');
         }
       } else {
-        print('AuthNotifier: Role resolved successfully: $userRole');
+        debugPrint('AuthNotifier: resolved role=$userRole for $uid');
       }
-
     } catch (e, st) {
-      print('AuthNotifier: Role resolution error: $e');
-      print('Stack trace: $st');
+      debugPrint('AuthNotifier: error resolving role: $e\n$st');
       userRole = null;
     } finally {
       roleResolved = true;
     }
   }
 
-  /// Force refresh role (useful after profile updates)
   Future<void> refreshRole() async {
-    final user = _auth.currentUser;
-    if (user != null) {
+    final u = _auth.currentUser;
+    if (u != null) {
       RoleService.clearCache();
       roleResolved = false;
       notifyListeners();
-      await _resolveRoleFor(user.uid);
+      await _resolveRoleFor(u.uid);
       notifyListeners();
     }
   }
@@ -328,10 +308,10 @@ class AuthNotifier extends ChangeNotifier {
   }
 }
 
-// Shared auth notifier instance
+// Shared instance used by router refreshListenable
 final _authNotifier = AuthNotifier();
 
-/// Path categorization helpers
+/// Path helpers
 bool _isRecruiterPath(String? path) {
   if (path == null) return false;
   final p = path.toLowerCase();
@@ -350,12 +330,39 @@ bool _isJobSeekerPath(String? path) {
       p.startsWith('/applied-jobs');
 }
 
-bool _isPublicPath(String? path) {
+bool _isAdminPath(String? path) {
   if (path == null) return false;
-  return ['/', '/login', '/register', '/recover-password'].contains(path);
+  final p = path.toLowerCase();
+  return p == '/admin' ||
+      p.startsWith('/admin/') ||
+      p.startsWith('/admin_dashboard') ||
+      p.startsWith('/admin-dashboard');
 }
 
-/// Animated page transition
+/// Public (unauthenticated) paths
+bool _isPublicPath(String? location) {
+  if (location == null) return false;
+  String path;
+  try {
+    path = Uri.parse(location).path;
+  } catch (_) {
+    path = location;
+  }
+  final normalized = (path.length > 1 && path.endsWith('/')) ? path.substring(0, path.length - 1) : path;
+
+  const publicPaths = [
+    '/',
+    '/login',
+    '/register',
+    '/recover-password',
+    '/admin', // allow direct access to admin login
+  ];
+  if (publicPaths.contains(normalized)) return true;
+  // if you want all /admin/* public (not recommended), use: if (normalized.startsWith('/admin')) return true;
+  return false;
+}
+
+/// Animated page transition helper
 CustomTransitionPage<T> _buildPageWithAnimation<T>({
   required BuildContext context,
   required GoRouterState state,
@@ -367,26 +374,19 @@ CustomTransitionPage<T> _buildPageWithAnimation<T>({
     transitionDuration: const Duration(milliseconds: 370),
     reverseTransitionDuration: const Duration(milliseconds: 370),
     transitionsBuilder: (context, animation, secondaryAnimation, child) {
-      final fadeAnimation = CurvedAnimation(
-        parent: animation,
-        curve: Curves.easeInOut,
-      );
-      final scaleAnimation = Tween<double>(begin: 0.99, end: 1.0).animate(
+      final fade = CurvedAnimation(parent: animation, curve: Curves.easeInOut);
+      final scale = Tween<double>(begin: 0.99, end: 1.0).animate(
         CurvedAnimation(parent: animation, curve: Curves.easeOutCubic),
       );
-      return FadeTransition(
-        opacity: fadeAnimation,
-        child: ScaleTransition(scale: scaleAnimation, child: child),
-      );
+      return FadeTransition(opacity: fade, child: ScaleTransition(scale: scale, child: child));
     },
   );
 }
 
-/// Main router with enhanced role-based access control
+/// Main router
 final GoRouter router = GoRouter(
   initialLocation: '/',
   refreshListenable: _authNotifier,
-
   redirect: (BuildContext context, GoRouterState state) {
     final user = FirebaseAuth.instance.currentUser;
     final isLoggedIn = user != null;
@@ -394,150 +394,115 @@ final GoRouter router = GoRouter(
     final roleResolved = _authNotifier.roleResolved;
     final location = state.uri.toString();
 
-    print('Router redirect: location=$location, loggedIn=$isLoggedIn, role=$role, resolved=$roleResolved');
+    debugPrint('Router.redirect -> loc=$location loggedIn=$isLoggedIn role=$role resolved=$roleResolved');
 
-    // Public paths accessible to everyone
+    // allow public pages (including admin login)
     if (_isPublicPath(location)) {
-      // If logged in with resolved role, redirect to appropriate dashboard
+      // if already signed in and role resolved, send to respective dashboard
       if (isLoggedIn && roleResolved && role != null) {
-        return role == 'recruiter' ? '/recruiter-dashboard' : '/dashboard';
+        if (role == 'admin') return '/admin_dashboard';
+        if (role == 'recruiter') return '/recruiter-dashboard';
+        return '/dashboard';
       }
-      return null; // Allow access to public pages
-    }
-
-    // Not logged in - redirect to splash/login
-    if (!isLoggedIn) {
-      return '/';
-    }
-
-    // Logged in but role not resolved yet - wait
-    if (!roleResolved) {
-      print('Router: Role not resolved yet, waiting...');
       return null;
     }
 
-    // Logged in, role resolved but is null - redirect to login
+    // if not logged in, redirect to splash
+    if (!isLoggedIn) return '/';
+
+    // logged in but role not resolved yet — allow route to wait (don't redirect)
+    if (!roleResolved) {
+      debugPrint('Router: role not resolved yet; waiting for AuthNotifier');
+      return null;
+    }
+
+    // logged in, role resolved but not found -> sign-in required
     if (role == null) {
-      print('Router: Role is null, redirecting to login');
+      debugPrint('Router: resolved role is null -> redirecting to /login');
       return '/login';
     }
 
-    // Role-based access control
-    if (role == 'recruiter') {
-      if (_isJobSeekerPath(location)) {
-        print('Router: Recruiter trying to access job seeker path, redirecting');
-        return '/recruiter-dashboard';
+    // Role-based guard: block access to other roles' pages
+    // Admin: allow admin pages, block access to recruiter/job seeker pages
+    if (role == 'admin') {
+      if (_isRecruiterPath(location) || _isJobSeekerPath(location)) {
+        debugPrint('Router: admin attempted non-admin path -> redirect to admin_dashboard');
+        return '/admin_dashboard';
       }
-    } else if (role == 'job_seeker') {
-      if (_isRecruiterPath(location)) {
-        print('Router: Job seeker trying to access recruiter path, redirecting');
-        return '/dashboard';
-      }
+      // allow admin pages
+      return null;
     }
 
-    return null; // Allow access
-  },
+    // Recruiter: prevent entering admin or job seeker pages
+    if (role == 'recruiter') {
+      if (_isAdminPath(location)) {
+        debugPrint('Router: recruiter attempted admin path -> redirect to recruiter-dashboard');
+        return '/recruiter-dashboard';
+      }
+      if (_isJobSeekerPath(location)) {
+        debugPrint('Router: recruiter attempted job-seeker path -> redirect to recruiter-dashboard');
+        return '/recruiter-dashboard';
+      }
+      return null;
+    }
 
+    // Job seeker: prevent admin/recruiter pages
+    if (role == 'job_seeker') {
+      if (_isAdminPath(location)) {
+        debugPrint('Router: job seeker attempted admin path -> redirect to /dashboard');
+        return '/dashboard';
+      }
+      if (_isRecruiterPath(location)) {
+        debugPrint('Router: job seeker attempted recruiter path -> redirect to /dashboard');
+        return '/dashboard';
+      }
+      return null;
+    }
+
+    return null;
+  },
   routes: <GoRoute>[
     // Public routes
     GoRoute(
       path: '/',
-      pageBuilder: (context, state) => _buildPageWithAnimation(
-        child: const SplashScreen(),
-        context: context,
-        state: state,
-      ),
+      pageBuilder: (context, state) => _buildPageWithAnimation(child: const SplashScreen(), context: context, state: state),
     ),
+
+    // Admin login (public) and admin dashboard (guarded by redirect logic)
+    GoRoute(
+      path: '/admin',
+      pageBuilder: (context, state) => _buildPageWithAnimation(child: const AdminLoginScreen(), context: context, state: state),
+    ),
+    GoRoute(
+      path: '/admin_dashboard',
+      pageBuilder: (context, state) => _buildPageWithAnimation(child: const AdminDashboardScreen(), context: context, state: state),
+    ),
+
     GoRoute(
       path: '/recover-password',
-      pageBuilder: (context, state) => _buildPageWithAnimation(
-        child: const ForgotPasswordScreen(),
-        context: context,
-        state: state,
-      ),
+      pageBuilder: (context, state) => _buildPageWithAnimation(child: const ForgotPasswordScreen(), context: context, state: state),
     ),
+
     GoRoute(
       path: '/login',
-      pageBuilder: (context, state) => _buildPageWithAnimation(
-        child: const JobSeekerLoginScreen(),
-        context: context,
-        state: state,
-      ),
+      pageBuilder: (context, state) => _buildPageWithAnimation(child: const JobSeekerLoginScreen(), context: context, state: state),
     ),
+
     GoRoute(
       path: '/register',
-      pageBuilder: (context, state) => _buildPageWithAnimation(
-        child: const SignUp_Screen(),
-        context: context,
-        state: state,
-      ),
+      pageBuilder: (context, state) => _buildPageWithAnimation(child: const SignUp_Screen(), context: context, state: state),
     ),
 
-    // Job Seeker routes
-    GoRoute(
-      path: '/dashboard',
-      pageBuilder: (context, state) => _buildPageWithAnimation(
-        child: const JobSeekerDashboard(),
-        context: context,
-        state: state,
-      ),
-    ),   GoRoute(
-      path: '/ai-tools',
-      pageBuilder: (context, state) => _buildPageWithAnimation(
-        child: const CVAnalysisScreen(),
-        context: context,
-        state: state,
-      ),
-    ),
-    GoRoute(
-      path: '/profile',
-      pageBuilder: (context, state) => _buildPageWithAnimation(
-        child: const ProfileScreen(),
-        context: context,
-        state: state,
-      ),
-    ),
-    GoRoute(
-      path: '/applied-jobs',
-      pageBuilder: (context, state) => _buildPageWithAnimation(
-        child: ListAppliedJobsScreen(),
-        context: context,
-        state: state,
-      ),
-    ),
-    GoRoute(
-      path: '/download-cv',
-      pageBuilder: (context, state) => _buildPageWithAnimation(
-        child: const CVGeneratorDialog(),
-        context: context,
-        state: state,
-      ),
-    ),
+    // Job seeker routes
+    GoRoute(path: '/dashboard', pageBuilder: (c, s) => _buildPageWithAnimation(child: const JobSeekerDashboard(), context: c, state: s)),
+    GoRoute(path: '/ai-tools', pageBuilder: (c, s) => _buildPageWithAnimation(child: const CVAnalysisScreen(), context: c, state: s)),
+    GoRoute(path: '/profile', pageBuilder: (c, s) => _buildPageWithAnimation(child: const ProfileScreen(), context: c, state: s)),
+    GoRoute(path: '/applied-jobs', pageBuilder: (c, s) => _buildPageWithAnimation(child: ListAppliedJobsScreen(), context: c, state: s)),
+    GoRoute(path: '/download-cv', pageBuilder: (c, s) => _buildPageWithAnimation(child: const CVGeneratorDialog(), context: c, state: s)),
 
     // Recruiter routes
-    GoRoute(
-      path: '/recruiter-dashboard',
-      pageBuilder: (context, state) => _buildPageWithAnimation(
-        child: const RecruiterDashboard(),
-        context: context,
-        state: state,
-      ),
-    ),
-    GoRoute(
-      path: '/job-posting',
-      pageBuilder: (context, state) => _buildPageWithAnimation(
-        child: const JobPostingScreen(),
-        context: context,
-        state: state,
-      ),
-    ),
-    GoRoute(
-      path: '/view-applications',
-      pageBuilder: (context, state) => _buildPageWithAnimation(
-        child: const ApplicantsScreen(),
-        context: context,
-        state: state,
-      ),
-    ),
+    GoRoute(path: '/recruiter-dashboard', pageBuilder: (c, s) => _buildPageWithAnimation(child: const RecruiterDashboard(), context: c, state: s)),
+    GoRoute(path: '/job-posting', pageBuilder: (c, s) => _buildPageWithAnimation(child: const JobPostingScreen(), context: c, state: s)),
+    GoRoute(path: '/view-applications', pageBuilder: (c, s) => _buildPageWithAnimation(child: const ApplicantsScreen(), context: c, state: s)),
   ],
 );

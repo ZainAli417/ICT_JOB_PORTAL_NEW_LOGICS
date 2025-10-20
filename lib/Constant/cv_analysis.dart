@@ -653,7 +653,7 @@ class _CVAnalysisScreenState extends State<CVAnalysisScreen>
         if (!prov.isLoading && (prov.advisory != null || prov.highlights.isNotEmpty || prov.score != null))
           SizedBox(
             // bounded height for the whole results area; tweak multiplier as needed
-            height: MediaQuery.of(context).size.height * 0.6,
+            height: MediaQuery.of(context).size.height * 0.7,
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -702,6 +702,131 @@ class _CVAnalysisScreenState extends State<CVAnalysisScreen>
       ],
     );
   }
+  Widget _buildHighlightsCard(CVAnalyzerBackendProvider prov) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // If parent provides a finite maxHeight, use most of it; otherwise use a fraction of viewport.
+        final double viewportHeight = MediaQuery.of(context).size.height;
+        final bool parentHasBoundedHeight = constraints.maxHeight.isFinite && constraints.maxHeight > 0;
+
+        // If parent bounded, use up to 90% of parent space; otherwise use 65% of screen height (clamped).
+        final double cardHeight = parentHasBoundedHeight
+            ? (constraints.maxHeight * 0.9).clamp(320.0, viewportHeight)
+            : (viewportHeight * 0.65).clamp(320.0, 900.0);
+
+        // Also allow a reasonable max width for larger screens
+        final double maxWidth = (MediaQuery.of(context).size.width > 1200) ? 900.0 : 700.0;
+
+        return Center(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxWidth: maxWidth,
+              // minHeight ensures compact screens still look okay
+              minHeight: 300,
+              maxHeight: cardHeight,
+            ),
+            child: Container(
+              // Use the computed height so the card grows to intended size
+              height: cardHeight,
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.08),
+                    blurRadius: 20,
+                    offset: const Offset(0, 10),
+                  ),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Header row (fixed-ish height)
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [Colors.orange.shade400, Colors.red.shade400],
+                          ),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Icon(Icons.stars, color: Colors.white, size: 20),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          'Key Highlights',
+                          style: GoogleFonts.poppins(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.grey.shade800,
+                          ),
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: Colors.blue.shade50,
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Text(
+                          '${prov.highlights.length} items',
+                          style: GoogleFonts.poppins(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.blue.shade700,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Content area: takes remaining space and scrolls if content overflows
+                  // We use Expanded so the ListView gets a bounded height (cardHeight minus header).
+                  Expanded(
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: Container(
+                        // subtle background to visually separate list
+                        color: Colors.white,
+                        child: prov.highlights.isEmpty
+                            ? Center(
+                          child: Text(
+                            'No highlights found',
+                            style: GoogleFonts.poppins(color: Colors.grey.shade500),
+                          ),
+                        )
+                            : Scrollbar(
+                          thumbVisibility: true,
+                          child: ListView.separated(
+                            padding: const EdgeInsets.symmetric(vertical: 8),
+                            itemCount: prov.highlights.length,
+                            separatorBuilder: (_, __) => const SizedBox(height: 12),
+                            // use default physics for better UX inside bounded container
+                            physics: const BouncingScrollPhysics(),
+                            itemBuilder: (_, idx) {
+                              final h = prov.highlights[idx];
+                              return _buildHighlightItem(h, idx);
+                            },
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   Widget _buildAdvisoryCard(CVAnalyzerBackendProvider prov) {
     return Container(
       padding: const EdgeInsets.all(15),
@@ -832,90 +957,6 @@ class _CVAnalysisScreenState extends State<CVAnalysisScreen>
     );
   }
 
-  Widget _buildHighlightsCard(CVAnalyzerBackendProvider prov) {
-    // Adjust this factor or replace with a fixed number like 420.0
-    final double maxHeightFactor = 0.8;
-    final double maxHeight = MediaQuery.of(context).size.height * maxHeightFactor;
-
-    return SizedBox(
-      height: maxHeight, // major container fixed height
-      child: Container(
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.08),
-              blurRadius: 20,
-              offset: const Offset(0, 10),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Header row (fixed height)
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [Colors.orange.shade400, Colors.red.shade400],
-                    ),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: const Icon(Icons.stars, color: Colors.white, size: 20),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    'Key Highlights',
-                    style: GoogleFonts.poppins(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.grey.shade800,
-                    ),
-                  ),
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: Colors.blue.shade50,
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(
-                    '${prov.highlights.length} items',
-                    style: GoogleFonts.poppins(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.blue.shade700,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-
-            // Content area: takes remaining space and scrolls if content overflows
-            Expanded(
-              child: ListView.separated(
-                itemCount: prov.highlights.length,
-                separatorBuilder: (_, __) => const SizedBox(height: 12),
-                // leave shrinkWrap false for better performance inside fixed-height container
-                physics: const AlwaysScrollableScrollPhysics(),
-                itemBuilder: (_, idx) {
-                  final h = prov.highlights[idx];
-                  return _buildHighlightItem(h, idx);
-                },
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 
 // Loading Popup Dialog
 // Add as a State field
@@ -1364,6 +1405,9 @@ class _CVAnalysisScreenState extends State<CVAnalysisScreen>
     );
   }
 // REPLACE: _buildScoreCard
+
+
+
   Widget _buildScoreCard(CVAnalyzerBackendProvider prov) {
     final score = prov.score ?? 0;
     final color = _getScoreColor(score);
