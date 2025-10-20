@@ -409,7 +409,7 @@ class _LandingPageState extends State<LandingPage> with TickerProviderStateMixin
               ),
             ),
             child: Text(
-              "Login",
+              "Admin Portal",
               style: GoogleFonts.poppins(
                 fontWeight: FontWeight.w600,
                 fontSize: 14,
