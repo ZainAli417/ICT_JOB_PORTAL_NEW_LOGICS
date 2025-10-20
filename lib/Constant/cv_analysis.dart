@@ -181,8 +181,8 @@ class _CVAnalysisScreenState extends State<CVAnalysisScreen>
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                         colors: [
-                          Colors.blue.shade50,
-                          Colors.purple.shade50,
+                          Colors.white,
+                          Colors.white,
                           Colors.pink.shade50,
                         ],
                       ),
@@ -704,7 +704,7 @@ class _CVAnalysisScreenState extends State<CVAnalysisScreen>
   }
   Widget _buildAdvisoryCard(CVAnalyzerBackendProvider prov) {
     return Container(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(15),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
@@ -730,14 +730,14 @@ class _CVAnalysisScreenState extends State<CVAnalysisScreen>
                   ),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: const Icon(Icons.lightbulb_outline, color: Colors.white, size: 24),
+                child: const Icon(Icons.lightbulb_outline, color: Colors.white, size: 20),
               ),
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
                   'AI Advisory & Insights',
                   style: GoogleFonts.poppins(
-                    fontSize: 18,
+                    fontSize: 16,
                     fontWeight: FontWeight.w600,
                     color: Colors.grey.shade800,
                   ),
@@ -745,9 +745,9 @@ class _CVAnalysisScreenState extends State<CVAnalysisScreen>
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 6),
           Divider(color: Colors.grey.shade200, thickness: 1),
-          const SizedBox(height: 16),
+          const SizedBox(height: 6),
 
           // --- NEW: limit advisory height based on available parent space ---
           LayoutBuilder(
@@ -774,7 +774,6 @@ class _CVAnalysisScreenState extends State<CVAnalysisScreen>
                       PConfig(
                         textStyle: GoogleFonts.poppins(
                           fontSize: 15,
-                          height: 1.6,
                           fontWeight: FontWeight.w600,
                           color: Colors.grey.shade700,
                         ),
@@ -835,7 +834,7 @@ class _CVAnalysisScreenState extends State<CVAnalysisScreen>
 
   Widget _buildHighlightsCard(CVAnalyzerBackendProvider prov) {
     // Adjust this factor or replace with a fixed number like 420.0
-    final double maxHeightFactor = 0.45;
+    final double maxHeightFactor = 0.8;
     final double maxHeight = MediaQuery.of(context).size.height * maxHeightFactor;
 
     return SizedBox(
@@ -919,110 +918,343 @@ class _CVAnalysisScreenState extends State<CVAnalysisScreen>
   }
 
 // Loading Popup Dialog
+// Add as a State field
+// State field
+  bool _isAiDialogVisible = false;
+
+// Replacement show dialog:
   void _showAIProcessingDialog(BuildContext context, CVAnalyzerBackendProvider prov) {
-    showDialog(
+    // don't show if not loading or already showing
+    if (!prov.isLoading || _isAiDialogVisible) return;
+    _isAiDialogVisible = true;
+
+    // Local listener used only to auto-close the dialog when loading finishes.
+    void _provListener() {
+      if (!prov.isLoading && _isAiDialogVisible && Navigator.of(context).canPop()) {
+        try {
+          Navigator.of(context).pop(); // close the dialog
+        } catch (_) {}
+      }
+    }
+
+    // Add the closing listener
+    prov.addListener(_provListener);
+
+    // Show the dialog once. The content inside uses AnimatedBuilder(prov) so it rebuilds
+    // whenever prov notifies (progress/text updates) without re-opening the dialog.
+    showDialog<void>(
       context: context,
       barrierDismissible: false,
-      // reduced opacity so background doesn't get too dark
       barrierColor: Colors.black.withOpacity(0.15),
-      builder: (BuildContext context) {
+      useRootNavigator: true,
+      builder: (BuildContext dialogContext) {
+        // AnimatedBuilder listens to prov (a ChangeNotifier) and rebuilds the dialog body
+        // whenever prov.notifyListeners() is called (progress updates, text updates, etc).
         return Center(
-          // ClipRect limits BackdropFilter to the dialog's area so the whole page isn't blurred/darkened
           child: ClipRect(
             child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+              // keep blur low for performance
+              filter: ImageFilter.blur(sigmaX: 3, sigmaY: 3),
               child: Dialog(
                 backgroundColor: Colors.transparent,
                 elevation: 0,
                 insetPadding: const EdgeInsets.all(20),
-                child: Container(
-                  constraints: const BoxConstraints(maxWidth: 550),
-                  padding: const EdgeInsets.all(28),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [Colors.purple.shade50, Colors.blue.shade50],
-                    ),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: Colors.purple.shade200.withOpacity(0.7), width: 1.5),
-                    boxShadow: [
-                      // softened shadow (less spread & opacity)
+                child: AnimatedBuilder(
+                  animation: prov,
+                  builder: (context, _) {
+                    // prov.isLoading and prov.progress are live values here
+                    final double progress = prov.progress.clamp(0.0, 1.0);
+                    final String stageText = _getAIProcessingText(progress);
+                    final bool stillLoading = prov.isLoading;
 
-                    ],
-                  ),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      ScaleTransition(
-                        scale: _aiPulseAnimation,
-                        child: Container(
-                          padding: const EdgeInsets.all(24),
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              colors: [Colors.purple.shade400, Colors.blue.shade400],
+                    return Container(
+                      constraints: const BoxConstraints(maxWidth: 550),
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(colors: [Colors.purple.shade50, Colors.blue.shade50]),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: Colors.purple.shade200.withOpacity(0.7), width: 1.2),
+                      ),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          // Animated pulse icon: prefer existing _aiPulseAnimation if present,
+                          // otherwise use a cheap implicit animation.
+                          if (_aiPulseAnimation != null)
+                            ScaleTransition(scale: _aiPulseAnimation, child: _buildAiIconCircle())
+                          else
+                            TweenAnimationBuilder<double>(
+                              tween: Tween(begin: 1.0, end: 1.02),
+                              duration: const Duration(milliseconds: 900),
+                              builder: (context, v, child) => Transform.scale(scale: v, child: child),
+                              child: _buildAiIconCircle(),
                             ),
-                            shape: BoxShape.circle,
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.purple.shade200.withOpacity(0.6),
-                                blurRadius: 16,
-                                spreadRadius: 2,
+
+                          const SizedBox(height: 14),
+
+                          // Animated text switcher for stage text (smooth fade/slide)
+                          AnimatedSwitcher(
+                            duration: const Duration(milliseconds: 280),
+                            transitionBuilder: (child, anim) {
+                              return FadeTransition(opacity: anim, child: SlideTransition(position: Tween<Offset>(
+                                begin: const Offset(0, 0.08),
+                                end: Offset.zero,
+                              ).animate(anim), child: child));
+                            },
+                            child: SizedBox(
+                              key: ValueKey<String>(stageText), // important so switcher recognizes changes
+                              width: double.infinity,
+                              child: Text(
+                                stageText,
+                                textAlign: TextAlign.center,
+                                style: GoogleFonts.poppins(
+                                  fontSize: 17,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.purple.shade900,
+                                ),
                               ),
-                            ],
+                            ),
                           ),
-                          child: const Icon(
-                            Icons.auto_awesome_outlined,
-                            size: 48,
-                            color: Colors.white,
+
+                          const SizedBox(height: 12),
+
+                          // Progress indicator updates live from prov.progress
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(10),
+                            child: LinearProgressIndicator(
+                              value: progress,
+                              minHeight: 8,
+                              backgroundColor: Colors.white,
+                              valueColor: AlwaysStoppedAnimation(Colors.purple.shade600),
+                            ),
                           ),
-                        ),
+
+                          const SizedBox(height: 8),
+
+                          // Animated numeric percent that updates smoothly
+                          Text(
+                            '${(progress * 100).toStringAsFixed(0)}% Complete',
+                            style: GoogleFonts.poppins(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.purple.shade700,
+                            ),
+                          ),
+
+                          const SizedBox(height: 8),
+
+                          // Optional tiny hint when finished
+                          if (!stillLoading && prov.score != null) ...[
+                            const SizedBox(height: 8),
+                            Text(
+                              'Results ready — generating report...',
+                              style: GoogleFonts.poppins(fontSize: 13, color: Colors.grey.shade700),
+                            ),
+                          ],
+                        ],
                       ),
-                      const SizedBox(height: 20),
-                      Text(
-                        _getAIProcessingText(prov.progress),
-                        textAlign: TextAlign.center,
-                        style: GoogleFonts.poppins(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.purple.shade900,
-                        ),
-                      ),
-                      const SizedBox(height: 14),
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(10),
-                        child: LinearProgressIndicator(
-                          value: prov.progress,
-                          minHeight: 8,
-                          backgroundColor: Colors.white,
-                          valueColor: AlwaysStoppedAnimation(Colors.purple.shade600),
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        '${(prov.progress * 100).toStringAsFixed(0)}% Complete',
-                        style: GoogleFonts.poppins(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.purple.shade700,
-                        ),
-                      ),
-                    ],
-                  ),
+                    );
+                  },
                 ),
               ),
             ),
           ),
         );
       },
-    );
-
-
-    // Auto-close dialog when loading completes
-    prov.addListener(() {
-      if (!prov.isLoading && Navigator.of(context).canPop()) {
-        Navigator.of(context).pop();
-      }
+    ).then((_) {
+      // Dialog closed: cleanup listener and flag
+      try {
+        prov.removeListener(_provListener);
+      } catch (_) {}
+      _isAiDialogVisible = false;
+    }).catchError((_) {
+      try {
+        prov.removeListener(_provListener);
+      } catch (_) {}
+      _isAiDialogVisible = false;
     });
   }
+
+// Helper to keep builder clean
+  Widget _buildAiIconCircle() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(colors: [Colors.purple.shade400, Colors.blue.shade400]),
+        shape: BoxShape.circle,
+        boxShadow: [
+          BoxShadow(color: Colors.purple.withOpacity(0.18), blurRadius: 12, spreadRadius: 1),
+        ],
+      ),
+      child: const Icon(Icons.auto_awesome_outlined, size: 44, color: Colors.white),
+    );
+  }
+  Widget _buildProgressCard(CVAnalyzerBackendProvider prov) {
+    final hasResults = prov.score != null;
+    final highlightCount = prov.highlights.length;
+
+    // constrained height & slightly reduced width to avoid vertical overflow
+    return ConstrainedBox(
+      constraints: const BoxConstraints(maxWidth: 300, maxHeight: 320),
+      child: Container(
+        width: 300, // reduced from 300
+        padding: const EdgeInsets.all(16), // slightly reduced
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              Colors.white,
+              Colors.blue.shade50.withOpacity(0.28),
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: Colors.blue.shade200,
+            width: 1.8,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.blue.withOpacity(0.13),
+              blurRadius: 20,
+              offset: const Offset(0, 8),
+              spreadRadius: 1,
+            ),
+            BoxShadow(
+              color: Colors.white.withOpacity(0.45),
+              blurRadius: 8,
+              offset: const Offset(-4, -4),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [Colors.blue.shade600, Colors.blue.shade400],
+                    ),
+                    borderRadius: BorderRadius.circular(10),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.blue.withOpacity(0.25),
+                        blurRadius: 6,
+                        offset: const Offset(0, 3),
+                      ),
+                    ],
+                  ),
+                  child: const Icon(
+                    Icons.timeline_rounded,
+                    color: Colors.white,
+                    size: 18,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    'Analysis Status',
+                    style: GoogleFonts.poppins(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.grey.shade900,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(10),
+              child: LinearProgressIndicator(
+                value: prov.progress,
+                minHeight: 10,
+                backgroundColor: Colors.grey.shade200,
+                valueColor: AlwaysStoppedAnimation(
+                  prov.isLoading
+                      ? Colors.blue.shade600
+                      : (hasResults ? Colors.green.shade600 : Colors.grey.shade400),
+                ),
+              ),
+            ),
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                Container(
+                  width: 8,
+                  height: 8,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: prov.isLoading
+                        ? Colors.blue.shade600
+                        : (hasResults ? Colors.green.shade600 : Colors.grey.shade400),
+                    boxShadow: [
+                      BoxShadow(
+                        color: (prov.isLoading
+                            ? Colors.blue.shade600
+                            : (hasResults ? Colors.green.shade600 : Colors.grey.shade400))
+                            .withOpacity(0.45),
+                        blurRadius: 6,
+                        spreadRadius: 1,
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    prov.isLoading
+                        ? _getAIProcessingText(prov.progress)
+                        : (hasResults ? '✓ Analysis Complete' : 'Ready to analyze'),
+                    style: GoogleFonts.poppins(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.grey.shade700,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Container(
+              height: 1.2,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    Colors.transparent,
+                    Colors.grey.shade300,
+                    Colors.transparent,
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            _buildStatRow(
+              'Highlights',
+              hasResults ? '$highlightCount' : '0',
+              Icons.stars_rounded,
+              Colors.amber.shade600,
+            ),
+
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _getAIProcessingText(double progress) {
+    if (progress < 0.15) return '🚀 Initializing AI analysis...';
+    if (progress < 0.35) return '📄 Reading and parsing document...';
+    if (progress < 0.60) return '🔍 Extracting key information...';
+    if (progress < 0.85) return '🧠 Comparing with job requirements...';
+    if (progress < 0.95) return '✨ Generating insights and score...';
+    return '✅ Finalizing report...';
+  }
+
 
   Widget _buildErrorCard(CVAnalyzerBackendProvider prov) {
     return Container(
@@ -1137,75 +1369,72 @@ class _CVAnalysisScreenState extends State<CVAnalysisScreen>
     final color = _getScoreColor(score);
     final hasResults = prov.score != null;
 
-    // tighter constraints to keep the card compact and prevent overflow
     return ConstrainedBox(
-      constraints: const BoxConstraints(maxWidth: 200, maxHeight: 350),
+      constraints: const BoxConstraints(maxWidth: 180, maxHeight: 300),
       child: Container(
-        width: 200, // reduced from 280
-        padding: const EdgeInsets.all(10), // reduced padding
+        width: 180,
+        padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
           gradient: LinearGradient(
             colors: [
-              color.withOpacity(0.12),
+              color.withOpacity(0.1),
               Colors.white,
-              color.withOpacity(0.04),
+              color.withOpacity(0.03),
             ],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: color.withOpacity(0.38),
-            width: 2,
+            color: color.withOpacity(0.3),
+            width: 1.5,
           ),
           boxShadow: [
             BoxShadow(
-              color: color.withOpacity(0.22),
-              blurRadius: 20,
-              offset: const Offset(0, 10),
-              spreadRadius: 1,
+              color: color.withOpacity(0.18),
+              blurRadius: 12,
+              offset: const Offset(0, 6),
+              spreadRadius: 0.5,
             ),
             BoxShadow(
-              color: Colors.white.withOpacity(0.45),
-              blurRadius: 8,
-              offset: const Offset(-4, -4),
+              color: Colors.white.withOpacity(0.35),
+              blurRadius: 6,
+              offset: const Offset(-3, -3),
             ),
           ],
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            // Header
             Row(
               mainAxisSize: MainAxisSize.min,
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Container(
-                  padding: const EdgeInsets.all(6),
+                  padding: const EdgeInsets.all(5),
                   decoration: BoxDecoration(
-                    color: color.withOpacity(0.18),
-                    borderRadius: BorderRadius.circular(10),
+                    color: color.withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(8),
                   ),
-                  child: Icon(
-                    Icons.analytics_rounded,
-                    color: color,
-                    size: 20,
-                  ),
+                  child: Icon(Icons.analytics_rounded, color: color, size: 18),
                 ),
-                const SizedBox(width: 10),
+                const SizedBox(width: 6),
                 Text(
                   'Match Score',
                   style: GoogleFonts.poppins(
-                    fontSize: 16,
+                    fontSize: 14,
                     fontWeight: FontWeight.w600,
                     color: Colors.grey.shade900,
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 18),
-            // smaller circular indicator
+            const SizedBox(height: 12),
+
+            // Circle
             SizedBox(
-              width: 100, // reduced size
+              width: 100,
               height: 100,
               child: Stack(
                 alignment: Alignment.center,
@@ -1215,6 +1444,7 @@ class _CVAnalysisScreenState extends State<CVAnalysisScreen>
                     painter: _CircularScorePainter(
                       progress: (score / 100).clamp(0.0, 1.0),
                       color: color,
+                      // thinner ring
                     ),
                   ),
                   Column(
@@ -1229,18 +1459,18 @@ class _CVAnalysisScreenState extends State<CVAnalysisScreen>
                         child: Text(
                           score.toStringAsFixed(0),
                           style: GoogleFonts.poppins(
-                            fontSize: 35, // reduced from 56
-                            fontWeight: FontWeight.w700,
+                            fontSize: 20,
+                            fontWeight: FontWeight.w600,
                             color: Colors.white,
                           ),
                         ),
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        'out of 100',
+                        'of 100',
                         style: GoogleFonts.poppins(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w500,
                           color: Colors.grey.shade600,
                         ),
                       ),
@@ -1249,21 +1479,24 @@ class _CVAnalysisScreenState extends State<CVAnalysisScreen>
                 ],
               ),
             ),
-            const SizedBox(height: 16),
+
+            const SizedBox(height: 10),
+
+            // Bottom label
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [color, color.withOpacity(0.8)],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
-                borderRadius: BorderRadius.circular(20),
+                borderRadius: BorderRadius.circular(16),
                 boxShadow: [
                   BoxShadow(
-                    color: color.withOpacity(0.36),
-                    blurRadius: 10,
-                    offset: const Offset(0, 3),
+                    color: color.withOpacity(0.3),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
                   ),
                 ],
               ),
@@ -1273,13 +1506,13 @@ class _CVAnalysisScreenState extends State<CVAnalysisScreen>
                   Icon(
                     hasResults ? Icons.emoji_events_rounded : Icons.pending_rounded,
                     color: Colors.white,
-                    size: 16,
+                    size: 14,
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: 6),
                   Text(
-                    hasResults ? _getScoreLabel(score) : 'Awaiting Analysis',
+                    hasResults ? _getScoreLabel(score) : 'Awaiting',
                     style: GoogleFonts.poppins(
-                      fontSize: 14,
+                      fontSize: 12,
                       fontWeight: FontWeight.w600,
                       color: Colors.white,
                     ),
@@ -1293,214 +1526,48 @@ class _CVAnalysisScreenState extends State<CVAnalysisScreen>
     );
   }
 // REPLACE: _buildProgressCard
-  Widget _buildProgressCard(CVAnalyzerBackendProvider prov) {
-    final hasResults = prov.score != null;
-    final highlightCount = prov.highlights.length;
-
-    // constrained height & slightly reduced width to avoid vertical overflow
-    return ConstrainedBox(
-      constraints: const BoxConstraints(maxWidth: 200, maxHeight: 320),
-      child: Container(
-        width: 200, // reduced from 300
-        padding: const EdgeInsets.all(16), // slightly reduced
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              Colors.white,
-              Colors.blue.shade50.withOpacity(0.28),
-            ],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: Colors.blue.shade200,
-            width: 1.8,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.blue.withOpacity(0.13),
-              blurRadius: 20,
-              offset: const Offset(0, 8),
-              spreadRadius: 1,
-            ),
-            BoxShadow(
-              color: Colors.white.withOpacity(0.45),
-              blurRadius: 8,
-              offset: const Offset(-4, -4),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [Colors.blue.shade600, Colors.blue.shade400],
-                    ),
-                    borderRadius: BorderRadius.circular(10),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.blue.withOpacity(0.25),
-                        blurRadius: 6,
-                        offset: const Offset(0, 3),
-                      ),
-                    ],
-                  ),
-                  child: const Icon(
-                    Icons.timeline_rounded,
-                    color: Colors.white,
-                    size: 18,
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    'Analysis Status',
-                    style: GoogleFonts.poppins(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.grey.shade900,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(10),
-              child: LinearProgressIndicator(
-                value: prov.progress,
-                minHeight: 10,
-                backgroundColor: Colors.grey.shade200,
-                valueColor: AlwaysStoppedAnimation(
-                  prov.isLoading
-                      ? Colors.blue.shade600
-                      : (hasResults ? Colors.green.shade600 : Colors.grey.shade400),
-                ),
-              ),
-            ),
-            const SizedBox(height: 10),
-            Row(
-              children: [
-                Container(
-                  width: 8,
-                  height: 8,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: prov.isLoading
-                        ? Colors.blue.shade600
-                        : (hasResults ? Colors.green.shade600 : Colors.grey.shade400),
-                    boxShadow: [
-                      BoxShadow(
-                        color: (prov.isLoading
-                            ? Colors.blue.shade600
-                            : (hasResults ? Colors.green.shade600 : Colors.grey.shade400))
-                            .withOpacity(0.45),
-                        blurRadius: 6,
-                        spreadRadius: 1,
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    prov.isLoading
-                        ? _getAIProcessingText(prov.progress)
-                        : (hasResults ? '✓ Analysis Complete' : 'Ready to analyze'),
-                    style: GoogleFonts.poppins(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.grey.shade700,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Container(
-              height: 1.2,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    Colors.transparent,
-                    Colors.grey.shade300,
-                    Colors.transparent,
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 12),
-            _buildStatRow(
-              'Highlights',
-              hasResults ? '$highlightCount' : '0',
-              Icons.stars_rounded,
-              Colors.amber.shade600,
-            ),
-            const SizedBox(height: 12),
-            _buildStatRow(
-              'Status',
-              prov.isLoading ? 'Processing' : (hasResults ? 'Complete' : 'Pending'),
-              hasResults
-                  ? Icons.check_circle_rounded
-                  : (prov.isLoading ? Icons.sync_rounded : Icons.pending_rounded),
-              prov.isLoading
-                  ? Colors.blue.shade600
-                  : (hasResults ? Colors.green.shade600 : Colors.orange.shade600),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   Widget _buildStatRow(String label, String value, IconData icon, Color color) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8), // tighter padding
       decoration: BoxDecoration(
-        color: color.withOpacity(0.08),
-        borderRadius: BorderRadius.circular(12),
+        color: color.withOpacity(0.07),
+        borderRadius: BorderRadius.circular(10),
         border: Border.all(
-          color: color.withOpacity(0.2),
-          width: 1.5,
+          color: color.withOpacity(0.18),
+          width: 1.2,
         ),
       ),
       child: Row(
         children: [
           Container(
-            padding: const EdgeInsets.all(6),
+            padding: const EdgeInsets.all(5), // smaller icon padding
             decoration: BoxDecoration(
-              color: color.withOpacity(0.15),
-              borderRadius: BorderRadius.circular(8),
+              color: color.withOpacity(0.12),
+              borderRadius: BorderRadius.circular(6),
             ),
-            child: Icon(icon, color: color, size: 18),
+            child: Icon(icon, color: color, size: 16), // slightly smaller icon
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 8), // reduced spacing
           Expanded(
             child: Text(
               label,
               style: GoogleFonts.poppins(
-                fontSize: 14,
+                fontSize: 13, // smaller font
                 fontWeight: FontWeight.w600,
                 color: Colors.grey.shade700,
               ),
+              overflow: TextOverflow.ellipsis,
             ),
           ),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3), // tighter chip
             decoration: BoxDecoration(
               color: color,
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(6),
               boxShadow: [
                 BoxShadow(
-                  color: color.withOpacity(0.3),
-                  blurRadius: 6,
+                  color: color.withOpacity(0.25),
+                  blurRadius: 5,
                   offset: const Offset(0, 2),
                 ),
               ],
@@ -1508,7 +1575,7 @@ class _CVAnalysisScreenState extends State<CVAnalysisScreen>
             child: Text(
               value,
               style: GoogleFonts.poppins(
-                fontSize: 13,
+                fontSize: 12, // slightly smaller
                 fontWeight: FontWeight.w600,
                 color: Colors.white,
               ),
@@ -1518,6 +1585,7 @@ class _CVAnalysisScreenState extends State<CVAnalysisScreen>
       ),
     );
   }
+
 
 
 
@@ -1572,14 +1640,6 @@ class _CVAnalysisScreenState extends State<CVAnalysisScreen>
     return '❌ Needs Improvement';
   }
 
-  String _getAIProcessingText(double progress) {
-    if (progress < 0.15) return '🚀 Initializing AI analysis...';
-    if (progress < 0.35) return '📄 Reading and parsing document...';
-    if (progress < 0.60) return '🔍 Extracting key information...';
-    if (progress < 0.85) return '🧠 Comparing with job requirements...';
-    if (progress < 0.95) return '✨ Generating insights and score...';
-    return '✅ Finalizing report...';
-  }
 
   Map<String, dynamic> _getHighlightConfig(String type) {
     switch (type) {
@@ -1657,7 +1717,7 @@ class _CircularScorePainter extends CustomPainter {
     final bgPaint = Paint()
       ..color = Colors.grey.shade200
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 16
+      ..strokeWidth = 5
       ..strokeCap = StrokeCap.round;
 
     canvas.drawCircle(center, radius - 8, bgPaint);
