@@ -166,36 +166,81 @@ class _CVAnalysisScreenState extends State<CVAnalysisScreen>
       ),
       child: Consumer<CVAnalyzerBackendProvider>(
         builder: (context, prov, _) {
-          return Scaffold(
-            body: Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    Colors.blue.shade50,
-                    Colors.purple.shade50,
-                    Colors.pink.shade50,
-                  ],
-                ),
-              ),
-              child: SafeArea(
-                child: Padding(
-                  padding: const EdgeInsets.all(24),
-                  child: Column(
-                    children: [
-                      _buildHeader(prov),
-                      const SizedBox(height: 24),
-                      _buildInputSection(context, prov),
-                      const SizedBox(height: 24),
-                      Expanded(
-
-                        child: _buildResultsSection(context, prov),
+// Replace the Scaffold -> body: Container(...) content with this:
+          return ChangeNotifierProvider<CVAnalyzerBackendProvider>(
+            create: (_) => CVAnalyzerBackendProvider(
+              useDirectGemini: true,
+              geminiApiKey: widget.geminiApiKey,
+            ),
+            child: Consumer<CVAnalyzerBackendProvider>(
+              builder: (context, prov, _) {
+                return Scaffold(
+                  body: Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          Colors.blue.shade50,
+                          Colors.purple.shade50,
+                          Colors.pink.shade50,
+                        ],
                       ),
-                    ],
+                    ),
+                    // <-- make the whole content scrollable
+                    child: SafeArea(
+                      child: SingleChildScrollView(
+                        physics: const BouncingScrollPhysics(),
+                        padding: const EdgeInsets.all(24),
+                        // Use a Column inside the scroll view; children may grow vertically and page will scroll
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            // Header row with score and progress cards
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Expanded(
+                                  flex: 1,
+                                  child: _buildHeader(prov),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 24),
+
+                            // Main content area with input and results side by side
+                            // --- replaced Expanded(...) with a bounded SizedBox to avoid unbounded-height issues ---
+                            SizedBox(
+                              // tuned to be responsive: adjust multiplier if you want more/less visible area
+                              height: MediaQuery.of(context).size.height * 0.72,
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  // Left side - Input Section
+                                  Expanded(
+                                    flex: 1,
+                                    child: _buildInputSection(context, prov),
+                                  ),
+                                  const SizedBox(width: 24),
+
+                                  // Right side - Results Section
+                                  Expanded(
+                                    flex: 2,
+                                    child: _buildResultsSection(context, prov),
+                                  ),
+                                ],
+                              ),
+                            ),
+
+                            // optional bottom padding so last content doesn't stick to screen edge
+                            const SizedBox(height: 24),
+                          ],
+                        ),
+                      ),
+                    ),
                   ),
-                ),
-              ),
+                );
+              },
             ),
           );
         },
@@ -244,7 +289,7 @@ class _CVAnalysisScreenState extends State<CVAnalysisScreen>
                   'AI-Powered CV Analyzer',
                   style: GoogleFonts.poppins(
                     fontSize: 28,
-                    fontWeight: FontWeight.w700,
+                    fontWeight: FontWeight.w600,
                     color: Colors.white,
                   ),
                 ),
@@ -311,46 +356,47 @@ class _CVAnalysisScreenState extends State<CVAnalysisScreen>
   }
   Widget _buildFileUploadCard() {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(12), // reduced
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [Colors.indigo.shade50, Colors.blue.shade50],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.blue.shade200, width: 2),
+        borderRadius: BorderRadius.circular(14), // slightly tighter
+        border: Border.all(color: Colors.blue.shade200, width: 1.8),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min, // important to avoid extra vertical space
         children: [
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(10),
+                padding: const EdgeInsets.all(8), // reduced
                 decoration: BoxDecoration(
                   color: Colors.blue.shade600,
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: const Icon(Icons.cloud_upload_outlined, color: Colors.white, size: 24),
+                child: const Icon(Icons.cloud_upload_outlined, color: Colors.white, size: 20),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 10),
               Expanded(
                 child: Text(
                   'Upload CV',
                   style: GoogleFonts.poppins(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w700,
+                    fontSize: 16, // reduced
+                    fontWeight: FontWeight.w600,
                     color: Colors.blue.shade900,
                   ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 10), // reduced
           if (_pickedFile != null) ...[
             Container(
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(10),
@@ -358,8 +404,8 @@ class _CVAnalysisScreenState extends State<CVAnalysisScreen>
               ),
               child: Row(
                 children: [
-                  Icon(_getFileIcon(), color: _getFileColor(), size: 28),
-                  const SizedBox(width: 12),
+                  Icon(_getFileIcon(), color: _getFileColor(), size: 22), // slightly smaller
+                  const SizedBox(width: 10),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -368,11 +414,12 @@ class _CVAnalysisScreenState extends State<CVAnalysisScreen>
                           _pickedFile!.name,
                           style: GoogleFonts.poppins(
                             fontWeight: FontWeight.w600,
-                            fontSize: 13,
+                            fontSize: 12, // reduced
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
+                        const SizedBox(height: 2),
                         Text(
                           _formatFileSize(_pickedFile!.size),
                           style: GoogleFonts.poppins(
@@ -384,9 +431,11 @@ class _CVAnalysisScreenState extends State<CVAnalysisScreen>
                     ),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.close, size: 20),
+                    icon: const Icon(Icons.close, size: 18),
                     onPressed: () => setState(() => _pickedFile = null),
                     color: Colors.red.shade400,
+                    padding: const EdgeInsets.all(6),
+                    constraints: const BoxConstraints(),
                   ),
                 ],
               ),
@@ -394,49 +443,58 @@ class _CVAnalysisScreenState extends State<CVAnalysisScreen>
           ] else ...[
             InkWell(
               onTap: _pickFile,
-              child: Container(
-                padding: const EdgeInsets.symmetric(vertical: 24),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: Colors.blue.shade300, width: 2, style: BorderStyle.solid),
-                ),
-                child: Column(
-                  children: [
-                    Icon(Icons.file_upload_outlined, size: 40, color: Colors.blue.shade600),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Click to browse',
-                      style: GoogleFonts.poppins(
-                        fontWeight: FontWeight.w600,
-                        color: Colors.blue.shade700,
+              child: Center(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: Colors.blue.shade300, width: 1.6),
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.file_upload_outlined, size: 32, color: Colors.blue.shade600), // smaller
+                      const SizedBox(height: 6),
+                      Text(
+                        'Click to browse',
+                        style: GoogleFonts.poppins(
+                          fontWeight: FontWeight.w600,
+                          color: Colors.blue.shade700,
+                        ),
                       ),
-                    ),
-                    Text(
-                      'PDF, DOC, DOCX (Max 2MB)',
-                      style: GoogleFonts.poppins(
-                        fontSize: 11,
-                        color: Colors.grey.shade600,
+                      const SizedBox(height: 4),
+                      Text(
+                        'PDF, DOC, DOCX (Max 2MB)',
+                        style: GoogleFonts.poppins(
+                          fontSize: 10,
+                          color: Colors.grey.shade600,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),
           ],
-          const SizedBox(height: 12),
-          ElevatedButton.icon(
-            onPressed: _pickFile,
-            icon: const Icon(Icons.folder_open, size: 18),
-            label: Text(
-              _pickedFile == null ? 'Choose File' : 'Change File',
-              style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
-            ),
-            style: ElevatedButton.styleFrom(
-              minimumSize: const Size.fromHeight(45),
-              backgroundColor: Colors.blue.shade600,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          const SizedBox(height: 10),
+          SizedBox(
+            width: double.infinity,
+            height: 40, // slightly smaller button
+            child: ElevatedButton.icon(
+              onPressed: _pickFile,
+              icon: const Icon(Icons.folder_open, size: 16),
+              label: Text(
+                _pickedFile == null ? 'Choose File' : 'Change File',
+                style: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 14),
+              ),
+              style: ElevatedButton.styleFrom(
+                minimumSize: const Size.fromHeight(40),
+                backgroundColor: Colors.blue.shade600,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+              ),
             ),
           ),
         ],
@@ -489,7 +547,7 @@ class _CVAnalysisScreenState extends State<CVAnalysisScreen>
                     prov.isLoading ? 'Analyzing...' : 'Analyze CV',
                     style: GoogleFonts.poppins(
                       fontSize: 16,
-                      fontWeight: FontWeight.w700,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
                   style: ElevatedButton.styleFrom(
@@ -546,7 +604,7 @@ class _CVAnalysisScreenState extends State<CVAnalysisScreen>
           text,
           style: GoogleFonts.poppins(
             fontSize: 14,
-            fontWeight: FontWeight.w700,
+            fontWeight: FontWeight.w600,
             color: Colors.grey.shade800,
           ),
         ),
@@ -600,36 +658,46 @@ class _CVAnalysisScreenState extends State<CVAnalysisScreen>
         ],
 
         // Main content row - side by side layout
+        // --- Replace this Expanded(...) block with the SizedBox version ---
         if (!prov.isLoading && (prov.advisory != null || prov.highlights.isNotEmpty || prov.score != null))
-          Expanded(
+          SizedBox(
+            // bounded height for the whole results area; tweak multiplier as needed
+            height: MediaQuery.of(context).size.height * 0.6,
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Left: Advisory Card
-                if (prov.advisory != null)
+                // Left column: Advisory (top) + Highlights (bottom)
+                if (prov.advisory != null || prov.highlights.isNotEmpty)
                   Expanded(
                     flex: 3,
-                    child: _buildAdvisoryCard(prov),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      mainAxisSize: MainAxisSize.max,
+                      children: [
+                        // Advisory on top — auto height (no Expanded here)
+                        if (prov.advisory != null) _buildAdvisoryCard(prov),
+
+                        if (prov.advisory != null && prov.highlights.isNotEmpty)
+                          const SizedBox(height: 16),
+
+                        // Highlights below — take remaining space and be scrollable if needed
+                        if (prov.highlights.isNotEmpty)
+                          Expanded(
+                            child: _buildHighlightsCard(prov),
+                          ),
+                      ],
+                    ),
                   ),
 
-                if (prov.advisory != null && (prov.highlights.isNotEmpty || prov.score != null))
+                if ((prov.advisory != null || prov.highlights.isNotEmpty) && prov.score != null)
                   const SizedBox(width: 16),
 
-                // Middle: Highlights Card
-                if (prov.highlights.isNotEmpty)
-                  Expanded(
-                    flex: 3,
-                    child: _buildHighlightsCard(prov),
-                  ),
-
-                if (prov.highlights.isNotEmpty && prov.score != null)
-                  const SizedBox(width: 16),
-
-                // Right: Score & Progress Cards
+                // Right column: Score & Progress (fixed width)
                 if (prov.score != null)
                   SizedBox(
-                    width: 320,
+                    width: 200,
                     child: Column(
+                      mainAxisSize: MainAxisSize.min,
                       children: [
                         _buildScoreCard(prov),
                         const SizedBox(height: 16),
@@ -659,7 +727,7 @@ class _CVAnalysisScreenState extends State<CVAnalysisScreen>
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
+        mainAxisSize: MainAxisSize.min, // advisory should size itself
         children: [
           Row(
             children: [
@@ -679,7 +747,7 @@ class _CVAnalysisScreenState extends State<CVAnalysisScreen>
                   'AI Advisory & Insights',
                   style: GoogleFonts.poppins(
                     fontSize: 18,
-                    fontWeight: FontWeight.w700,
+                    fontWeight: FontWeight.w600,
                     color: Colors.grey.shade800,
                   ),
                 ),
@@ -689,67 +757,85 @@ class _CVAnalysisScreenState extends State<CVAnalysisScreen>
           const SizedBox(height: 16),
           Divider(color: Colors.grey.shade200, thickness: 1),
           const SizedBox(height: 16),
-          Expanded(
-            child: SingleChildScrollView(
-              child: MarkdownWidget(
-                data: _formatAdvisoryText(prov.advisory ?? ''),
-                config: MarkdownConfig(
-                  configs: [
-                    PConfig(
-                      textStyle: GoogleFonts.poppins(
-                        fontSize: 15,
-                        height: 1.6,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.grey.shade700,
+
+          // --- NEW: limit advisory height based on available parent space ---
+          LayoutBuilder(
+            builder: (context, constraints) {
+              // Parent (left column) is inside a SizedBox(height: ...). Use that as baseline.
+              final parentMax = constraints.hasBoundedHeight
+                  ? constraints.maxHeight
+              // fallback if not bounded (shouldn't happen in your layout)
+                  : MediaQuery.of(context).size.height * 0.25;
+
+              // advisory should take at most a portion of the parent's available height
+              final double advisoryMaxHeight = math.min(parentMax * 0.65, MediaQuery.of(context).size.height * 0.45);
+
+              return ConstrainedBox(
+                constraints: BoxConstraints(maxHeight: advisoryMaxHeight),
+                child: MarkdownWidget(
+                  data: _formatAdvisoryText(prov.advisory ?? ''),
+                  // allow the internal ListView in markdown_widget to size itself
+                  shrinkWrap: true,
+                  // let advisory scroll when its content exceeds advisoryMaxHeight
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  config: MarkdownConfig(
+                    configs: [
+                      PConfig(
+                        textStyle: GoogleFonts.poppins(
+                          fontSize: 15,
+                          height: 1.6,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.grey.shade700,
+                        ),
                       ),
-                    ),
-                    H1Config(
-                      style: GoogleFonts.poppins(
-                        fontSize: 24,
-                        fontWeight: FontWeight.w700,
-                        color: Colors.grey.shade900,
+                      H1Config(
+                        style: GoogleFonts.poppins(
+                          fontSize: 24,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.grey.shade900,
+                        ),
                       ),
-                    ),
-                    H2Config(
-                      style: GoogleFonts.poppins(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w700,
-                        color: Colors.grey.shade900,
+                      H2Config(
+                        style: GoogleFonts.poppins(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.grey.shade900,
+                        ),
                       ),
-                    ),
-                    H3Config(
-                      style: GoogleFonts.poppins(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w700,
-                        color: Colors.grey.shade800,
+                      H3Config(
+                        style: GoogleFonts.poppins(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.grey.shade800,
+                        ),
                       ),
-                    ),
-                    PreConfig(
-                      textStyle: GoogleFonts.sourceCodePro(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
+                      PreConfig(
+                        textStyle: GoogleFonts.sourceCodePro(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
-                    ),
-                    CodeConfig(
-                      style: GoogleFonts.sourceCodePro(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        backgroundColor: Colors.grey.shade100,
-                        color: Colors.blue.shade700,
+                      CodeConfig(
+                        style: GoogleFonts.sourceCodePro(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          backgroundColor: Colors.grey.shade100,
+                          color: Colors.blue.shade700,
+                        ),
                       ),
-                    ),
-                    LinkConfig(
-                      style: GoogleFonts.poppins(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w700,
-                        color: Colors.blue.shade600,
-                        decoration: TextDecoration.underline,
+                      LinkConfig(
+                        style: GoogleFonts.poppins(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.blue.shade600,
+                          decoration: TextDecoration.underline,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-            ),
+              );
+            },
           ),
         ],
       ),
@@ -757,74 +843,86 @@ class _CVAnalysisScreenState extends State<CVAnalysisScreen>
   }
 
   Widget _buildHighlightsCard(CVAnalyzerBackendProvider prov) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.08),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [Colors.orange.shade400, Colors.red.shade400],
-                  ),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: const Icon(Icons.stars, color: Colors.white, size: 20),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  'Key Highlights',
-                  style: GoogleFonts.poppins(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w700,
-                    color: Colors.grey.shade800,
-                  ),
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: Colors.blue.shade50,
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(
-                  '${prov.highlights.length} items',
-                  style: GoogleFonts.poppins(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                    color: Colors.blue.shade700,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Expanded(
-            child: ListView.separated(
-              itemCount: prov.highlights.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 12),
-              itemBuilder: (_, idx) {
-                final h = prov.highlights[idx];
-                return _buildHighlightItem(h, idx);
-              },
+    // Adjust this factor or replace with a fixed number like 420.0
+    final double maxHeightFactor = 0.45;
+    final double maxHeight = MediaQuery.of(context).size.height * maxHeightFactor;
+
+    return SizedBox(
+      height: maxHeight, // major container fixed height
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.08),
+              blurRadius: 20,
+              offset: const Offset(0, 10),
             ),
-          ),
-        ],
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header row (fixed height)
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [Colors.orange.shade400, Colors.red.shade400],
+                    ),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(Icons.stars, color: Colors.white, size: 20),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'Key Highlights',
+                    style: GoogleFonts.poppins(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.grey.shade800,
+                    ),
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Colors.blue.shade50,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    '${prov.highlights.length} items',
+                    style: GoogleFonts.poppins(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.blue.shade700,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+
+            // Content area: takes remaining space and scrolls if content overflows
+            Expanded(
+              child: ListView.separated(
+                itemCount: prov.highlights.length,
+                separatorBuilder: (_, __) => const SizedBox(height: 12),
+                // leave shrinkWrap false for better performance inside fixed-height container
+                physics: const AlwaysScrollableScrollPhysics(),
+                itemBuilder: (_, idx) {
+                  final h = prov.highlights[idx];
+                  return _buildHighlightItem(h, idx);
+                },
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -847,7 +945,7 @@ class _CVAnalysisScreenState extends State<CVAnalysisScreen>
                 elevation: 0,
                 insetPadding: const EdgeInsets.all(20),
                 child: Container(
-                  constraints: const BoxConstraints(maxWidth: 400),
+                  constraints: const BoxConstraints(maxWidth: 550),
                   padding: const EdgeInsets.all(28),
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
@@ -857,12 +955,7 @@ class _CVAnalysisScreenState extends State<CVAnalysisScreen>
                     border: Border.all(color: Colors.purple.shade200.withOpacity(0.7), width: 1.5),
                     boxShadow: [
                       // softened shadow (less spread & opacity)
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.08),
-                        blurRadius: 18,
-                        spreadRadius: 1,
-                        offset: const Offset(0, 8),
-                      ),
+
                     ],
                   ),
                   child: Column(
@@ -898,7 +991,7 @@ class _CVAnalysisScreenState extends State<CVAnalysisScreen>
                         textAlign: TextAlign.center,
                         style: GoogleFonts.poppins(
                           fontSize: 18,
-                          fontWeight: FontWeight.w700,
+                          fontWeight: FontWeight.w600,
                           color: Colors.purple.shade900,
                         ),
                       ),
@@ -967,7 +1060,7 @@ class _CVAnalysisScreenState extends State<CVAnalysisScreen>
                   'Analysis Failed',
                   style: GoogleFonts.poppins(
                     fontSize: 18,
-                    fontWeight: FontWeight.w700,
+                    fontWeight: FontWeight.w600,
                     color: Colors.red.shade900,
                   ),
                 ),
@@ -1024,7 +1117,7 @@ class _CVAnalysisScreenState extends State<CVAnalysisScreen>
                   highlight['text'] ?? 'No title',
                   style: GoogleFonts.poppins(
                     fontSize: 14,
-                    fontWeight: FontWeight.w700,
+                    fontWeight: FontWeight.w600,
                     color: Colors.grey.shade900,
                   ),
                 ),
@@ -1047,88 +1140,385 @@ class _CVAnalysisScreenState extends State<CVAnalysisScreen>
       ),
     );
   }
-
+// REPLACE: _buildScoreCard
   Widget _buildScoreCard(CVAnalyzerBackendProvider prov) {
     final score = prov.score ?? 0;
     final color = _getScoreColor(score);
+    final hasResults = prov.score != null;
 
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [color.withOpacity(0.1), Colors.white],
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-        ),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: color.withOpacity(0.3), width: 2),
-        boxShadow: [
-          BoxShadow(
-            color: color.withOpacity(0.2),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
+    // tighter constraints to keep the card compact and prevent overflow
+    return ConstrainedBox(
+      constraints: const BoxConstraints(maxWidth: 200, maxHeight: 350),
+      child: Container(
+        width: 200, // reduced from 280
+        padding: const EdgeInsets.all(10), // reduced padding
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              color.withOpacity(0.12),
+              Colors.white,
+              color.withOpacity(0.04),
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
           ),
-        ],
-      ),
-      child: Column(
-        children: [
-          Text(
-            'Match Score',
-            style: GoogleFonts.poppins(
-              fontSize: 16,
-              fontWeight: FontWeight.w700,
-              color: Colors.grey.shade800,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: color.withOpacity(0.38),
+            width: 2,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: color.withOpacity(0.22),
+              blurRadius: 20,
+              offset: const Offset(0, 10),
+              spreadRadius: 1,
             ),
-          ),
-          const SizedBox(height: 20),
-          Stack(
-            alignment: Alignment.center,
-            children: [
-              SizedBox(
-                width: 160,
-                height: 160,
-                child: CustomPaint(
-                  painter: _CircularScorePainter(
-                    progress: score / 100,
+            BoxShadow(
+              color: Colors.white.withOpacity(0.45),
+              blurRadius: 8,
+              offset: const Offset(-4, -4),
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: BoxDecoration(
+                    color: color.withOpacity(0.18),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(
+                    Icons.analytics_rounded,
                     color: color,
+                    size: 20,
                   ),
                 ),
-              ),
-              Column(
-                mainAxisSize: MainAxisSize.min,
+                const SizedBox(width: 10),
+                Text(
+                  'Match Score',
+                  style: GoogleFonts.poppins(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.grey.shade900,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 18),
+            // smaller circular indicator
+            SizedBox(
+              width: 100, // reduced size
+              height: 100,
+              child: Stack(
+                alignment: Alignment.center,
                 children: [
-                  Text(
-                    score.toStringAsFixed(0),
-                    style: GoogleFonts.poppins(
-                      fontSize: 48,
-                      fontWeight: FontWeight.w700,
+                  CustomPaint(
+                    size: const Size(100, 100),
+                    painter: _CircularScorePainter(
+                      progress: (score / 100).clamp(0.0, 1.0),
                       color: color,
                     ),
                   ),
+                  Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      ShaderMask(
+                        shaderCallback: (bounds) => LinearGradient(
+                          colors: [color, color.withOpacity(0.75)],
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                        ).createShader(bounds),
+                        child: Text(
+                          score.toStringAsFixed(0),
+                          style: GoogleFonts.poppins(
+                            fontSize: 35, // reduced from 56
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        'out of 100',
+                        style: GoogleFonts.poppins(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.grey.shade600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [color, color.withOpacity(0.8)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(
+                    color: color.withOpacity(0.36),
+                    blurRadius: 10,
+                    offset: const Offset(0, 3),
+                  ),
+                ],
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    hasResults ? Icons.emoji_events_rounded : Icons.pending_rounded,
+                    color: Colors.white,
+                    size: 16,
+                  ),
+                  const SizedBox(width: 8),
                   Text(
-                    'out of 100',
+                    hasResults ? _getScoreLabel(score) : 'Awaiting Analysis',
                     style: GoogleFonts.poppins(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
-                      color: Colors.grey.shade600,
+                      color: Colors.white,
                     ),
                   ),
                 ],
               ),
-            ],
-          ),
-          const SizedBox(height: 20),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            decoration: BoxDecoration(
-              color: color,
-              borderRadius: BorderRadius.circular(20),
             ),
+          ],
+        ),
+      ),
+    );
+  }
+// REPLACE: _buildProgressCard
+  Widget _buildProgressCard(CVAnalyzerBackendProvider prov) {
+    final hasResults = prov.score != null;
+    final highlightCount = prov.highlights.length;
+
+    // constrained height & slightly reduced width to avoid vertical overflow
+    return ConstrainedBox(
+      constraints: const BoxConstraints(maxWidth: 200, maxHeight: 320),
+      child: Container(
+        width: 200, // reduced from 300
+        padding: const EdgeInsets.all(16), // slightly reduced
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              Colors.white,
+              Colors.blue.shade50.withOpacity(0.28),
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: Colors.blue.shade200,
+            width: 1.8,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.blue.withOpacity(0.13),
+              blurRadius: 20,
+              offset: const Offset(0, 8),
+              spreadRadius: 1,
+            ),
+            BoxShadow(
+              color: Colors.white.withOpacity(0.45),
+              blurRadius: 8,
+              offset: const Offset(-4, -4),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [Colors.blue.shade600, Colors.blue.shade400],
+                    ),
+                    borderRadius: BorderRadius.circular(10),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.blue.withOpacity(0.25),
+                        blurRadius: 6,
+                        offset: const Offset(0, 3),
+                      ),
+                    ],
+                  ),
+                  child: const Icon(
+                    Icons.timeline_rounded,
+                    color: Colors.white,
+                    size: 18,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    'Analysis Status',
+                    style: GoogleFonts.poppins(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.grey.shade900,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(10),
+              child: LinearProgressIndicator(
+                value: prov.progress,
+                minHeight: 10,
+                backgroundColor: Colors.grey.shade200,
+                valueColor: AlwaysStoppedAnimation(
+                  prov.isLoading
+                      ? Colors.blue.shade600
+                      : (hasResults ? Colors.green.shade600 : Colors.grey.shade400),
+                ),
+              ),
+            ),
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                Container(
+                  width: 8,
+                  height: 8,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: prov.isLoading
+                        ? Colors.blue.shade600
+                        : (hasResults ? Colors.green.shade600 : Colors.grey.shade400),
+                    boxShadow: [
+                      BoxShadow(
+                        color: (prov.isLoading
+                            ? Colors.blue.shade600
+                            : (hasResults ? Colors.green.shade600 : Colors.grey.shade400))
+                            .withOpacity(0.45),
+                        blurRadius: 6,
+                        spreadRadius: 1,
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    prov.isLoading
+                        ? _getAIProcessingText(prov.progress)
+                        : (hasResults ? '✓ Analysis Complete' : 'Ready to analyze'),
+                    style: GoogleFonts.poppins(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.grey.shade700,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Container(
+              height: 1.2,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    Colors.transparent,
+                    Colors.grey.shade300,
+                    Colors.transparent,
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            _buildStatRow(
+              'Highlights',
+              hasResults ? '$highlightCount' : '0',
+              Icons.stars_rounded,
+              Colors.amber.shade600,
+            ),
+            const SizedBox(height: 12),
+            _buildStatRow(
+              'Status',
+              prov.isLoading ? 'Processing' : (hasResults ? 'Complete' : 'Pending'),
+              hasResults
+                  ? Icons.check_circle_rounded
+                  : (prov.isLoading ? Icons.sync_rounded : Icons.pending_rounded),
+              prov.isLoading
+                  ? Colors.blue.shade600
+                  : (hasResults ? Colors.green.shade600 : Colors.orange.shade600),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStatRow(String label, String value, IconData icon, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.08),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: color.withOpacity(0.2),
+          width: 1.5,
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.15),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(icon, color: color, size: 18),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
             child: Text(
-              _getScoreLabel(score),
+              label,
               style: GoogleFonts.poppins(
                 fontSize: 14,
-                fontWeight: FontWeight.w700,
+                fontWeight: FontWeight.w600,
+                color: Colors.grey.shade700,
+              ),
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            decoration: BoxDecoration(
+              color: color,
+              borderRadius: BorderRadius.circular(8),
+              boxShadow: [
+                BoxShadow(
+                  color: color.withOpacity(0.3),
+                  blurRadius: 6,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Text(
+              value,
+              style: GoogleFonts.poppins(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
                 color: Colors.white,
               ),
             ),
@@ -1137,112 +1527,6 @@ class _CVAnalysisScreenState extends State<CVAnalysisScreen>
       ),
     );
   }
-
-  Widget _buildProgressCard(CVAnalyzerBackendProvider prov) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.08),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(Icons.timeline, color: Colors.blue.shade600, size: 20),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  'Analysis Status',
-                  style: GoogleFonts.poppins(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                    color: Colors.grey.shade800,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(10),
-            child: LinearProgressIndicator(
-              value: prov.progress,
-              minHeight: 10,
-              backgroundColor: Colors.grey.shade200,
-              valueColor: AlwaysStoppedAnimation(
-                prov.isLoading ? Colors.blue.shade600 : Colors.green.shade600,
-              ),
-            ),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            prov.isLoading
-                ? _getAIProcessingText(prov.progress)
-                : (prov.score != null ? '✓ Analysis Complete' : 'Ready to analyze'),
-            style: GoogleFonts.poppins(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: Colors.grey.shade700,
-            ),
-          ),
-          const SizedBox(height: 16),
-          Divider(color: Colors.grey.shade200),
-          const SizedBox(height: 16),
-          _buildStatRow('Highlights', '${prov.highlights.length}', Icons.stars),
-          const SizedBox(height: 12),
-          _buildStatRow(
-            'Status',
-            prov.isLoading ? 'Processing' : (prov.score != null ? 'Complete' : 'Pending'),
-            Icons.check_circle_outline,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStatRow(String label, String value, IconData icon) {
-    return Row(
-      children: [
-        Icon(icon, size: 18, color: Colors.blue.shade600),
-        const SizedBox(width: 8),
-        Expanded(
-          child: Text(
-            label,
-            style: GoogleFonts.poppins(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: Colors.grey.shade600,
-            ),
-          ),
-        ),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-          decoration: BoxDecoration(
-            color: Colors.blue.shade50,
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Text(
-            value,
-            style: GoogleFonts.poppins(
-              fontSize: 13,
-              fontWeight: FontWeight.w700,
-              color: Colors.blue.shade700,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
 
 
 
