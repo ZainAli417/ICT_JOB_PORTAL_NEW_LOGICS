@@ -1,8 +1,9 @@
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
-import 'Recruiter_provider_old.dart';
+import 'Recruiter_provider_Job_listing.dart';
 
 class PostJobDialog extends StatefulWidget {
   const PostJobDialog({super.key});
@@ -13,7 +14,7 @@ class PostJobDialog extends StatefulWidget {
 
 class _PostJobDialogState extends State<PostJobDialog> {
   final _formKey = GlobalKey<FormState>();
-  static const Color primary = Color(0xFF003366); // Air Force Blue
+  static const Color primary = Color(0xFF6366F1); // Air Force Blue
   static const Color secondary = Color(0xFF87CEEB); // Sky Blue
   static const Color white = Color(0xFFFAFAFA);
   static const Color paleWhite = Color(0xFFF5F5F5);
@@ -61,7 +62,7 @@ class _PostJobDialogState extends State<PostJobDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<JobPostingProvider>( // Wrap with Consumer
+    return Consumer<job_listing_provider>( // Wrap with Consumer
         builder: (context, provider, child) {
           return Dialog(
             insetPadding: const EdgeInsets.symmetric(
@@ -251,6 +252,10 @@ class _PostJobDialogState extends State<PostJobDialog> {
                                 ),
                               ],
                             ),
+
+
+
+
                             const SizedBox(height: 16),
                             _buildSectionCard(
                               title: 'Compensation & Pay Information',
@@ -294,6 +299,184 @@ class _PostJobDialogState extends State<PostJobDialog> {
                                 ),
                               ],
                             ),
+
+                            const SizedBox(height: 12),
+
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.center, // ensures middle alignment
+                              children: [
+                                // ---------------- DEADLINE PICKER ----------------
+                                Expanded(
+                                  flex: 1,
+                                  child: FormField<String>(
+                                    initialValue: provider.tempDeadline,
+                                    validator: (v) =>
+                                    provider.tempDeadline.isEmpty ? 'Deadline is required' : null,
+                                    builder: (state) {
+                                      String displayText =
+                                      _formatDeadlineForDisplay(provider.tempDeadline);
+                                      return Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            'Application Deadline',
+                                            style: GoogleFonts.poppins(
+                                              fontWeight: FontWeight.w600,
+                                              fontSize: 14,
+                                              color: Colors.black87,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 6),
+                                          GestureDetector(
+                                            onTap: () async {
+                                              DateTime initialDate;
+                                              try {
+                                                initialDate = provider.tempDeadline.isNotEmpty
+                                                    ? DateTime.parse(provider.tempDeadline)
+                                                    : DateTime.now();
+                                              } catch (_) {
+                                                initialDate = DateTime.now();
+                                              }
+
+                                              final DateTime? picked = await showDatePicker(
+                                                context: context,
+                                                initialDate: initialDate,
+                                                firstDate: DateTime.now(),
+                                                lastDate: DateTime.now().add(const Duration(days: 3650)),
+                                                helpText: 'Select application deadline',
+                                                confirmText: 'Set deadline',
+                                                initialEntryMode: DatePickerEntryMode.calendar,
+                                              );
+
+                                              if (picked != null) {
+                                                provider.updateTempDeadline(picked.toIso8601String());
+                                                state.didChange(provider.tempDeadline);
+                                              }
+                                            },
+                                            child: Container(
+                                              height: 48, // 👈 fixed height to match TextFormField
+                                              padding:
+                                              const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
+                                              decoration: BoxDecoration(
+                                                color: Theme.of(context).cardColor,
+                                                borderRadius: BorderRadius.circular(10),
+                                                border: Border.all(color: Colors.grey.withOpacity(0.25)),
+                                              ),
+                                              child: Row(
+                                                children: [
+                                                  const Icon(Icons.calendar_today_outlined, size: 18),
+                                                  const SizedBox(width: 10),
+                                                  Expanded(
+                                                    child: Text(
+                                                      displayText.isEmpty
+                                                          ? 'Select deadline'
+                                                          : displayText,
+                                                      style: GoogleFonts.poppins(
+                                                        fontSize: 13.5,
+                                                        color: displayText.isEmpty
+                                                            ? Colors.grey
+                                                            : Colors.black87,
+                                                        fontWeight: displayText.isEmpty
+                                                            ? FontWeight.w400
+                                                            : FontWeight.w500,
+                                                      ),
+                                                      overflow: TextOverflow.ellipsis,
+                                                    ),
+                                                  ),
+                                                  if (provider.tempDeadline.isNotEmpty)
+                                                    InkWell(
+                                                      borderRadius: BorderRadius.circular(8),
+                                                      onTap: () {
+                                                        provider.updateTempDeadline('');
+                                                        state.didChange(provider.tempDeadline);
+                                                      },
+                                                      child: const Padding(
+                                                        padding: EdgeInsets.all(6.0),
+                                                        child: Icon(Icons.clear, size: 16),
+                                                      ),
+                                                    ),
+                                                ],
+                                              ),
+                                            ),
+                                          ),
+                                          if (state.hasError)
+                                            Padding(
+                                              padding: const EdgeInsets.only(top: 6.0, left: 4.0),
+                                              child: Text(
+                                                state.errorText ?? '',
+                                                style: GoogleFonts.poppins(
+                                                  color: Theme.of(context).colorScheme.error,
+                                                  fontSize: 12,
+                                                ),
+                                              ),
+                                            ),
+                                        ],
+                                      );
+                                    },
+                                  ),
+                                ),
+
+                                const SizedBox(width: 12),
+
+                                // ---------------- CONTACT EMAIL FIELD ----------------
+                                Expanded(
+                                  flex: 1,
+                                  child: SizedBox(
+                                    height: 76, // 👈 matches total column height (label + input)
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          'Contact Email',
+                                          style: GoogleFonts.poppins(
+                                            fontWeight: FontWeight.w600,
+                                            fontSize: 14,
+                                            color: Colors.black87,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 6),
+                                        SizedBox(
+                                          height: 48, // 👈 same as deadline container
+                                          child: TextFormField(
+                                            initialValue: provider.tempContactEmail ?? '',
+                                            onChanged: provider.updateTempContactEmail,
+                                            validator: (v) {
+                                              if (v == null || v.trim().isEmpty) {
+                                                return 'Email is required';
+                                              }
+                                              final emailRegex = RegExp(r'^[^@]+@[^@]+\.[^@]+');
+                                              if (!emailRegex.hasMatch(v.trim())) {
+                                                return 'Enter valid email';
+                                              }
+                                              return null;
+                                            },
+                                            decoration: InputDecoration(
+                                              prefixIcon: const Icon(Icons.email_outlined, size: 18),
+                                              hintText: 'e.g., hr@airforce.mil',
+                                              hintStyle: GoogleFonts.poppins(
+                                                fontSize: 13.5,
+                                                color: Colors.grey,
+                                              ),
+                                              contentPadding:
+                                              const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
+                                              border: OutlineInputBorder(
+                                                borderRadius: BorderRadius.circular(10),
+                                                borderSide:
+                                                BorderSide(color: Colors.grey.withOpacity(0.25)),
+                                              ),
+                                            ),
+                                            style: GoogleFonts.poppins(fontSize: 13.5),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 12),
+
+
                             const SizedBox(height: 16),
                             _buildSectionCard(
                               title: 'Rank & Security Requirements',
@@ -505,6 +688,18 @@ class _PostJobDialogState extends State<PostJobDialog> {
         }
     );
   }
+
+  String _formatDeadlineForDisplay(String iso) {
+    if (iso.isEmpty) return '';
+    try {
+      final dt = DateTime.parse(iso);
+      return DateFormat.yMMMMd().format(dt); // e.g., "October 28, 2025"
+    } catch (_) {
+      return iso; // fallback if format unexpected
+    }
+  }
+
+
   Widget _buildPillSelector({
     required String title,
     required List<String> selectedItems,
@@ -611,7 +806,7 @@ class _PostJobDialogState extends State<PostJobDialog> {
     );
   }
 
-  Widget _buildLogoUploader(JobPostingProvider provider) {
+  Widget _buildLogoUploader(job_listing_provider provider) {
     return Column(
       children: [
         Text(

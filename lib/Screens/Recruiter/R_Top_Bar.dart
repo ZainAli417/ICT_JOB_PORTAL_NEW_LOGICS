@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:job_portal/Screens/Recruiter/R_Initials_provider.dart';
+import 'package:job_portal/Screens/Recruiter/post_a_job_form.dart';
 import 'package:provider/provider.dart';
 
 class Recruiter_MainLayout extends StatefulWidget {
@@ -32,6 +33,12 @@ class _Recruiter_MainLayoutState extends State<Recruiter_MainLayout>
   late AnimationController _shimmerController;
   late AnimationController _particleController;
 
+  void _openPostJobDialog() {
+    showDialog(
+      context: context,
+      builder: (_) => const PostJobDialog(),
+    );
+  }
 
   @override
   void initState() {
@@ -189,7 +196,7 @@ class _Recruiter_MainLayoutState extends State<Recruiter_MainLayout>
             child: Row(
               children: [
                 _buildEnhancedLogo(),
-                const SizedBox(width: 48),
+                const SizedBox(width: 70),
                 Expanded(
                   child: Row(
                     children: [
@@ -202,16 +209,17 @@ class _Recruiter_MainLayoutState extends State<Recruiter_MainLayout>
                             context.go('/recruiter-dashboard');
                         },
                       ),
-                      const SizedBox(width: 6),
+                      const SizedBox(width: 15),
                       _buildModernNavItem(
-                        icon: Icons.post_add_rounded,
-                        label: 'Post Job',
+                        icon: Icons.hub_outlined,
+                        label: 'Job Listing',
                         isActive: widget.activeIndex == 1,
                         onTap: () {
-                          if (widget.activeIndex != 1) context.go('/job-posting');
+                          if (widget.activeIndex != 1) context.go('/recruiter-job-listing');
                         },
                       ),
-                      const SizedBox(width: 6),
+
+                      const SizedBox(width: 15),
                       _buildModernNavItem(
                         icon: Icons.description_rounded,
                         label: 'Applications',
@@ -221,7 +229,7 @@ class _Recruiter_MainLayoutState extends State<Recruiter_MainLayout>
                             context.go('/view-applications');
                         },
                       ),
-                      const SizedBox(width: 6),
+                      const SizedBox(width: 15),
                       _buildModernNavItem(
                         icon: Icons.video_call_rounded,
                         label: 'Interviews',
@@ -234,9 +242,11 @@ class _Recruiter_MainLayoutState extends State<Recruiter_MainLayout>
                   ),
                 ),
                 _buildGlowingActionButton(
-                  text: 'Post Job',
+                  text: 'Post A Job',
                   icon: Icons.add_circle_outline_rounded,
-                  onPressed: () => context.go('/job-posting'),
+                //  onPressed: () => context.go('/job-posting'),
+                  onPressed: _openPostJobDialog,
+
                 ),
                 const SizedBox(width: 16),
                 _buildGlassmorphicIconButton(
@@ -298,6 +308,7 @@ class _Recruiter_MainLayoutState extends State<Recruiter_MainLayout>
       ),
     );
   }
+
 
   Widget _buildEnhancedLogo() {
     return Row(
@@ -784,6 +795,7 @@ class _Recruiter_MainLayoutState extends State<Recruiter_MainLayout>
       ),
     );
   }
+
 }
 
 class _ModernHoverNavItem extends StatefulWidget {

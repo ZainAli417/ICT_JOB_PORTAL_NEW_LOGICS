@@ -361,6 +361,10 @@ class SignUpProvider extends ChangeNotifier {
     }
   }
 
+
+
+
+
   String _handleAuthError(FirebaseAuthException e) {
     switch (e.code) {
       case 'email-already-in-use':

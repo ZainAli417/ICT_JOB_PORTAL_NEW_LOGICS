@@ -6,7 +6,7 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 
 /// Main provider class for managing job postings, filtering, and search functionality
-class JobPostingProvider extends ChangeNotifier {
+class job_listing_provider extends ChangeNotifier {
   // =============================================================================
   // STATIC INSTANCES & CONSTANTS
   // =============================================================================
@@ -79,7 +79,7 @@ class JobPostingProvider extends ChangeNotifier {
   // =============================================================================
   // CONSTRUCTOR & INITIALIZATION
   // =============================================================================
-  JobPostingProvider() {
+  job_listing_provider() {
     _initializeProvider();
   }
 
@@ -101,7 +101,7 @@ class JobPostingProvider extends ChangeNotifier {
     if (_cachedUserId == null) return;
     await _jobsSubscription?.cancel();
     _jobsSubscription = _firestore
-        .collection('Recruiter')
+        .collection('recruiter')
         .doc(_cachedUserId)
         .collection('Posted_jobs')
         .orderBy('timestamp', descending: true)
@@ -279,7 +279,7 @@ class JobPostingProvider extends ChangeNotifier {
         return 'You do not have permission to post a job.';
       }
 
-      final jobId = _firestore.collection('Recruiter').doc().id;
+      final jobId = _firestore.collection('recruiter').doc().id;
       final logoUrl = await _uploadLogoIfNeeded(_cachedUserId!, jobId);
       if (_formData.logoBytes != null && logoUrl == null) {
         return 'Logo upload failed';
@@ -466,11 +466,46 @@ class JobPostingProvider extends ChangeNotifier {
   }
 
   Future<bool> _validateRecruiterRole() async {
+    // Return cached result if we already computed for this user
     if (_isRecruiterCached != null) return _isRecruiterCached!;
-    if (_cachedUserId == null) return false;
-    final doc = await _firestore.collection('Recruiter').doc(_cachedUserId).get();
-    _isRecruiterCached = doc.exists && doc.data()?['role'] == 'Recruiter';
-    return _isRecruiterCached!;
+
+    // No user id -> cannot be recruiter
+    if (_cachedUserId == null) {
+      debugPrint('[job_provider] _validateRecruiterRole: no cachedUserId');
+      _isRecruiterCached = false;
+      return false;
+    }
+
+    try {
+      // Query users collection for a document where 'uid' equals the current user's uid
+      final q = await _firestore
+          .collection('users')
+          .where('uid', isEqualTo: _cachedUserId)
+          .limit(1)
+          .get();
+
+      if (q.docs.isEmpty) {
+        debugPrint('[job_provider] _validateRecruiterRole: no user doc found for uid=$_cachedUserId');
+        _isRecruiterCached = false;
+        return false;
+      }
+
+      final data = q.docs.first.data();
+      debugPrint('[job_provider] _validateRecruiterRole: user doc data: $data');
+
+      final roleValue = (data['role'] ?? '').toString().toLowerCase();
+      final isRecruiter = roleValue == 'recruiter';
+      _isRecruiterCached = isRecruiter;
+
+      debugPrint('[job_provider] _validateRecruiterRole: role="$roleValue", isRecruiter=$isRecruiter');
+      return isRecruiter;
+    } catch (e, st) {
+      debugPrint('[job_provider] _validateRecruiterRole error: $e\n$st');
+      // On error we return false but keep caching to avoid repeated failing calls;
+      // if you prefer to retry next time, set _isRecruiterCached = null instead.
+      _isRecruiterCached = false;
+      return false;
+    }
   }
 
   String? _validateRequiredFields() {
@@ -493,7 +528,8 @@ class JobPostingProvider extends ChangeNotifier {
       if (condition) return message;
     }
 
-    if (!_emailRegex.hasMatch(_formData.contactEmail)) {
+    // Use the provider-level regex but do a trim (and lower-case not required for regex)
+    if (!_emailRegex.hasMatch(_formData.contactEmail.trim())) {
       return 'Invalid email format';
     }
     return null;
@@ -546,14 +582,14 @@ class JobPostingProvider extends ChangeNotifier {
 
   Future<void> _saveJobData(String jobId, Map<String, dynamic> jobData) async {
     final batch = _firestore.batch();
-    batch.set(_firestore.collection('Recruiter').doc(_cachedUserId).collection('Posted_jobs').doc(jobId), jobData);
+    batch.set(_firestore.collection('recruiter').doc(_cachedUserId).collection('Posted_jobs').doc(jobId), jobData);
     batch.set(_firestore.collection('Posted_jobs_public').doc(jobId), jobData);
     await batch.commit();
   }
 
   Future<void> _updateJobInBothCollections(String jobId, Map<String, dynamic> updates, {bool merge = false}) async {
     final batch = _firestore.batch();
-    final recruiterRef = _firestore.collection('Recruiter').doc(_cachedUserId).collection('Posted_jobs').doc(jobId);
+    final recruiterRef = _firestore.collection('recruiter').doc(_cachedUserId).collection('Posted_jobs').doc(jobId);
     final publicRef = _firestore.collection('Posted_jobs_public').doc(jobId);
 
     if (merge) {
@@ -568,7 +604,7 @@ class JobPostingProvider extends ChangeNotifier {
 
   Future<void> _deleteJobFromBothCollections(String jobId) async {
     final batch = _firestore.batch();
-    batch.delete(_firestore.collection('Recruiter').doc(_cachedUserId).collection('Posted_jobs').doc(jobId));
+    batch.delete(_firestore.collection('recruiter').doc(_cachedUserId).collection('Posted_jobs').doc(jobId));
     batch.delete(_firestore.collection('Posted_jobs_public').doc(jobId));
     await batch.commit();
   }

@@ -3,7 +3,8 @@ import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
-import 'Recruiter_provider_old.dart';
+import 'Recruiter_provider_Job_listing.dart';
+
 
 class JobDetailModal_recruiter extends StatefulWidget {
   final Map<String, dynamic> jobData;
@@ -584,7 +585,7 @@ class _JobDetailModal_recruiterState extends State<JobDetailModal_recruiter>
                 Expanded(
                   child: ElevatedButton.icon(
                     onPressed: () async {
-                      final provider = Provider.of<JobPostingProvider>(context,
+                      final provider = Provider.of<job_listing_provider>(context,
                           listen: false);
                       final error = await provider.deleteJob(jobId);
                       if (error != null) {
@@ -637,7 +638,7 @@ class _JobDetailModal_recruiterState extends State<JobDetailModal_recruiter>
                         inactiveThumbColor: Colors.grey.shade400,              // thumb color when OFF
                         inactiveTrackColor: Colors.grey.shade300,              // track color when OFF
                         onChanged: (newValue) async {
-                          final provider = Provider.of<JobPostingProvider>(context, listen: false);
+                          final provider = Provider.of<job_listing_provider>(context, listen: false);
                           final error = await provider.toggleJobStatus(jobId, status);
                           if (error != null) {
                             ScaffoldMessenger.of(context).showSnackBar(

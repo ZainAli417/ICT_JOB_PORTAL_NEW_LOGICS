@@ -12,196 +12,7 @@ class ApplicantRecord {
   final DateTime appliedAt;
   final Map<String, dynamic> profileSnapshot;
   final String docId;
-  final JobData? jobData; // Add job data to each record
-
-  // Derived properties from profileSnapshot with safe type casting
-  String get name {
-    try {
-      return profileSnapshot['user_Account_Data']?['name']?.toString() ?? 'Unknown';
-    } catch (e) {
-      debugPrint('Error getting name: $e');
-      return 'Unknown';
-    }
-  }
-
-  String get email {
-    try {
-      return profileSnapshot['user_Account_Data']?['email']?.toString() ?? '';
-    } catch (e) {
-      debugPrint('Error getting email: $e');
-      return '';
-    }
-  }
-
-  String get phone {
-    try {
-      return profileSnapshot['user_Account_Data']?['phone']?.toString() ?? '';
-    } catch (e) {
-      debugPrint('Error getting phone: $e');
-      return '';
-    }
-  }
-
-  String get location {
-    try {
-      return profileSnapshot['user_Account_Data']?['location']?.toString() ?? '';
-    } catch (e) {
-      debugPrint('Error getting location: $e');
-      return '';
-    }
-  }
-
-  String get company {
-    try {
-      return profileSnapshot['user_Account_Data']?['company']?.toString() ?? '';
-    } catch (e) {
-      debugPrint('Error getting company: $e');
-      return '';
-    }
-  }
-
-  int get experienceYears {
-    try {
-      final value = profileSnapshot['user_Account_Data']?['experience_years'];
-      if (value == null) return 0;
-      if (value is int) return value;
-      if (value is String) return int.tryParse(value) ?? 0;
-      if (value is double) return value.toInt();
-      return 0;
-    } catch (e) {
-      debugPrint('Error getting experience_years: $e');
-      return 0;
-    }
-  }
-
-  List<String> get skills {
-    try {
-      final skillsData = profileSnapshot['user_Profile_Sections']?['skills'];
-      if (skillsData == null) return [];
-      if (skillsData is List) {
-        return skillsData.map((e) => e.toString()).toList();
-      }
-      return [];
-    } catch (e) {
-      debugPrint('Error getting skills: $e');
-      return [];
-    }
-  }
-
-  String get education {
-    try {
-      final educationData = profileSnapshot['user_Profile_Sections']?['education'];
-      if (educationData is Map<String, dynamic>) {
-        return educationData['degree']?.toString() ?? '';
-      } else if (educationData is String) {
-        return educationData;
-      }
-      return '';
-    } catch (e) {
-      debugPrint('Error getting education degree: $e');
-      return '';
-    }
-  }
-
-  String get university {
-    try {
-      final educationData = profileSnapshot['user_Profile_Sections']?['education'];
-      if (educationData is Map<String, dynamic>) {
-        return educationData['university']?.toString() ?? '';
-      }
-      return '';
-    } catch (e) {
-      debugPrint('Error getting university: $e');
-      return '';
-    }
-  }
-
-  double get expectedSalary {
-    try {
-      final value = profileSnapshot['user_Profile_Sections']?['expected_salary'];
-      if (value == null) return 0.0;
-      if (value is double) return value;
-      if (value is int) return value.toDouble();
-      if (value is String) return double.tryParse(value) ?? 0.0;
-      return 0.0;
-    } catch (e) {
-      debugPrint('Error getting expected_salary: $e');
-      return 0.0;
-    }
-  }
-
-  String get availability {
-    try {
-      return profileSnapshot['user_Profile_Sections']?['availability']?.toString() ?? '';
-    } catch (e) {
-      debugPrint('Error getting availability: $e');
-      return '';
-    }
-  }
-
-  String get workType {
-    try {
-      return profileSnapshot['user_Profile_Sections']?['work_type']?.toString() ?? '';
-    } catch (e) {
-      debugPrint('Error getting work_type: $e');
-      return '';
-    }
-  }
-
-  String get bio {
-    try {
-      return profileSnapshot['user_Profile_Sections']?['bio']?.toString() ?? '';
-    } catch (e) {
-      debugPrint('Error getting bio: $e');
-      return '';
-    }
-  }
-
-  String get linkedIn {
-    try {
-      return profileSnapshot['user_Profile_Sections']?['linkedin']?.toString() ?? '';
-    } catch (e) {
-      debugPrint('Error getting linkedin: $e');
-      return '';
-    }
-  }
-
-  String get github {
-    try {
-      return profileSnapshot['user_Profile_Sections']?['github']?.toString() ?? '';
-    } catch (e) {
-      debugPrint('Error getting github: $e');
-      return '';
-    }
-  }
-
-  List<String> get languages {
-    try {
-      final languagesData = profileSnapshot['user_Profile_Sections']?['languages'];
-      if (languagesData == null) return [];
-      if (languagesData is List) {
-        return languagesData.map((e) => e.toString()).toList();
-      }
-      return [];
-    } catch (e) {
-      debugPrint('Error getting languages: $e');
-      return [];
-    }
-  }
-
-  List<String> get certifications {
-    try {
-      final certificationsData = profileSnapshot['user_Profile_Sections']?['certifications'];
-      if (certificationsData == null) return [];
-      if (certificationsData is List) {
-        return certificationsData.map((e) => e.toString()).toList();
-      }
-      return [];
-    } catch (e) {
-      debugPrint('Error getting certifications: $e');
-      return [];
-    }
-  }
+  final JobData? jobData;
 
   ApplicantRecord({
     required this.userId,
@@ -212,6 +23,283 @@ class ApplicantRecord {
     required this.docId,
     this.jobData,
   });
+
+  // Helper to read canonical account data and profile section maps
+  Map<String, dynamic> get _acct {
+    final m = profileSnapshot['user_account_data'] ??
+        profileSnapshot['user_Account_Data'] ??
+        profileSnapshot['user_data'] ??
+        <String, dynamic>{};
+    return (m is Map) ? Map<String, dynamic>.from(m) : <String, dynamic>{};
+  }
+
+  Map<String, dynamic> get _prof {
+    final p = profileSnapshot['user_profile_section'] ??
+        profileSnapshot['user_Profile_Sections'] ??
+        profileSnapshot['user_profile'] ??
+        <String, dynamic>{};
+    return (p is Map) ? Map<String, dynamic>.from(p) : <String, dynamic>{};
+  }
+
+  String get name {
+    try {
+      return _acct['name']?.toString() ??
+          _acct['displayName']?.toString() ??
+          'Unknown';
+    } catch (e) {
+      debugPrint('Error getting name: $e');
+      return 'Unknown';
+    }
+  }
+
+  String get email {
+    try {
+      return _acct['email']?.toString() ?? '';
+    } catch (e) {
+      debugPrint('Error getting email: $e');
+      return '';
+    }
+  }
+
+  String get phone {
+    try {
+      return _acct['phone']?.toString() ?? '';
+    } catch (e) {
+      debugPrint('Error getting phone: $e');
+      return '';
+    }
+  }
+
+  String get location {
+    try {
+      return _acct['location']?.toString() ?? '';
+    } catch (e) {
+      debugPrint('Error getting location: $e');
+      return '';
+    }
+  }
+
+  String get company {
+    try {
+      return _acct['company']?.toString() ?? '';
+    } catch (e) {
+      debugPrint('Error getting company: $e');
+      return '';
+    }
+  }
+
+  String get nationality {
+    try {
+      return _acct['nationality']?.toString() ?? '';
+    } catch (e) {
+      debugPrint('Error getting nationality: $e');
+      return '';
+    }
+  }
+
+  String get pictureUrl {
+    try {
+      return _acct['picture_url']?.toString() ??
+          _prof['picture_url']?.toString() ??
+          '';
+    } catch (e) {
+      debugPrint('Error getting picture_url: $e');
+      return '';
+    }
+  }
+
+  String get cvUrl {
+    try {
+      return _prof['cv_url']?.toString() ?? '';
+    } catch (e) {
+      debugPrint('Error getting cv_url: $e');
+      return '';
+    }
+  }
+
+  int get experienceYears {
+    try {
+      final value = _acct['experiences'] ?? _acct['experienceYears'];
+      if (value == null) {
+        // fallback: derive from experiences list length (approximate)
+        final exps = experiences;
+        return exps.isNotEmpty ? exps.length : 0;
+      }
+      if (value is int) return value;
+      if (value is String) return int.tryParse(value) ?? 0;
+      if (value is double) return value.toInt();
+      return 0;
+    } catch (e) {
+      debugPrint('Error getting experience_years: $e');
+      return 0;
+    }
+  }
+
+  // profile section getters
+  List<String> get skills {
+    try {
+      final s = _prof['skills'];
+      if (s == null) return [];
+      if (s is List) return s.map((e) => e.toString()).toList();
+      return [];
+    } catch (e) {
+      debugPrint('Error getting skills: $e');
+      return [];
+    }
+  }
+
+  String get education {
+    try {
+      final edu = _prof['educations'];
+      if (edu is Map) return edu['degree']?.toString() ?? '';
+      if (edu is String) return edu;
+      return '';
+    } catch (e) {
+      debugPrint('Error getting education: $e');
+      return '';
+    }
+  }
+
+  String get university {
+    try {
+      final edu = _prof['educations'];
+      if (edu is Map) return edu['university']?.toString() ?? '';
+      return '';
+    } catch (e) {
+      debugPrint('Error getting university: $e');
+      return '';
+    }
+  }
+
+  double get expectedSalary {
+    try {
+      final v = _prof['salary'] ?? _prof['Salary'];
+      if (v == null) return 0.0;
+      if (v is double) return v;
+      if (v is int) return v.toDouble();
+      if (v is String) return double.tryParse(v.replaceAll(',', '')) ?? 0.0;
+      return 0.0;
+    } catch (e) {
+      debugPrint('Error getting salary: $e');
+      return 0.0;
+    }
+  }
+
+  String get availability {
+    try {
+      return _prof['availability']?.toString() ?? '';
+    } catch (e) {
+      debugPrint('Error getting availability: $e');
+      return '';
+    }
+  }
+
+  String get workType {
+    try {
+      return _prof['workModes']?.toString() ?? '';
+    } catch (e) {
+      debugPrint('Error getting work_type: $e');
+      return '';
+    }
+  }
+
+  String get bio {
+    try {
+      return _prof['bio']?.toString() ?? '';
+    } catch (e) {
+      debugPrint('Error getting bio: $e');
+      return '';
+    }
+  }
+
+  String get linkedIn {
+    try {
+      return _prof['linkedin']?.toString() ?? _prof['linkedIn']?.toString() ?? '';
+    } catch (e) {
+      debugPrint('Error getting linkedin: $e');
+      return '';
+    }
+  }
+
+  String get github {
+    try {
+      return _prof['github']?.toString() ?? '';
+    } catch (e) {
+      debugPrint('Error getting github: $e');
+      return '';
+    }
+  }
+
+  List<String> get languages {
+    try {
+      final l = _prof['languages'];
+      if (l == null) return [];
+      if (l is List) return l.map((e) => e.toString()).toList();
+      return [];
+    } catch (e) {
+      debugPrint('Error getting languages: $e');
+      return [];
+    }
+  }
+
+  List<String> get certifications {
+    try {
+      final c = _prof['certifications'];
+      if (c == null) return [];
+      if (c is List) return c.map((e) => e.toString()).toList();
+      return [];
+    } catch (e) {
+      debugPrint('Error getting certifications: $e');
+      return [];
+    }
+  }
+
+  // New getters for additional profile fields you listed
+  String get dob {
+    try {
+      return _prof['dob']?.toString() ?? _acct['dob']?.toString() ?? '';
+    } catch (e) {
+      debugPrint('Error getting dob: $e');
+      return '';
+    }
+  }
+
+  String get fatherName {
+    try {
+      return _prof['father_name']?.toString() ?? '';
+    } catch (e) {
+      debugPrint('Error getting father_name: $e');
+      return '';
+    }
+  }
+
+  List<Map<String, dynamic>> get experiences {
+    try {
+      final ex = _prof['experiences'];
+      if (ex == null) return [];
+      if (ex is List) {
+        return ex.map((e) => (e is Map) ? Map<String, dynamic>.from(e) : <String, dynamic>{}).toList();
+      }
+      return [];
+    } catch (e) {
+      debugPrint('Error getting experiences: $e');
+      return [];
+    }
+  }
+
+  List<Map<String, dynamic>> get references {
+    try {
+      final r = _prof['references'];
+      if (r == null) return [];
+      if (r is List) {
+        return r.map((e) => (e is Map) ? Map<String, dynamic>.from(e) : <String, dynamic>{}).toList();
+      }
+      return [];
+    } catch (e) {
+      debugPrint('Error getting references: $e');
+      return [];
+    }
+  }
 
   ApplicantRecord copyWith({
     String? userId,
@@ -345,7 +433,7 @@ class ApplicantsProvider with ChangeNotifier {
 
       // First, get all job seeker UIDs from job_seeker-uids collection
       final jobSeekerUidsQuery = await _firestore
-          .collection('Job_Seeker')
+          .collection('job_seeker')
           .get();
 
       debugPrint('📋 Found ${jobSeekerUidsQuery.docs.length} job seeker documents');
@@ -443,82 +531,101 @@ class ApplicantsProvider with ChangeNotifier {
     }
   }
 
-  // Helper method to clean and convert profile snapshot data
+
   Map<String, dynamic> _cleanProfileSnapshot(Map<String, dynamic> data) {
     try {
-      final cleaned = Map<String, dynamic>.from(data);
+      // Make a modifiable copy
+      final raw = Map<String, dynamic>.from(data);
 
-      // Handle user_Account_Data section
-      if (cleaned['user_Account_Data'] is Map<String, dynamic>) {
-        final accountData = Map<String, dynamic>.from(cleaned['user_Account_Data']);
-
-        // Convert experience_years to int if it's a string
-        if (accountData['experience_years'] is String) {
-          final expStr = accountData['experience_years'] as String;
-          accountData['experience_years'] = int.tryParse(expStr) ?? 0;
-          debugPrint('🔧 Converted experience_years from "$expStr" to ${accountData['experience_years']}');
+      // Normalize account data to 'user_account_data'
+      Map<String, dynamic> accountData = {};
+      if (raw.containsKey('user_account_data') && raw['user_account_data'] is Map) {
+        accountData = Map<String, dynamic>.from(raw['user_account_data'] as Map);
+      } else if (raw.containsKey('user_Account_Data') && raw['user_Account_Data'] is Map) {
+        accountData = Map<String, dynamic>.from(raw['user_Account_Data'] as Map);
+      } else if (raw.containsKey('user_data') && raw['user_data'] is Map) {
+        accountData = Map<String, dynamic>.from(raw['user_data'] as Map);
+      } else {
+        // Pull flattened fields into accountData if present
+        final possible = ['email', 'name', 'nationality', 'phone', 'picture_url', 'location', 'company', 'uid', 'experience_years'];
+        for (final k in possible) {
+          if (raw.containsKey(k)) accountData[k] = raw[k];
         }
-
-        cleaned['user_Account_Data'] = accountData;
       }
 
-      // Handle user_Profile_Sections
-      if (cleaned['user_Profile_Sections'] is Map<String, dynamic>) {
-        final profileSections = Map<String, dynamic>.from(cleaned['user_Profile_Sections']);
-
-        // Handle education section - ensure all fields are properly typed
-        if (profileSections['education'] is Map<String, dynamic>) {
-          final education = Map<String, dynamic>.from(profileSections['education']);
-
-          // Ensure degree is string
-          if (education['degree'] != null) {
-            education['degree'] = education['degree'].toString();
-          }
-
-          // Ensure university is string
-          if (education['university'] != null) {
-            education['university'] = education['university'].toString();
-          }
-
-          profileSections['education'] = education;
-          debugPrint('🔧 Cleaned education section');
+      // Normalize profile section to 'user_profile_section'
+      Map<String, dynamic> profileSections = {};
+      if (raw.containsKey('user_profile_section') && raw['user_profile_section'] is Map) {
+        profileSections = Map<String, dynamic>.from(raw['user_profile_section'] as Map);
+      } else if (raw.containsKey('user_Profile_Sections') && raw['user_Profile_Sections'] is Map) {
+        profileSections = Map<String, dynamic>.from(raw['user_Profile_Sections'] as Map);
+      } else if (raw.containsKey('user_profile') && raw['user_profile'] is Map) {
+        profileSections = Map<String, dynamic>.from(raw['user_profile'] as Map);
+      } else {
+        // fallback keys you listed
+        final fallback = [
+          'certifications','cv_url','dob','education','experiences','father_name','picture_url',
+          'references','skills','salary','availability','workModes','languages','linkedin','github','bio'
+        ];
+        for (final k in fallback) {
+          if (raw.containsKey(k)) profileSections[k] = raw[k];
         }
-
-        // Handle expected_salary
-        if (profileSections['expected_salary'] is String) {
-          final salaryStr = profileSections['expected_salary'] as String;
-          profileSections['expected_salary'] = double.tryParse(salaryStr) ?? 0.0;
-          debugPrint('🔧 Converted expected_salary from "$salaryStr" to ${profileSections['expected_salary']}');
-        }
-
-        // Ensure skills is a list of strings
-        if (profileSections['skills'] != null && profileSections['skills'] is! List) {
-          profileSections['skills'] = [];
-        } else if (profileSections['skills'] is List) {
-          profileSections['skills'] = (profileSections['skills'] as List).map((e) => e.toString()).toList();
-        }
-
-        // Ensure languages is a list of strings
-        if (profileSections['languages'] != null && profileSections['languages'] is! List) {
-          profileSections['languages'] = [];
-        } else if (profileSections['languages'] is List) {
-          profileSections['languages'] = (profileSections['languages'] as List).map((e) => e.toString()).toList();
-        }
-
-        // Ensure certifications is a list of strings
-        if (profileSections['certifications'] != null && profileSections['certifications'] is! List) {
-          profileSections['certifications'] = [];
-        } else if (profileSections['certifications'] is List) {
-          profileSections['certifications'] = (profileSections['certifications'] as List).map((e) => e.toString()).toList();
-        }
-
-        cleaned['user_Profile_Sections'] = profileSections;
       }
 
-      return cleaned;
-    } catch (e) {
-      debugPrint('❌ Error cleaning profile snapshot: $e');
-      return data; // Return original data if cleaning fails
+      // Defensive conversions
+      if (accountData['experience_years'] is String) {
+        accountData['experience_years'] = int.tryParse(accountData['experience_years']) ?? 0;
+      } else if (accountData['experience_years'] is double) {
+        accountData['experience_years'] = (accountData['experience_years'] as double).toInt();
+      }
+
+      // Education map normalization
+      if (profileSections['education'] is Map) {
+        final edu = Map<String, dynamic>.from(profileSections['education'] as Map);
+        if (edu['degree'] != null) edu['degree'] = edu['degree'].toString();
+        if (edu['university'] != null) edu['university'] = edu['university'].toString();
+        profileSections['education'] = edu;
+      }
+
+      // expected_salary normalization
+      if (profileSections['salary'] is String) {
+        profileSections['salary'] =
+            double.tryParse((profileSections['salary'] as String).replaceAll(',', '')) ?? 0.0;
+      } else if (profileSections['salary'] is int) {
+        profileSections['salary'] = (profileSections['salary'] as int).toDouble();
+      }
+
+      // Ensure lists are proper lists of strings for simple fields
+      for (final listKey in ['skills', 'languages', 'certifications', 'references']) {
+        final v = profileSections[listKey];
+        if (v == null) {
+          profileSections[listKey] = <dynamic>[];
+        } else if (v is List) {
+          profileSections[listKey] = v.map((e) => e).toList();
+        } else {
+          profileSections[listKey] = <dynamic>[];
+        }
+      }
+
+      // Ensure experiences is a list of maps
+      if (profileSections['experiences'] is! List) {
+        profileSections['experiences'] = <Map<String, dynamic>>[];
+      } else {
+        profileSections['experiences'] = (profileSections['experiences'] as List).map((e) {
+          return (e is Map) ? Map<String, dynamic>.from(e) : <String, dynamic>{};
+        }).toList();
+      }
+
+      // Compose canonical snapshot with exact keys you specified
+      final normalized = <String, dynamic>{
+        'user_account_data': accountData,
+        'user_profile_section': profileSections,
+      };
+
+      return normalized;
+    } catch (e, st) {
+      debugPrint('❌ Error cleaning profile snapshot: $e\n$st');
+      return data;
     }
   }
 
@@ -568,7 +675,7 @@ class ApplicantsProvider with ChangeNotifier {
           company: data['company']?.toString() ?? '',
           location: data['location']?.toString() ?? '',
           jobType: data['job_type']?.toString() ?? '',
-          workType: data['work_type']?.toString() ?? '',
+          workType: data['workModes']?.toString() ?? '',
           salary: salary,
           experience: experience,
           requiredSkills: requiredSkills,

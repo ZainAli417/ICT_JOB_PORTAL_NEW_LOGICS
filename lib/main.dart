@@ -14,8 +14,8 @@ import 'Screens/Job_Seeker/Profile_Provider.dart';
 import 'Screens/Job_Seeker/job_seeker_provider.dart';
 import 'Screens/Job_Seeker/jobs_application_provider.dart';
 import 'Screens/Recruiter/LIst_of_Applicants_provider.dart';
+import 'Screens/Recruiter/Recruiter_provider_Job_listing.dart';
 import 'Screens/Recruiter/Signup_Provider_Recruiter.dart';
-import 'Screens/Recruiter/Recruiter_provider_old.dart';
 import 'Screens/Recruiter/login_provider_Recruiter.dart';
 import 'Screens/Recruiter/R_Initials_provider.dart';
 import 'Signup_Provider.dart';
@@ -63,7 +63,7 @@ void main() async {
         ChangeNotifierProvider(create: (_) => AdminDashboardProvider()),
 
         ChangeNotifierProvider(create: (_) => R_TopNavProvider()),
-        ChangeNotifierProvider(create: (_) => JobPostingProvider()),
+        ChangeNotifierProvider(create: (_) => job_listing_provider()),
         ChangeNotifierProvider(create: (_) => JobSeekerProvider()),
         ChangeNotifierProvider(create: (_) => JobApplicationsProvider()),
         ChangeNotifierProvider(create: (_) => ListAppliedJobsProvider()),
@@ -86,10 +86,10 @@ class JobPortalApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       routerConfig: router,
       theme: ThemeData(
-        primaryColor: const Color(0xFF003366),
+        primaryColor: const Color(0xFF6366F1),
         colorScheme: ColorScheme.fromSwatch().copyWith(
-          primary: const Color(0xFF003366),
-          secondary: const Color(0xFF003366),
+          primary: const Color(0xFF6366F1),
+          secondary: const Color(0xFF6366F1),
         ),
         fontFamily: GoogleFonts.inter().fontFamily,
         textTheme: GoogleFonts.interTextTheme(),
@@ -104,7 +104,7 @@ class JobPortalApp extends StatelessWidget {
         buttonTheme: ButtonThemeData(
           shape:
           RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-          buttonColor: const Color(0xFF003366),
+          buttonColor: const Color(0xFF6366F1),
           textTheme: ButtonTextTheme.primary,
         ),
       ),

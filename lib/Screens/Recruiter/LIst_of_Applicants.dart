@@ -5,6 +5,8 @@ import 'package:intl/intl.dart';
 import 'package:job_portal/Screens/Recruiter/R_Top_Bar.dart';
 import 'package:provider/provider.dart';
 
+import '../../widgets/downloadcv.dart';
+import '../../widgets/view_js_profile.dart';
 import '../Job_Seeker/JS_Top_Bar.dart';
 import 'LIst_of_Applicants_provider.dart';
 
@@ -151,6 +153,11 @@ class _ApplicantsScreenState extends State<ApplicantsScreen>
       ),
     );
   }
+
+
+
+
+  //FILTERING SECTION
   Widget _buildFiltersColumn(ApplicantsProvider provider) {
     return Container(
       decoration: const BoxDecoration(
@@ -1069,6 +1076,10 @@ class _ApplicantsScreenState extends State<ApplicantsScreen>
     );
   }
 
+
+
+
+
   Widget _buildCandidatesColumn(ApplicantsProvider provider) {
     return RepaintBoundary(
       child: Column(
@@ -1580,8 +1591,49 @@ class _ApplicantsScreenState extends State<ApplicantsScreen>
     );
   }
 
+// make sure you have:
+// import 'package:intl/intl.dart';
+// import 'package:google_fonts/google_fonts.dart';
+// import 'package:your_app/widgets/view_applicant_details.dart';
+// import 'package:your_app/utils/downloadcv.dart'; // if used
+
   Widget _buildCandidateCard(ApplicantRecord applicant, ApplicantsProvider provider, int index) {
     final isEven = index % 2 == 0;
+
+    // Determine mandatory fields presence
+    final hasEmail = applicant.email.isNotEmpty;
+    final hasPhone = applicant.phone.isNotEmpty;
+    final hasNationality = applicant.nationality.isNotEmpty;
+    final hasCv = applicant.cvUrl.isNotEmpty;
+    final hasDob = applicant.dob.isNotEmpty;
+
+    final missingMandatoryCount = [
+      hasEmail,
+      hasPhone,
+      hasNationality,
+      hasCv,
+      hasDob,
+    ].where((ok) => !ok).length;
+
+    Widget _chip(String text, {Color? color, IconData? icon}) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+        margin: const EdgeInsets.only(right: 6, bottom: 6),
+        decoration: BoxDecoration(
+          color: (color ?? Colors.grey[200])!.withOpacity(0.25),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: (color ?? Colors.grey)!.withOpacity(0.18)),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (icon != null) Icon(icon, size: 14, color: color ?? Colors.black87),
+            if (icon != null) const SizedBox(width: 6),
+            Text(text, style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w600)),
+          ],
+        ),
+      );
+    }
 
     return AnimatedContainer(
       duration: const Duration(milliseconds: 300),
@@ -1590,23 +1642,10 @@ class _ApplicantsScreenState extends State<ApplicantsScreen>
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: const Color(0xFFE2E8F0),
-          width: 1,
-        ),
+        border: Border.all(color: const Color(0xFFE2E8F0), width: 1),
         boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF1E293B).withOpacity(0.06),
-            blurRadius: 16,
-            offset: const Offset(0, 4),
-            spreadRadius: 0,
-          ),
-          BoxShadow(
-            color: const Color(0xFF1E293B).withOpacity(0.04),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
-            spreadRadius: 0,
-          ),
+          BoxShadow(color: const Color(0xFF1E293B).withOpacity(0.06), blurRadius: 16, offset: const Offset(0, 4)),
+          BoxShadow(color: const Color(0xFF1E293B).withOpacity(0.04), blurRadius: 4, offset: const Offset(0, 2)),
         ],
       ),
       child: Column(
@@ -1616,60 +1655,26 @@ class _ApplicantsScreenState extends State<ApplicantsScreen>
           Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  const Color(0xFF334155),
-                  const Color(0xFF475569),
-                ],
+              gradient: const LinearGradient(
+                colors: [Color(0xFF334155), Color(0xFF475569)],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(16),
-                topRight: Radius.circular(16),
-              ),
+              borderRadius: const BorderRadius.only(topLeft: Radius.circular(16), topRight: Radius.circular(16)),
             ),
             child: Row(
               children: [
-                // Profile Avatar with Status Indicator
+                // Avatar / picture
                 Stack(
                   children: [
-                    Container(
-                      padding: const EdgeInsets.all(3),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.1),
-                            blurRadius: 8,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: Container(
-                        width: 56,
-                        height: 56,
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: [
-                              const Color(0xFF3B82F6),
-                              const Color(0xFF1D4ED8),
-                            ],
-                          ),
-                          shape: BoxShape.circle,
-                        ),
-                        child: Center(
-                          child: Text(
-                            applicant.name.isNotEmpty ? applicant.name[0].toUpperCase() : 'U',
-                            style: const TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.w700,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ),
-                      ),
+                    CircleAvatar(
+                      radius: 28,
+                      backgroundColor: const Color(0xFF3B82F6),
+                      backgroundImage: applicant.pictureUrl.isNotEmpty ? NetworkImage(applicant.pictureUrl) : null,
+                      child: applicant.pictureUrl.isEmpty
+                          ? Text(applicant.name.isNotEmpty ? applicant.name[0].toUpperCase() : 'U',
+                          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: Colors.white))
+                          : null,
                     ),
                     Positioned(
                       bottom: 2,
@@ -1681,13 +1686,7 @@ class _ApplicantsScreenState extends State<ApplicantsScreen>
                           color: _getStatusColor(applicant.status),
                           shape: BoxShape.circle,
                           border: Border.all(color: Colors.white, width: 2),
-                          boxShadow: [
-                            BoxShadow(
-                              color: _getStatusColor(applicant.status).withOpacity(0.4),
-                              blurRadius: 4,
-                              spreadRadius: 1,
-                            ),
-                          ],
+                          boxShadow: [BoxShadow(color: _getStatusColor(applicant.status).withOpacity(0.4), blurRadius: 4)],
                         ),
                       ),
                     ),
@@ -1700,52 +1699,23 @@ class _ApplicantsScreenState extends State<ApplicantsScreen>
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        applicant.name,
-                        style: const TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w700,
-                          color: Colors.white,
-                          letterSpacing: -0.5,
-                        ),
-                      ),
+                      Text(applicant.name,
+                          style: GoogleFonts.poppins(fontSize: 20, fontWeight: FontWeight.w700, color: Colors.white)),
                       const SizedBox(height: 6),
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.15),
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(
-                            color: Colors.white.withOpacity(0.2),
-                          ),
-                        ),
-                        child: Text(
-                          applicant.jobData?.title ?? 'Job Title Not Available',
-                          style: const TextStyle(
-                            fontSize: 13,
-                            color: Colors.white,
-                            fontWeight: FontWeight.w600,
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
+                        decoration: BoxDecoration(color: Colors.white.withOpacity(0.15), borderRadius: BorderRadius.circular(20)),
+                        child: Text(applicant.jobData?.title ?? 'Job Title Not Available',
+                            style: const TextStyle(fontSize: 13, color: Colors.white, fontWeight: FontWeight.w600),
+                            overflow: TextOverflow.ellipsis),
                       ),
                       const SizedBox(height: 8),
                       Row(
                         children: [
-                          Icon(
-                            Icons.schedule_outlined,
-                            color: Colors.white.withOpacity(0.8),
-                            size: 14,
-                          ),
+                          Icon(Icons.schedule_outlined, color: Colors.white.withOpacity(0.8), size: 14),
                           const SizedBox(width: 6),
-                          Text(
-                            'Applied ${DateFormat('MMM dd, yyyy').format(applicant.appliedAt)}',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.white.withOpacity(0.8),
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
+                          Text('Applied ${DateFormat('MMM dd, yyyy').format(applicant.appliedAt)}',
+                              style: TextStyle(fontSize: 12, color: Colors.white.withOpacity(0.8), fontWeight: FontWeight.w500)),
                         ],
                       ),
                     ],
@@ -1769,7 +1739,46 @@ class _ApplicantsScreenState extends State<ApplicantsScreen>
             padding: const EdgeInsets.all(20),
             child: Column(
               children: [
-                // Profile Details in Rows and Columns
+                // Quick mandatory info row (chips)
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: Wrap(
+                        runSpacing: 6,
+                        children: [
+                          _chip(hasEmail ? 'Email: ${applicant.email}' : 'Email: missing',
+                              color: hasEmail ? const Color(0xFF2563EB) : const Color(0xFFEF4444), icon: Icons.email_outlined),
+                          _chip(hasPhone ? 'Phone: ${applicant.phone}' : 'Phone: missing',
+                              color: hasPhone ? const Color(0xFF059669) : const Color(0xFFEF4444), icon: Icons.phone_outlined),
+                          _chip(hasNationality ? 'Nationality: ${applicant.nationality}' : 'Nationality: missing',
+                              color: hasNationality ? const Color(0xFF7C3AED) : const Color(0xFFEF4444), icon: Icons.flag_outlined),
+                          _chip(hasDob ? 'DOB' : 'DOB missing', color: hasDob ? Colors.orange : const Color(0xFFEF4444), icon: Icons.cake_outlined),
+                          _chip(hasCv ? 'CV attached' : 'CV missing', color: hasCv ? const Color(0xFF10B981) : const Color(0xFFEF4444), icon: Icons.description_outlined),
+                        ],
+                      ),
+                    ),
+
+                    // Missing count indicator
+                    if (missingMandatoryCount > 0)
+                      Container(
+                        margin: const EdgeInsets.only(left: 8),
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        decoration: BoxDecoration(color: const Color(0xFFFEF2F2), borderRadius: BorderRadius.circular(12)),
+                        child: Row(
+                          children: [
+                            Icon(Icons.error_outline, size: 14, color: const Color(0xFFDC2626)),
+                            const SizedBox(width: 6),
+                            Text('$missingMandatoryCount missing', style: GoogleFonts.poppins(fontSize: 12, color: const Color(0xFFDC2626))),
+                          ],
+                        ),
+                      ),
+                  ],
+                ),
+
+                const SizedBox(height: 16),
+
+                // Profile Details in Rows and Columns (same layout but ensure data from new keys)
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -1777,11 +1786,7 @@ class _ApplicantsScreenState extends State<ApplicantsScreen>
                     Expanded(
                       child: Container(
                         padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFF8FAFC),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: const Color(0xFFE2E8F0)),
-                        ),
+                        decoration: BoxDecoration(color: const Color(0xFFF8FAFC), borderRadius: BorderRadius.circular(12), border: Border.all(color: const Color(0xFFE2E8F0))),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -1789,34 +1794,42 @@ class _ApplicantsScreenState extends State<ApplicantsScreen>
                               children: [
                                 Container(
                                   padding: const EdgeInsets.all(6),
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFF3B82F6).withOpacity(0.1),
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child: Icon(
-                                    Icons.contact_page_outlined,
-                                    color: const Color(0xFF3B82F6),
-                                    size: 16,
-                                  ),
+                                  decoration: BoxDecoration(color: const Color(0xFF3B82F6).withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
+                                  child: Icon(Icons.contact_page_outlined, color: const Color(0xFF3B82F6), size: 16),
                                 ),
                                 const SizedBox(width: 8),
-                                Text(
-                                  'Contact Information',
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w700,
-                                    color: const Color(0xFF0F172A),
-                                  ),
-                                ),
+                                Text('Contact Information', style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w700)),
                               ],
                             ),
                             const SizedBox(height: 16),
                             _buildDetailItem(Icons.email_outlined, 'Email', applicant.email),
                             _buildDetailItem(Icons.phone_outlined, 'Phone', applicant.phone),
                             _buildDetailItem(Icons.location_on_outlined, 'Location', applicant.location),
-                            _buildDetailItem(Icons.business_outlined, 'Company', applicant.company),
-                            _buildDetailItem(Icons.link_outlined, 'LinkedIn', applicant.linkedIn),
-                            _buildDetailItem(Icons.code_outlined, 'GitHub', applicant.github),
+                            _buildDetailItem(Icons.flag_outlined, 'Nationality', applicant.nationality),
+                            _buildDetailItem(Icons.cake_outlined, 'DOB', applicant.dob),
+                            _buildDetailItem(Icons.person_outline, 'Father', applicant.fatherName),
+                            const SizedBox(height: 8),
+                            Row(children: [
+                              if (applicant.cvUrl.isNotEmpty)
+                                TextButton.icon(
+                                  onPressed: () async {
+                                   try {
+                                      await downloadCvForUser(context, applicant.userId, applicant: applicant);
+
+                                   } catch (e) {
+                                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Download failed: $e')));
+                                    }
+
+
+                                  },
+
+
+                                  icon: const Icon(Icons.download_outlined, size: 16),
+                                  label: const Text('Download CV'),
+                                )
+                              else
+                                Text('No CV attached', style: GoogleFonts.poppins(fontSize: 13, color: Colors.grey[600])),
+                            ]),
                           ],
                         ),
                       ),
@@ -1828,11 +1841,7 @@ class _ApplicantsScreenState extends State<ApplicantsScreen>
                     Expanded(
                       child: Container(
                         padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFF8FAFC),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: const Color(0xFFE2E8F0)),
-                        ),
+                        decoration: BoxDecoration(color: const Color(0xFFF8FAFC), borderRadius: BorderRadius.circular(12), border: Border.all(color: const Color(0xFFE2E8F0))),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -1840,25 +1849,11 @@ class _ApplicantsScreenState extends State<ApplicantsScreen>
                               children: [
                                 Container(
                                   padding: const EdgeInsets.all(6),
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFF10B981).withOpacity(0.1),
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child: Icon(
-                                    Icons.work_outline,
-                                    color: const Color(0xFF10B981),
-                                    size: 16,
-                                  ),
+                                  decoration: BoxDecoration(color: const Color(0xFF10B981).withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
+                                  child: Icon(Icons.work_outline, color: const Color(0xFF10B981), size: 16),
                                 ),
                                 const SizedBox(width: 8),
-                                Text(
-                                  'Professional Details',
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w700,
-                                    color: const Color(0xFF0F172A),
-                                  ),
-                                ),
+                                Text('Professional Details', style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w700)),
                               ],
                             ),
                             const SizedBox(height: 16),
@@ -1868,7 +1863,7 @@ class _ApplicantsScreenState extends State<ApplicantsScreen>
                             _buildDetailItem(Icons.schedule_outlined, 'Availability', applicant.availability),
                             _buildDetailItem(Icons.work_outline, 'Work Type', applicant.workType),
                             _buildDetailItem(Icons.attach_money_outlined, 'Expected Salary',
-                                applicant.expectedSalary > 0 ? '\$${applicant.expectedSalary.toStringAsFixed(0)}k' : 'Not specified'),
+                                applicant.expectedSalary > 0 ? '\$${applicant.expectedSalary.toStringAsFixed(0)}' : 'Not specified'),
                           ],
                         ),
                       ),
@@ -1878,365 +1873,98 @@ class _ApplicantsScreenState extends State<ApplicantsScreen>
 
                 const SizedBox(height: 16),
 
-                // Bio Section
-                if (applicant.bio.isNotEmpty) ...[
+                // Show short profile summary (bio) if present
+                if (applicant.bio.isNotEmpty)
                   Container(
                     width: double.infinity,
                     padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFFEFEFE),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: const Color(0xFFE2E8F0)),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(6),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFF8B5CF6).withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Icon(
-                                Icons.person_outline,
-                                color: const Color(0xFF8B5CF6),
-                                size: 16,
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              'About',
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w700,
-                                color: const Color(0xFF0F172A),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 12),
-                        Text(
-                          applicant.bio,
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: const Color(0xFF475569),
-                            height: 1.6,
-                            fontWeight: FontWeight.w400,
-                          ),
-                        ),
-                      ],
-                    ),
+                    decoration: BoxDecoration(color: const Color(0xFFFEFEFE), borderRadius: BorderRadius.circular(12), border: Border.all(color: const Color(0xFFE2E8F0))),
+                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      Row(children: [
+                        Container(padding: const EdgeInsets.all(6), decoration: BoxDecoration(color: const Color(0xFF8B5CF6).withOpacity(0.1), borderRadius: BorderRadius.circular(8)), child: Icon(Icons.person_outline, color: const Color(0xFF8B5CF6), size: 16)),
+                        const SizedBox(width: 8),
+                        Text('About', style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w700)),
+                      ]),
+                      const SizedBox(height: 12),
+                      Text(applicant.bio, style: GoogleFonts.poppins(fontSize: 14, color: const Color(0xFF475569), height: 1.6)),
+                    ]),
                   ),
-                  const SizedBox(height: 16),
-                ],
 
-                // Skills and Languages Row
+                const SizedBox(height: 16),
+
+                // Compact lists: skills / certifications (only show a few on main card)
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Skills
-                    if (applicant.skills.isNotEmpty) ...[
+                    if (applicant.skills.isNotEmpty)
                       Expanded(
-                        child: Container(
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFF0F9FF),
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: const Color(0xFFBAE6FD)),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  Container(
-                                    padding: const EdgeInsets.all(6),
-                                    decoration: BoxDecoration(
-                                      color: const Color(0xFF0284C7).withOpacity(0.1),
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                    child: Icon(
-                                      Icons.psychology_outlined,
-                                      color: const Color(0xFF0284C7),
-                                      size: 16,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Text(
-                                    'Skills',
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w700,
-                                      color: const Color(0xFF0F172A),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 12),
-                              Wrap(
-                                spacing: 6,
-                                runSpacing: 6,
-                                children: applicant.skills.map((skill) {
-                                  return Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                                    decoration: BoxDecoration(
-                                      color: const Color(0xFF0284C7).withOpacity(0.1),
-                                      borderRadius: BorderRadius.circular(16),
-                                      border: Border.all(
-                                        color: const Color(0xFF0284C7).withOpacity(0.2),
-                                      ),
-                                    ),
-                                    child: Text(
-                                      skill,
-                                      style: TextStyle(
-                                        fontSize: 11,
-                                        color: const Color(0xFF0284C7),
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                  );
-                                }).toList(),
-                              ),
-                            ],
-                          ),
-                        ),
+                        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                          Text('Skills', style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.w700)),
+                          const SizedBox(height: 8),
+                          Wrap(spacing: 6, runSpacing: 6, children: applicant.skills.take(6).map((s) => Chip(label: Text(s))).toList()),
+                          if (applicant.skills.length > 6) const SizedBox(height: 6),
+                          if (applicant.skills.length > 6) Text('+ more', style: GoogleFonts.poppins(fontSize: 12, color: Colors.grey[600])),
+                        ]),
                       ),
-                      const SizedBox(width: 12),
-                    ],
-
-                    // Languages
-                    if (applicant.languages.isNotEmpty) ...[
+                    if (applicant.certifications.isNotEmpty) const SizedBox(width: 12),
+                    if (applicant.certifications.isNotEmpty)
                       Expanded(
-                        child: Container(
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFF0FDF4),
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: const Color(0xFFBBF7D0)),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  Container(
-                                    padding: const EdgeInsets.all(6),
-                                    decoration: BoxDecoration(
-                                      color: const Color(0xFF059669).withOpacity(0.1),
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                    child: Icon(
-                                      Icons.language_outlined,
-                                      color: const Color(0xFF059669),
-                                      size: 16,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Text(
-                                    'Languages',
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w700,
-                                      color: const Color(0xFF0F172A),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 12),
-                              Wrap(
-                                spacing: 6,
-                                runSpacing: 6,
-                                children: applicant.languages.map((language) {
-                                  return Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                                    decoration: BoxDecoration(
-                                      color: const Color(0xFF059669).withOpacity(0.1),
-                                      borderRadius: BorderRadius.circular(16),
-                                      border: Border.all(
-                                        color: const Color(0xFF059669).withOpacity(0.2),
-                                      ),
-                                    ),
-                                    child: Text(
-                                      language,
-                                      style: TextStyle(
-                                        fontSize: 11,
-                                        color: const Color(0xFF059669),
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                  );
-                                }).toList(),
-                              ),
-                            ],
-                          ),
-                        ),
+                        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                          Text('Certifications', style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.w700)),
+                          const SizedBox(height: 8),
+                          Wrap(spacing: 6, runSpacing: 6, children: applicant.certifications.take(6).map((c) => Chip(label: Text(c))).toList()),
+                          if (applicant.certifications.length > 6) const SizedBox(height: 6),
+                          if (applicant.certifications.length > 6) Text('+ more', style: GoogleFonts.poppins(fontSize: 12, color: Colors.grey[600])),
+                        ]),
                       ),
-                      const SizedBox(width: 12),
-                    ],
-
-                    // Certifications
-                    if (applicant.certifications.isNotEmpty) ...[
-                      Expanded(
-                        child: Container(
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFFDF4FF),
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: const Color(0xFFE9D5FF)),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  Container(
-                                    padding: const EdgeInsets.all(6),
-                                    decoration: BoxDecoration(
-                                      color: const Color(0xFF7C3AED).withOpacity(0.1),
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                    child: Icon(
-                                      Icons.verified_outlined,
-                                      color: const Color(0xFF7C3AED),
-                                      size: 16,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Text(
-                                    'Certifications',
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w700,
-                                      color: const Color(0xFF0F172A),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 12),
-                              Wrap(
-                                spacing: 6,
-                                runSpacing: 6,
-                                children: applicant.certifications.map((cert) {
-                                  return Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                                    decoration: BoxDecoration(
-                                      color: const Color(0xFF7C3AED).withOpacity(0.1),
-                                      borderRadius: BorderRadius.circular(16),
-                                      border: Border.all(
-                                        color: const Color(0xFF7C3AED).withOpacity(0.2),
-                                      ),
-                                    ),
-                                    child: Text(
-                                      cert,
-                                      style: TextStyle(
-                                        fontSize: 11,
-                                        color: const Color(0xFF7C3AED),
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                  );
-                                }).toList(),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
                   ],
                 ),
 
                 const SizedBox(height: 20),
 
-                // Action Buttons Row
+                // Action Buttons Row (View full profile / download CV)
                 Container(
                   padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF8FAFC),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: const Color(0xFFE2E8F0)),
-                  ),
+                  decoration: BoxDecoration(color: const Color(0xFFF8FAFC), borderRadius: BorderRadius.circular(12), border: Border.all(color: const Color(0xFFE2E8F0))),
                   child: Row(
                     children: [
-                      // Job Details
                       Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Applied for: ${applicant.jobData?.title ?? 'Unknown Position'}',
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w600,
-                                color: const Color(0xFF0F172A),
-                              ),
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              'Company: ${applicant.jobData?.company ?? 'Unknown Company'}',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: const Color(0xFF64748B),
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ],
-                        ),
+                        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                          Text('Applied for: ${applicant.jobData?.title ?? 'Unknown Position'}', style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w600)),
+                          const SizedBox(height: 2),
+                          Text('Company: ${applicant.jobData?.company ?? 'Unknown Company'}', style: GoogleFonts.poppins(fontSize: 12, color: const Color(0xFF64748B), fontWeight: FontWeight.w500)),
+                        ]),
                       ),
 
-                      // Action Buttons
-                      Row(
-                        children: [
-                          ElevatedButton.icon(
-                            onPressed: () {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: const Text('Profile view feature coming soon'),
-                                  backgroundColor: const Color(0xFF3B82F6),
-                                  behavior: SnackBarBehavior.floating,
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                                ),
-                              );
-                            },
-                            icon: const Icon(Icons.visibility_outlined, size: 16),
-                            label: const Text('View Profile'),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF3B82F6),
-                              foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                              textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
-                              elevation: 2,
-                              shadowColor: const Color(0xFF3B82F6).withOpacity(0.3),
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          ElevatedButton.icon(
-                            onPressed: () {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: const Text('CV download feature coming soon'),
-                                  backgroundColor: const Color(0xFF10B981),
-                                  behavior: SnackBarBehavior.floating,
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                                ),
-                              );
-                            },
-                            icon: const Icon(Icons.download_outlined, size: 16),
-                            label: const Text('Download CV'),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF10B981),
-                              foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                              textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
-                              elevation: 2,
-                              shadowColor: const Color(0xFF10B981).withOpacity(0.3),
-                            ),
-                          ),
-                        ],
-                      ),
+                      Row(children: [
+                        ElevatedButton.icon(
+                          onPressed: () {
+                            showDialog(context: context, builder: (ctx) => ViewApplicantDetails(applicant: applicant));
+                          },
+                          icon: const Icon(Icons.visibility_outlined, size: 16),
+                          label: const Text('View Profile'),
+                          style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF3B82F6), foregroundColor: Colors.white),
+                        ),
+                        const SizedBox(width: 12),
+                        ElevatedButton.icon(
+                          onPressed: () async {
+                            if (applicant.cvUrl.isNotEmpty) {
+                              try {
+                                await downloadCvForUser(context, applicant.userId, applicant: applicant);
+                              } catch (e) {
+                                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to download CV: $e')));
+                              }
+
+
+                            } else {
+                              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('CV not available')));
+                            }
+                          },
+                          icon: const Icon(Icons.download_outlined, size: 16),
+                          label: const Text('Download CV'),
+                          style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF10B981), foregroundColor: Colors.white),
+                        ),
+                      ]),
                     ],
                   ),
                 ),

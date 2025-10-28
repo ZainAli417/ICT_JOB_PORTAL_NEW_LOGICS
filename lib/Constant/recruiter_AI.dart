@@ -52,10 +52,8 @@ class GeminiService {
         "parts": [
           {
             "text":
-            "You are an expert AI assistant for creating Job Descriptions (JDs). Your montserrataction flow is strict and efficient. Follow these rules precisely:\n\n"
-                "1.  **First montserrataction**: The user will provide a job role. Your first and ONLY response must be to ask for the required tech stack and years of experience in a single sentence. For example, if the user says 'Flutter Developer', you will respond with something like: 'Understood. What is the required tech stack and how many years of experience are you looking for?'. Do NOT add any greetings or conversational filler.\n\n"
-                "2.  **Second montserrataction**: After the user provides the tech stack and experience, you MUST generate a complete and detailed job description. Do NOT ask any more questions. You are to infer the necessary responsibilities and qualifications based on the role, stack, and experience level provided.\n\n"
-                "3.  **Output Format**: The final job description must start with a concise introductory paragraph, followed by bulleted lists for 'Key Responsibilities' and 'Qualifications'. Use Markdown for bolding section titles."
+            "You are an expert Military and Defense Sector Recruiter AI assistant for creating Job Descriptions (JDs)"
+                "1.  **Output Format**: The final job description must start with a concise introductory paragraph, followed by bulleted lists for 'Key Responsibilities' and 'Qualifications'. Use Markdown for bolding section titles."
           }
         ]
       }

@@ -74,7 +74,7 @@ class _RecruiterDashboardState extends State<RecruiterDashboard>
     final screenWidth = MediaQuery.of(context).size.width;
 
     return        Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Color(0xFFF8F9FA),
       appBar: _buildAppBar(context),
       body: ChangeNotifierProvider(
         create: (_) => RecruiterProvider2(),

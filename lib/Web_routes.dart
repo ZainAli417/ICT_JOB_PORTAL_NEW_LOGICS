@@ -12,6 +12,7 @@ import 'Screens/Admin/admin_dashbaord.dart';
 import 'Screens/Admin/admin_login.dart';
 import 'Screens/Job_Seeker/JS_Profile.dart';
 import 'Login.dart';
+import 'Screens/Recruiter/Recruiter_Job_Listing.dart';
 import 'Sign Up.dart';
 import 'Screens/Job_Seeker/JS_Dashboard.dart';
 import 'Screens/Job_Seeker/List_Applied_jobs_application.dart';
@@ -502,7 +503,8 @@ final GoRouter router = GoRouter(
 
     // Recruiter routes
     GoRoute(path: '/recruiter-dashboard', pageBuilder: (c, s) => _buildPageWithAnimation(child: const RecruiterDashboard(), context: c, state: s)),
-    GoRoute(path: '/job-posting', pageBuilder: (c, s) => _buildPageWithAnimation(child: const JobPostingScreen(), context: c, state: s)),
+    GoRoute(path: '/recruiter-job-listing', pageBuilder: (c, s) => _buildPageWithAnimation(child: const JobPostingScreen(), context: c, state: s)),
+   // GoRoute(path: '/job-posting', pageBuilder: (c, s) => _buildPageWithAnimation(child: const recruiter_job_listing(), context: c, state: s)),
     GoRoute(path: '/view-applications', pageBuilder: (c, s) => _buildPageWithAnimation(child: const ApplicantsScreen(), context: c, state: s)),
   ],
 );

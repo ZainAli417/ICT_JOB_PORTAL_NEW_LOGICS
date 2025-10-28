@@ -215,7 +215,7 @@ class _LiveJobsForSeekerState extends State<LiveJobsForSeeker>
             // Left Sidebar - Filters Panel
             AnimatedContainer(
               duration: const Duration(milliseconds: 300),
-              width: _isSidebarCollapsed ? 60 : 350,
+              width: _isSidebarCollapsed ? 60 : 400,
               decoration: const BoxDecoration(
                 color: Colors.white,
                 border: Border(

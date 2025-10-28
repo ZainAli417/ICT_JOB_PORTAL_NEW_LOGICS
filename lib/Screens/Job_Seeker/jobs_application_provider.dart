@@ -37,14 +37,12 @@ class JobApplicationsProvider with ChangeNotifier {
         ..addAll(userApps.docs.map((doc) => doc.data()['jobId'] as String));
       notifyListeners();
     } catch (e) {
-      // optionally set an error field here
       debugPrint('loadAppliedJobs error: $e');
     }
   }
 
   /// Apply to [jobId], take a snapshot of the seeker profile,
   /// and atomically increment both counters.
-
   Future<void> applyForJob(String jobId) async {
     final user = _auth.currentUser;
     if (user == null) {
@@ -60,19 +58,24 @@ class JobApplicationsProvider with ChangeNotifier {
       return;
     }
 
-    // 2️⃣ Server‑side guard in case local state is stale
+    // 2️⃣ Server-side guard in case local state is stale
     final appliedRef = _firestore
         .collection('applications')
         .doc(user.uid)
         .collection('applied_jobs');
-    final existing = await appliedRef
-        .where('jobId', isEqualTo: jobId)
-        .limit(1)
-        .get();
-    if (existing.docs.isNotEmpty) {
-      _errorMessage = 'You have already applied to this job.';
-      notifyListeners();
-      return;
+    try {
+      final existing = await appliedRef
+          .where('jobId', isEqualTo: jobId)
+          .limit(1)
+          .get();
+      if (existing.docs.isNotEmpty) {
+        _errorMessage = 'You have already applied to this job.';
+        notifyListeners();
+        return;
+      }
+    } catch (e) {
+      debugPrint('applyForJob: server-side guard failed: $e');
+      // continue — we'll still attempt to apply (but show helpful message if commit fails)
     }
 
     // 3️⃣ Begin apply flow
@@ -81,31 +84,31 @@ class JobApplicationsProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      // ─── Fetch seeker profile ───────────────────────────────────────
-      final seekerRef = _firestore.collection('Job_Seeker').doc(user.uid);
+      // ─── Fetch seeker profile from job_seeker/{uid} where registration writes:
+      //     { user_data: {...}, user_profile: {...} }
+      final seekerRef = _firestore.collection('job_seeker').doc(user.uid);
       final seekerSnap = await seekerRef.get();
+
       if (!seekerSnap.exists) {
-        throw Exception('Seeker profile not found.');
+        throw Exception('Seeker profile not found at job_seeker/${user.uid}.');
       }
-      final mainData = seekerSnap.data()!;
 
-      final sectionsSnap = await seekerRef
-          .collection('user_profile')
-          .doc('sections')
-          .get();
-      final subProfiles = sectionsSnap.exists
-          ? sectionsSnap.data()!
-          : <String, dynamic>{};
+      final seekerDoc = seekerSnap.data()!;
 
-      // ─── Prepare payload ───────────────────────────────────────────
+      // main account data stored under 'user_data'
+      final mainData = seekerDoc['user_data'] ?? <String, dynamic>{};
+      // profile sections stored under 'user_profile' as a map
+      final subProfiles = seekerDoc['user_profile'] ?? <String, dynamic>{};
+
+      // ─── Prepare payload (store snapshot as maps so it's easy to read later)
       final applicationData = {
         'userId': user.uid,
         'jobId': jobId,
         'appliedAt': FieldValue.serverTimestamp(),
         'status': 'pending',
         'profileSnapshot': {
-          'user_Account_Data': mainData,
-          'user_Profile_Sections': subProfiles,
+          'user_Account_Data': Map<String, dynamic>.from(mainData),
+          'user_Profile_Sections': Map<String, dynamic>.from(subProfiles),
         },
       };
 
@@ -116,22 +119,35 @@ class JobApplicationsProvider with ChangeNotifier {
 
       final jobRef =
       _firestore.collection('Posted_jobs_public').doc(jobId);
-      batch.update(jobRef, {
-        'applicationCount': FieldValue.increment(1),
-        'viewCount': FieldValue.increment(1),
-      });
 
-      await batch.commit();
+      // Try update; if job doc doesn't exist, we will attempt a set with merge after catching.
+      try {
+        batch.update(jobRef, {
+          'applicationCount': FieldValue.increment(1),
+          'viewCount': FieldValue.increment(1),
+        });
+        await batch.commit();
+      } catch (e) {
+        debugPrint('applyForJob: batch.update failed (maybe missing job doc): $e');
+        // Fall back: commit a batch that sets the counters using merge to create doc if missing
+        final fallbackBatch = _firestore.batch();
+        fallbackBatch.set(newAppRef, applicationData);
+        fallbackBatch.set(jobRef, {
+          'applicationCount': FieldValue.increment(1),
+          'viewCount': FieldValue.increment(1),
+        }, SetOptions(merge: true));
+        await fallbackBatch.commit();
+      }
 
       // ─── Mark locally so UI updates immediately ───────────────────
       _appliedJobs.add(jobId);
-    } catch (e) {
+      _errorMessage = null;
+    } catch (e, st) {
+      debugPrint('applyForJob error: $e\n$st');
       _errorMessage = e.toString();
     } finally {
       _isApplying = false;
       notifyListeners();
     }
   }
-
-
 }

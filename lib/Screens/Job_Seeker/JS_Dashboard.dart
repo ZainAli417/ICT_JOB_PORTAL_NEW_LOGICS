@@ -134,6 +134,7 @@ class _JobSeekerDashboardState extends State<JobSeekerDashboard>
             children: [
               // Header above the 3-column layout
               _buildWelcomeSection(),
+
               const SizedBox(height: 16),
 
               // The 3 columns themselves fill remaining space
@@ -143,7 +144,7 @@ class _JobSeekerDashboardState extends State<JobSeekerDashboard>
                   children: [
                     // Center column: main content (jobs list)
                     Expanded(
-                      flex: 3,
+                      flex: 2,
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -201,21 +202,27 @@ class _JobSeekerDashboardState extends State<JobSeekerDashboard>
                     const SizedBox(width: 20),
 
                     // Right column: AI Assistant (and potential extras)
-                    Expanded(
+                 /*   Expanded(
                       flex: 1,
                       child: Column(
                         children: [
                           Expanded(
                             flex: 3,
-                            child: _EnhancedAIAssistant(
+                            /*child: _EnhancedAIAssistant(
                               messageController: _messageController,
                               messageFocusNode: _messageFocusNode,
                               isMessageFocused: _isMessageFocused,
                             ),
+
+                             */
                           ),
                         ],
                       ),
                     ),
+
+                  */
+
+
                   ],
                 ),
               ),
@@ -282,12 +289,14 @@ class _JobSeekerDashboardState extends State<JobSeekerDashboard>
                   ),
                 ),
                 const SizedBox(height: 12),
-                _EnhancedAIAssistant(
+               /* _EnhancedAIAssistant(
                   messageController: _messageController,
                   messageFocusNode: _messageFocusNode,
                   isMessageFocused: _isMessageFocused,
                 ),
                 const SizedBox(height: 12),
+
+                */
               ],
             ),
           );
@@ -482,7 +491,7 @@ class _EnhancedStatCardState extends State<_EnhancedStatCard>
     }
   }
 }
-
+/*
 /// AI Assistant and helper components (unchanged functional behavior)
 class _EnhancedAIAssistant extends StatefulWidget {
   final TextEditingController messageController;
@@ -1030,3 +1039,4 @@ class _EnhancedAIAssistantState extends State<_EnhancedAIAssistant>
     }
   }
 }
+*/

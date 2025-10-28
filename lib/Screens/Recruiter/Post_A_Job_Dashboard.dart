@@ -89,16 +89,19 @@ class _JobPostingScreenState extends State<JobPostingScreen>
   Widget build(BuildContext context) {
     return Recruiter_MainLayout(
       activeIndex: 1,
-      child: FadeTransition(
-        opacity: _fadeAnimation,
-        child: SlideTransition(
-          position: _slideAnimation,
-          child: _buildDashboardContent(context),
-        ),
+      child: Stack(
+          children: [
+            FadeTransition(
+              opacity: _fadeAnimation,
+              child: SlideTransition(
+                position: _slideAnimation,
+                child: _buildDashboardContent(context),
+              ),
+            ),
+          ]
       ),
     );
   }
-
   Widget _buildDashboardContent(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.all(24),
@@ -237,7 +240,7 @@ class _JobPostingScreenState extends State<JobPostingScreen>
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Manage your Air Force job postings and applicants',
+                  'Manage your job postings and applicants',
                   style: GoogleFonts.inter(
                     fontSize: 16,
                     fontWeight: FontWeight.w500,
@@ -247,6 +250,7 @@ class _JobPostingScreenState extends State<JobPostingScreen>
               ],
             ),
           ),
+          /*
           ElevatedButton.icon(
             onPressed: _openPostJobDialog,
             icon: const Icon(Icons.add_circle_outline, size: 20),
@@ -268,6 +272,8 @@ class _JobPostingScreenState extends State<JobPostingScreen>
               elevation: 2,
             ),
           ),
+
+           */
         ],
       ),
     );
