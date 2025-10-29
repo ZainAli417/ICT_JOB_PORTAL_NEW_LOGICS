@@ -15,7 +15,7 @@ import 'package:provider/provider.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-import '../Screens/Job_Seeker/JS_Dashboard.dart';
+import '../Screens/Job_Seeker/job_hub.dart';
 import '../Screens/Job_Seeker/JS_Top_Bar.dart';
 import 'cv_analysis_provider.dart';
 

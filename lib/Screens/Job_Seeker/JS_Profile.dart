@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../Constant/Profile_Sidebar.dart';
-import 'JS_Dashboard.dart';
+import 'job_hub.dart';
 import 'JS_Top_Bar.dart';
 import 'Profile_Provider.dart';
 

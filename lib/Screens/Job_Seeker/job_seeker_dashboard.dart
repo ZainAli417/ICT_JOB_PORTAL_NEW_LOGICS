@@ -20,14 +20,14 @@ class SmoothScrollBehavior extends MaterialScrollBehavior {
       const BouncingScrollPhysics(parent: ClampingScrollPhysics());
 }
 
-class ListAppliedJobsScreen extends StatefulWidget {
-  const ListAppliedJobsScreen({super.key});
+class job_seeker_dashboard extends StatefulWidget {
+  const job_seeker_dashboard({super.key});
 
   @override
-  State<ListAppliedJobsScreen> createState() => _ListAppliedJobsScreenState();
+  State<job_seeker_dashboard> createState() => _job_seeker_dashboardState();
 }
 
-class _ListAppliedJobsScreenState extends State<ListAppliedJobsScreen>
+class _job_seeker_dashboardState extends State<job_seeker_dashboard>
     with TickerProviderStateMixin {
   late AnimationController _fadeController;
   late Animation<double> _fadeAnimation;

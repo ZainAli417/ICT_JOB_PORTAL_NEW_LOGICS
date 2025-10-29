@@ -208,6 +208,15 @@ class _MainLayoutState extends State<MainLayout>
                       ),
                       const SizedBox(width: 16),
                       _buildModernNavItem(
+                        icon: Icons.post_add_rounded,
+                        label: 'Profile',
+                        isActive: widget.activeIndex == 2,
+                        onTap: () {
+                          if (widget.activeIndex != 2) context.go('/profile');
+                        },
+                      ),
+                      const SizedBox(width: 16),
+                      _buildModernNavItem(
                         icon: Icons.auto_awesome_outlined,
                         label: 'AI Tools',
                         isActive: widget.activeIndex == 1,
@@ -219,17 +228,8 @@ class _MainLayoutState extends State<MainLayout>
                       ),
                       const SizedBox(width: 16),
                       _buildModernNavItem(
-                        icon: Icons.post_add_rounded,
-                        label: 'Profile',
-                        isActive: widget.activeIndex == 2,
-                        onTap: () {
-                          if (widget.activeIndex != 2) context.go('/profile');
-                        },
-                      ),
-                      const SizedBox(width: 16),
-                      _buildModernNavItem(
                         icon: Icons.description_rounded,
-                        label: 'Job Application',
+                        label: 'Job Hub',
                         isActive: widget.activeIndex == 3,
                         onTap: () {
                           if (widget.activeIndex != 3) {

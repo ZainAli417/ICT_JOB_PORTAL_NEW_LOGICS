@@ -14,14 +14,15 @@ import 'Screens/Job_Seeker/JS_Profile.dart';
 import 'Login.dart';
 import 'Screens/Recruiter/Recruiter_Job_Listing.dart';
 import 'Sign Up.dart';
-import 'Screens/Job_Seeker/JS_Dashboard.dart';
-import 'Screens/Job_Seeker/List_Applied_jobs_application.dart';
+import 'Screens/Job_Seeker/job_hub.dart';
+import 'Screens/Job_Seeker/job_seeker_dashboard.dart';
 import 'Screens/Recruiter/LIst_of_Applicants.dart';
 import 'Screens/Recruiter/Login_Recruiter.dart';
 import 'Screens/Recruiter/Sign Up_Recruiter.dart';
 import 'Constant/Splash.dart';
 import 'Screens/Recruiter/Post_A_Job_Dashboard.dart';
 import 'Screens/Recruiter/Recruiter_dashboard.dart';
+import 'SignUp /signup_UI.dart';
 
 /// Enhanced RoleService with admin detection and caching
 class RoleService {
@@ -491,14 +492,15 @@ final GoRouter router = GoRouter(
 
     GoRoute(
       path: '/register',
-      pageBuilder: (context, state) => _buildPageWithAnimation(child: const SignUp_Screen(), context: context, state: state),
+      //pageBuilder: (context, state) => _buildPageWithAnimation(child: const SignUp_Screen(), context: context, state: state),
+      pageBuilder: (context, state) => _buildPageWithAnimation(child: const SignUp_Screen2(), context: context, state: state),
     ),
 
     // Job seeker routes
-    GoRoute(path: '/dashboard', pageBuilder: (c, s) => _buildPageWithAnimation(child: const JobSeekerDashboard(), context: c, state: s)),
-    GoRoute(path: '/ai-tools', pageBuilder: (c, s) => _buildPageWithAnimation(child: const CVAnalysisScreen(), context: c, state: s)),
+    GoRoute(path: '/dashboard', pageBuilder: (c, s) => _buildPageWithAnimation(child: const job_seeker_dashboard(), context: c, state: s)),
     GoRoute(path: '/profile', pageBuilder: (c, s) => _buildPageWithAnimation(child: const ProfileScreen(), context: c, state: s)),
-    GoRoute(path: '/applied-jobs', pageBuilder: (c, s) => _buildPageWithAnimation(child: ListAppliedJobsScreen(), context: c, state: s)),
+    GoRoute(path: '/job-hub', pageBuilder: (c, s) => _buildPageWithAnimation(child: job_hub(), context: c, state: s)),
+    GoRoute(path: '/ai-tools', pageBuilder: (c, s) => _buildPageWithAnimation(child: const CVAnalysisScreen(), context: c, state: s)),
     GoRoute(path: '/download-cv', pageBuilder: (c, s) => _buildPageWithAnimation(child: const CVGeneratorDialog(), context: c, state: s)),
 
     // Recruiter routes

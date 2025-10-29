@@ -333,6 +333,9 @@ class SignUpSteps {
       ),
     );
   }
+
+
+
   Widget _imageUploadStep() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,

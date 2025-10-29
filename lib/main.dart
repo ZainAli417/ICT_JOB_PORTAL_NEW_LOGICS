@@ -18,6 +18,7 @@ import 'Screens/Recruiter/Recruiter_provider_Job_listing.dart';
 import 'Screens/Recruiter/Signup_Provider_Recruiter.dart';
 import 'Screens/Recruiter/login_provider_Recruiter.dart';
 import 'Screens/Recruiter/R_Initials_provider.dart';
+import 'SignUp /signup_provider.dart';
 import 'Signup_Provider.dart';
 import 'Screens/Job_Seeker/JS_Initials_provider.dart';
 import 'Web_routes.dart';
@@ -68,6 +69,11 @@ void main() async {
         ChangeNotifierProvider(create: (_) => JobApplicationsProvider()),
         ChangeNotifierProvider(create: (_) => ListAppliedJobsProvider()),
         ChangeNotifierProvider(create: (_) => ApplicantsProvider()),
+
+
+
+        ChangeNotifierProvider(create: (_) => SignupProvider())
+
 
       ],
       child: const JobPortalApp(),

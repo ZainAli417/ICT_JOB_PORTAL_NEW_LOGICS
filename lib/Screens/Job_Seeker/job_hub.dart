@@ -1,4 +1,4 @@
-// JS_Dashboard.dart - Enhanced Version with Smooth, Web-Friendly Scrolling
+// job_hub.dart - Enhanced Version with Smooth, Web-Friendly Scrolling
 import 'dart:async';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
@@ -27,15 +27,15 @@ class SmoothScrollBehavior extends MaterialScrollBehavior {
   }
 }
 
-/// Enhanced JobSeekerDashboard with modern UI/UX and optimized performance
-class JobSeekerDashboard extends StatefulWidget {
-  const JobSeekerDashboard({super.key});
+/// Enhanced job_hub with modern UI/UX and optimized performance
+class job_hub extends StatefulWidget {
+  const job_hub({super.key});
 
   @override
-  State<JobSeekerDashboard> createState() => _JobSeekerDashboardState();
+  State<job_hub> createState() => _job_hubState();
 }
 
-class _JobSeekerDashboardState extends State<JobSeekerDashboard>
+class _job_hubState extends State<job_hub>
     with TickerProviderStateMixin {
   late AnimationController _fadeController;
   late AnimationController _slideController;
