@@ -1,6 +1,7 @@
 // lib/main.dart
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
@@ -30,6 +31,7 @@ import 'login_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await dotenv.load(fileName: ".env"); // loads .env
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
@@ -128,4 +130,13 @@ class RoleProvider extends ChangeNotifier {
     _selectedRole = role;
     notifyListeners();
   }
+}
+
+class Env {
+  // Never call dotenv.env directly throughout app — use these getters.
+  static String get geminiApiKey => dotenv.env['GEMINI_API_KEY'] ?? '';
+  static String get cloudConvertApiKey => dotenv.env['CLOUDCONVERT_API_KEY'] ?? '';
+
+  // Optional helper to check presence
+  static bool get hasGeminiKey => geminiApiKey.isNotEmpty;
 }

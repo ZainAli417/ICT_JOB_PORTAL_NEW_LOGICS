@@ -500,7 +500,7 @@ final GoRouter router = GoRouter(
     GoRoute(path: '/dashboard', pageBuilder: (c, s) => _buildPageWithAnimation(child: const job_seeker_dashboard(), context: c, state: s)),
     GoRoute(path: '/profile', pageBuilder: (c, s) => _buildPageWithAnimation(child: const ProfileScreen(), context: c, state: s)),
     GoRoute(path: '/job-hub', pageBuilder: (c, s) => _buildPageWithAnimation(child: job_hub(), context: c, state: s)),
-    GoRoute(path: '/ai-tools', pageBuilder: (c, s) => _buildPageWithAnimation(child: const CVAnalysisScreen(), context: c, state: s)),
+    GoRoute(path: '/ai-tools', pageBuilder: (c, s) => _buildPageWithAnimation(child:  CVAnalysisScreen(), context: c, state: s)),
     GoRoute(path: '/download-cv', pageBuilder: (c, s) => _buildPageWithAnimation(child: const CVGeneratorDialog(), context: c, state: s)),
 
     // Recruiter routes

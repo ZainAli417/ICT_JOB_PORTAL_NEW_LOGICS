@@ -7,6 +7,8 @@ import 'package:http/http.dart' as http;
 import 'package:file_picker/file_picker.dart';
 import 'dart:io' as io;
 
+import '../main.dart';
+
 class CVAnalyzerBackendProvider extends ChangeNotifier {
   // State management
   bool _isLoading = false;
@@ -42,11 +44,11 @@ class CVAnalyzerBackendProvider extends ChangeNotifier {
     'pdf', 'doc', 'docx', 'txt', 'rtf'
   ];
 
-  CVAnalyzerBackendProvider( {
+  CVAnalyzerBackendProvider({
     this.useDirectGemini = true,
-    this.geminiApiKey = 'AIzaSyCGkh3g_A_HvBtRNQ2q2WGxS3LP2Sqtko0',
+    String? geminiApiKey, // accept nullable
     this.geminiModel = 'gemini-2.0-flash-exp',
-  });
+  }) : geminiApiKey = geminiApiKey ?? Env.geminiApiKey; // init list sets final field
 
   // State setters
   void _setLoading(bool v) {

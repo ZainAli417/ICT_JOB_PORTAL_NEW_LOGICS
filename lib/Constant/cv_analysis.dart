@@ -17,16 +17,16 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../Screens/Job_Seeker/job_hub.dart';
 import '../Screens/Job_Seeker/JS_Top_Bar.dart';
+import '../main.dart';
 import 'cv_analysis_provider.dart';
 
 /// Enhanced CV Analysis Screen with vibrant UI/UX
 class CVAnalysisScreen extends StatefulWidget {
   final String geminiApiKey;
 
-  const CVAnalysisScreen({
-    super.key,
-    this.geminiApiKey = 'AIzaSyCGkh3g_A_HvBtRNQ2q2WGxS3LP2Sqtko0',
-  });
+  // NOT const, use initializer to default to runtime Env value
+  CVAnalysisScreen({super.key, String? geminiApiKey})
+      : geminiApiKey = geminiApiKey ?? Env.geminiApiKey;
 
   @override
   State<CVAnalysisScreen> createState() => _CVAnalysisScreenState();
