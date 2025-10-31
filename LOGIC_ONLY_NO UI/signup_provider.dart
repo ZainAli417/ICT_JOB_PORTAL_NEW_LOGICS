@@ -395,7 +395,7 @@ class SignupProvider extends ChangeNotifier {
       // Save role/doc
       final userDocRef = firestore.collection(role).doc(uid);
       await userDocRef.set({
-        'userData': {
+        'user_data': {
           'personalProfile': personalProfile,
           'educationalProfile': educationList,
         }

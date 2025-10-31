@@ -6,7 +6,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
 import '../../Constant/Header_Nav.dart';
-import '../../Signup_Provider.dart';
+import '../../Signup_Provider_OLD.dart';
 import 'Signup_Provider_Recruiter.dart';
 
 
@@ -480,7 +480,7 @@ class _Recruiter_SignUpScreenState extends State<Recruiter_SignUpScreen> {
                                     const SizedBox(height: 20),
 // ─── Sign Up Button ───
                                     // ─── Sign Up Button ───
-                                    Consumer<SignUpProvider>(
+                                    Consumer<SignUpProvider_old>(
                                       builder: (_, provider, __) {
                                         return Align(
                                           alignment: Alignment.center, // prevent full-width stretch

@@ -13,7 +13,7 @@ import 'Screens/Admin/admin_login.dart';
 import 'Screens/Job_Seeker/JS_Profile.dart';
 import 'Login.dart';
 import 'Screens/Recruiter/Recruiter_Job_Listing.dart';
-import 'Sign Up.dart';
+import 'SignUp_Screen_OLD.dart';
 import 'Screens/Job_Seeker/job_hub.dart';
 import 'Screens/Job_Seeker/job_seeker_dashboard.dart';
 import 'Screens/Recruiter/LIst_of_Applicants.dart';

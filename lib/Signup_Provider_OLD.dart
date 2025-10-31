@@ -7,7 +7,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 
-class SignUpProvider extends ChangeNotifier {
+class SignUpProvider_old extends ChangeNotifier {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseStorage _storage = FirebaseStorage.instance;
@@ -158,7 +158,7 @@ class SignUpProvider extends ChangeNotifier {
         required String email,
         required String password,
         required String role,
-        required Map<String, dynamic> userData,
+        required Map<String, dynamic> user_data,
         required Map<String, dynamic> profileData,
       }) async {
     _setLoading(true);
@@ -178,11 +178,11 @@ class SignUpProvider extends ChangeNotifier {
       if (!['Job Seeker', 'Recruiter'].contains(sanitizedRole)) {
         throw Exception('Invalid role selected');
       }
-      final name = _sanitizeInput(userData['name'] ?? '');
+      final name = _sanitizeInput(user_data['name'] ?? '');
       if (name.isEmpty) {
         throw Exception('Name is required');
       }
-      final phone = _sanitizeInput(userData['phone'] ?? '');
+      final phone = _sanitizeInput(user_data['phone'] ?? '');
       if (phone.isNotEmpty && !_isValidPhone(phone)) {
         throw Exception('Invalid phone number format');
       }
@@ -203,17 +203,17 @@ class SignUpProvider extends ChangeNotifier {
       }
       final now = FieldValue.serverTimestamp();
       final createdAtString = DateTime.now().toUtc().toIso8601String();
-      final baseUserData = <String, dynamic>{
+      final baseuser_data = <String, dynamic>{
         'email': sanitizedEmail,
         'name': name,
         'phone': phone,
-        'nationality': _sanitizeInput(userData['nationality'] ?? ''),
+        'nationality': _sanitizeInput(user_data['nationality'] ?? ''),
         'role': sanitizedRole,
         'picture_url': photoUrl ?? '',
         'created_at': now,
         'created_at_string': createdAtString,
         'uid': uid,
-        'psid': userData['psid'],
+        'psid': user_data['psid'],
         'ispaid': false,
         'active': false,
         'updated_at': now,
@@ -224,7 +224,7 @@ class SignUpProvider extends ChangeNotifier {
       if (isRecruiter) {
         try {
           await docRef.set({
-            'user_data': baseUserData,
+            'user_data': baseuser_data,
             'user_profile': <String, dynamic>{
               'picture_url': photoUrl ?? '',
               'last_updated': now,
@@ -253,8 +253,8 @@ class SignUpProvider extends ChangeNotifier {
         }
       } else {
         final profilePayload = <String, dynamic>{
-          'dob': userData['dob'],
-          'father_name': _sanitizeInput(userData['father_name'] ?? ''),
+          'dob': user_data['dob'],
+          'father_name': _sanitizeInput(user_data['father_name'] ?? ''),
           'educations': _sanitizeList(profileData['educations'] ?? []),
           'experiences': _sanitizeList(profileData['experiences'] ?? []),
           'skills': _sanitizeStringList(profileData['skills'] ?? []),
@@ -267,7 +267,7 @@ class SignUpProvider extends ChangeNotifier {
         };
         try {
           await docRef.set({
-            'user_data': baseUserData,
+            'user_data': baseuser_data,
             'user_profile': profilePayload,
           }, SetOptions(merge: false));
         } catch (e) {

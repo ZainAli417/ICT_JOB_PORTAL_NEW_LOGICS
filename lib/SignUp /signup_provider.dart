@@ -1,6 +1,8 @@
 // lib/providers/signup_provider.dart
 import 'dart:convert';
 import 'dart:typed_data';
+import 'dart:async';
+import 'dart:html' as html; // for web image picker
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
@@ -9,14 +11,17 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 
-import 'dart:async';
-import 'dart:html' as html;
-
+import '../extractor_CV/cv_extractor.dart'; // ensure path matches your project
 
 class SignupProvider extends ChangeNotifier {
   // Role selection
   String role = 'job_seeker';
+  bool showCvUploadSection = false;
 
+  void revealCvUpload({bool reveal = true}) {
+    showCvUploadSection = reveal;
+    notifyListeners();
+  }
   // Step trackers
   int personalVisibleIndex = 0; // controls reveal stepwise
   int currentStep = 0; // 0: account, 1: personal, 2: education, 3: review
@@ -30,7 +35,7 @@ class SignupProvider extends ChangeNotifier {
   final TextEditingController nameController = TextEditingController();
   final TextEditingController contactNumberController = TextEditingController();
   final TextEditingController nationalityController = TextEditingController();
-  final TextEditingController summaryController = TextEditingController(); // NEW
+  final TextEditingController summaryController = TextEditingController(); // short professional summary
   final TextEditingController objectivesController = TextEditingController();
 
   // Skills & social inputs
@@ -46,6 +51,9 @@ class SignupProvider extends ChangeNotifier {
   Uint8List? profilePicBytes; // used for preview & upload
   String? imageDataUrl; // data:<mime>;base64,<payload> for MemoryImage hint style
   String? profilePicUrl; // final URL in Firebase Storage (nullable)
+
+  // Secondary extracted email (from CV)
+  String? secondaryEmail;
 
   // Education
   final List<Map<String, dynamic>> educationalProfile = [];
@@ -64,14 +72,73 @@ class SignupProvider extends ChangeNotifier {
 
   // ---------- State helpers ----------
   void setRole(String newRole) {
+    if (role == 'recruiter') showCvUploadSection = false;
+
     if (newRole != 'job_seeker' && newRole != 'recruiter') return;
     role = newRole;
+
     notifyListeners();
+  }
+
+  // REGISTER RECRUITER
+  Future<bool> registerRecruiter() async {
+    try {
+      generalError = null;
+      notifyListeners();
+
+      // 1) create auth user
+      final cred = await FirebaseAuth.instance.createUserWithEmailAndPassword(
+        email: emailController.text.trim(),
+        password: passwordController.text,
+      );
+      final uid = cred.user?.uid;
+      if (uid == null) {
+        generalError = 'Failed to obtain user id after signup.';
+        notifyListeners();
+        return false;
+      }
+
+      // 2) build canonical user_data map
+      final user_data = {
+        'uid': uid,
+        'name': nameController.text.trim(),
+        'email': emailController.text.trim(),
+        'role': role, // uses provider.role (should be 'recruiter' here)
+        'createdAt': FieldValue.serverTimestamp(),
+      };
+
+      final firestore = FirebaseFirestore.instance;
+
+      // 3) write canonical doc under: /{role}/{uid}/user_data
+      // We'll put the structured map inside a `user_data` field to match your described layout.
+      await firestore.collection(role).doc(uid).set({
+        'user_data': user_data,
+      }, SetOptions(merge: true));
+
+      // 4) shadow copy under 'users' (auto-id) - unchanged
+      await firestore.collection('users').add({
+        'name': user_data['name'],
+        'email': user_data['email'],
+        'uid': uid,
+        'role': role,
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+
+      notifyListeners();
+      return true;
+    } on FirebaseAuthException catch (e) {
+      generalError = e.message;
+      notifyListeners();
+      return false;
+    } catch (e) {
+      generalError = e.toString();
+      notifyListeners();
+      return false;
+    }
   }
 
   void goToStep(int step) {
     currentStep = step;
-    // if entering personal step ensure first field visible
     if (step == 1 && personalVisibleIndex == 0) personalVisibleIndex = 0;
     notifyListeners();
   }
@@ -89,7 +156,6 @@ class SignupProvider extends ChangeNotifier {
   }
 
   void onFieldTypedAutoReveal(int index, String value) {
-    // Called from UI onChanged; reveal next field when current becomes non-empty
     if (value.trim().isNotEmpty && personalVisibleIndex == index) {
       revealNextPersonalField();
     }
@@ -100,32 +166,28 @@ class SignupProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  // ---------- Image pick (web + mobile) ----------
   Future<void> pickProfilePicture() async {
     try {
-      // --- Web path: use the html file picker helper (data URL + bytes) ---
       if (kIsWeb) {
         final res = await pickImageWebImpl();
-        if (res == null) return; // user cancelled or stubbed
+        if (res == null) return;
         if (res.containsKey('error')) {
           generalError = res['error'] as String?;
           notifyListeners();
           return;
         }
-        // assign bytes and dataUrl for preview + upload
         profilePicBytes = res['bytes'] as Uint8List?;
         imageDataUrl = res['dataUrl'] as String?;
-        // keep profilePicUrl null until uploaded during submit
         profilePicUrl = null;
         notifyListeners();
         return;
       }
 
-      // --- Mobile/desktop path: use image_picker plugin ---
       final XFile? picked = await _picker.pickImage(source: ImageSource.gallery, imageQuality: 80);
       if (picked == null) return;
       final bytes = await picked.readAsBytes();
       profilePicBytes = bytes;
-      // create a data url for consistent preview approach
       final mime = picked.mimeType ?? 'image/jpeg';
       imageDataUrl = 'data:$mime;base64,${base64Encode(bytes)}';
       profilePicUrl = null;
@@ -244,8 +306,6 @@ class SignupProvider extends ChangeNotifier {
     return true;
   }
 
-  // Personal fields indices (updated to include summary)
-  // 0: name, 1: contact, 2: nationality, 3: summary, 4: skills, 5: objectives, 6: dob
   bool validatePersonalFieldAtIndex(int index) {
     switch (index) {
       case 0:
@@ -289,7 +349,6 @@ class SignupProvider extends ChangeNotifier {
   }
 
   double computeProgress() {
-    // (number of personal fields complete + educationComplete) / total
     final personalIndices = [0, 1, 2, 3, 4, 5, 6];
     int personalDone = 0;
     for (final i in personalIndices) {
@@ -299,14 +358,13 @@ class SignupProvider extends ChangeNotifier {
     return (personalDone + educationDone) / (personalIndices.length + 1);
   }
 
-  // ---------- Firebase submit ----------
+  // ---------- Firebase submit for manual signup (existing) ----------
   Future<bool> submitAllAndCreateAccount() async {
     generalError = null;
     isLoading = true;
     notifyListeners();
 
     try {
-      // Validate account
       if (!validateEmail()) {
         generalError = emailError;
         isLoading = false;
@@ -319,8 +377,6 @@ class SignupProvider extends ChangeNotifier {
         notifyListeners();
         return false;
       }
-
-      // Validate personal & education
       if (!personalSectionIsComplete()) {
         generalError = 'Please complete all required personal fields.';
         isLoading = false;
@@ -334,7 +390,6 @@ class SignupProvider extends ChangeNotifier {
         return false;
       }
 
-      // Create user
       final auth = FirebaseAuth.instance;
       UserCredential uc;
       try {
@@ -357,21 +412,19 @@ class SignupProvider extends ChangeNotifier {
         return false;
       }
 
-      // Upload image if present (putData)
+      // Upload image if present
       if (profilePicBytes != null && profilePicBytes!.isNotEmpty) {
         try {
-          final storageRef = FirebaseStorage.instance.ref().child('$role/$uid/profilePic.jpg');
-          final meta = SettableMetadata(contentType: 'image/jpeg');
-          await storageRef.putData(profilePicBytes!, meta);
-          profilePicUrl = await storageRef.getDownloadURL();
-        } catch (e) {
+          final url = await _uploadProfilePicBytes(uid, profilePicBytes!);
+          profilePicUrl = url;
+        } catch (_) {
           profilePicUrl = null;
         }
       }
 
-      // Build normalized data
       final personalProfile = {
         'fullName': nameController.text.trim(),
+        'email': emailController.text.trim(),
         'contactNumber': contactNumberController.text.trim(),
         'nationality': nationalityController.text.trim(),
         'summary': summaryController.text.trim(),
@@ -383,25 +436,25 @@ class SignupProvider extends ChangeNotifier {
         'createdAt': FieldValue.serverTimestamp(),
       };
 
-      final educationList = educationalProfile.map((e) => {
+      final educationList = educationalProfile
+          .map((e) => {
         'institutionName': (e['institutionName'] as String).trim(),
         'duration': (e['duration'] as String).trim(),
         'majorSubjects': (e['majorSubjects'] as String).trim(),
         'marksOrCgpa': (e['marksOrCgpa'] as String).trim(),
-      }).toList();
+      })
+          .toList();
 
       final firestore = FirebaseFirestore.instance;
-
-      // Save role/doc
       final userDocRef = firestore.collection(role).doc(uid);
       await userDocRef.set({
-        'userData': {
+        'user_data': {
           'personalProfile': personalProfile,
           'educationalProfile': educationList,
         }
       }, SetOptions(merge: true));
 
-      // Shadow copy in users collection (auto doc)
+      // shadow copy
       try {
         final shadowData = {
           'fullName': nameController.text.trim(),
@@ -412,7 +465,6 @@ class SignupProvider extends ChangeNotifier {
         };
         await firestore.collection('users').add(shadowData);
       } catch (e) {
-        // non-fatal
         generalError = 'Warning: shadow copy failed.';
       }
 
@@ -425,6 +477,207 @@ class SignupProvider extends ChangeNotifier {
       notifyListeners();
       return false;
     }
+  }
+
+  // ---------- NEW: submit extracted CV, create user and save the full 8 sections ----------
+// inside SignupProvider
+
+  Future<bool> submitExtractedCvAndCreateAccount(
+      CvExtractionResult result, {
+        String? overrideEmail,
+        String? overridePassword,
+      })
+  async {
+    generalError = null;
+    isLoading = true;
+    notifyListeners();
+
+    try {
+      // 1) Populate provider fields (so UI updates immediately)
+      final personal = result.personalProfile;
+      nameController.text = (personal['name'] ?? nameController.text).toString();
+      contactNumberController.text = (personal['contactNumber'] ?? contactNumberController.text).toString();
+      nationalityController.text = (personal['nationality'] ?? nationalityController.text).toString();
+      summaryController.text = (personal['summary'] ?? result.professionalSummary ?? summaryController.text).toString();
+
+      // social links
+      socialLinks.clear();
+      if (personal['socialLinks'] is List) {
+        socialLinks.addAll((personal['socialLinks'] as List).map((e) => e.toString()));
+      } else if (personal['socialLinks'] is String && (personal['socialLinks'] as String).isNotEmpty) {
+        socialLinks.addAll((personal['socialLinks'] as String)
+            .split(RegExp(r'[\n,;]'))
+            .map((s) => s.trim())
+            .where((s) => s.isNotEmpty));
+      }
+
+      // skills
+      skills.clear();
+      if (personal['skills'] is List) {
+        skills.addAll((personal['skills'] as List).map((e) => e.toString()));
+      } else if (personal['skills'] is String && (personal['skills'] as String).isNotEmpty) {
+        skills.addAll((personal['skills'] as String)
+            .split(RegExp(r'[,;\n]'))
+            .map((s) => s.trim())
+            .where((s) => s.isNotEmpty));
+      }
+
+      // set secondary email (extracted email from CV)
+      secondaryEmail = (personal['email'] ?? '').toString();
+
+      // education
+      educationalProfile.clear();
+      for (final edu in result.educationalProfile) {
+        educationalProfile.add({
+          'institutionName': (edu['institutionName'] ?? '').toString(),
+          'duration': (edu['duration'] ?? '').toString(),
+          'majorSubjects': (edu['majorSubjects'] ?? '').toString(),
+          'marksOrCgpa': (edu['marksOrCgpa'] ?? '').toString(),
+        });
+      }
+
+      notifyListeners();
+
+      // 2) Determine auth credentials (override -> controller -> extracted secondary)
+      final String authEmail = (overrideEmail != null && overrideEmail.trim().isNotEmpty)
+          ? overrideEmail.trim()
+          : (emailController.text.trim().isNotEmpty ? emailController.text.trim() : (secondaryEmail ?? ''));
+
+      final String authPass = (overridePassword != null && overridePassword.isNotEmpty)
+          ? overridePassword
+          : passwordController.text;
+
+      // If overrides were provided, reflect them into controllers so UI shows them
+      if (overrideEmail != null && overrideEmail.trim().isNotEmpty) {
+        emailController.text = overrideEmail.trim();
+      }
+      if (overridePassword != null && overridePassword.isNotEmpty) {
+        passwordController.text = overridePassword;
+        confirmPasswordController.text = overridePassword;
+      }
+
+      if (authEmail.isEmpty || authPass.isEmpty) {
+        generalError = 'Email and password required to create account. Provide them in the account step or fill before proceeding.';
+        isLoading = false;
+        notifyListeners();
+        return false;
+      }
+
+      // 3) Create Firebase Auth user
+      UserCredential uc;
+      try {
+        uc = await FirebaseAuth.instance.createUserWithEmailAndPassword(email: authEmail, password: authPass);
+      } on FirebaseAuthException catch (e) {
+        generalError = e.message ?? 'Authentication failed';
+        isLoading = false;
+        notifyListeners();
+        return false;
+      }
+
+      final uid = uc.user?.uid;
+      if (uid == null) {
+        generalError = 'Unable to obtain user id after signup.';
+        isLoading = false;
+        notifyListeners();
+        return false;
+      }
+
+      // 4) Handle profile picture: prefer provider.profilePicBytes (user-picked), else try to read from extracted data
+      if (profilePicBytes == null && personal['profilePic'] != null) {
+        try {
+          final dynamic picVal = personal['profilePic'];
+          if (picVal is String && picVal.startsWith('data:')) {
+            final parts = picVal.split(',');
+            if (parts.length == 2) {
+              final b64 = parts[1];
+              profilePicBytes = base64Decode(b64);
+              imageDataUrl = picVal;
+            }
+          } else if (picVal is String) {
+            try {
+              profilePicBytes = base64Decode(picVal);
+              imageDataUrl = 'data:image/jpeg;base64,$picVal';
+            } catch (_) {}
+          }
+        } catch (_) {}
+      }
+
+      // upload profile pic to Firebase Storage if present
+      if (profilePicBytes != null && profilePicBytes!.isNotEmpty) {
+        try {
+          final storageRef = FirebaseStorage.instance.ref().child('$role/$uid/profilePic.jpg');
+          final meta = SettableMetadata(contentType: 'image/jpeg');
+          await storageRef.putData(profilePicBytes!, meta);
+          profilePicUrl = await storageRef.getDownloadURL();
+        } catch (e) {
+          // non-fatal: leave profilePicUrl null
+          profilePicUrl = null;
+        }
+      }
+
+      // 5) Build full document structure and persist to Firestore
+      final Map<String, dynamic> user_data = {
+        'personalProfile': {
+          'name': nameController.text.trim(),
+          'email': authEmail,
+          'secondary_email': secondaryEmail ?? '',
+          'contactNumber': contactNumberController.text.trim(),
+          'nationality': nationalityController.text.trim(),
+          'profilePicUrl': profilePicUrl,
+          'skills': skills,
+          'objectives': objectivesController.text.trim(),
+          'socialLinks': socialLinks,
+          'summary': summaryController.text.trim(),
+          'dob': dob != null ? DateFormat('yyyy-MM-dd').format(dob!) : null,
+        },
+        'educationalProfile': educationalProfile,
+        'professionalProfile': {
+          'summary': result.professionalSummary ?? '',
+        },
+        'professionalExperience': result.experiences,
+        'certifications': result.certifications,
+        'publications': result.publications,
+        'awards': result.awards,
+        'references': result.references,
+        'createdAt': FieldValue.serverTimestamp(),
+      };
+
+      final firestore = FirebaseFirestore.instance;
+      final userDocRef = firestore.collection(role).doc(uid);
+      await userDocRef.set({'user_data': user_data, 'secondary_email': secondaryEmail ?? ''}, SetOptions(merge: true));
+
+      // 6) Shadow copy in 'users' collection
+      try {
+        final shadowData = {
+          'fullName': nameController.text.trim(),
+          'email': authEmail,
+          'secondary_email': secondaryEmail ?? '',
+          'uid': uid,
+          'role': role,
+          'createdAt': FieldValue.serverTimestamp(),
+        };
+        await firestore.collection('users').add(shadowData);
+      } catch (_) {}
+
+      isLoading = false;
+      notifyListeners();
+      return true;
+    } catch (e, st) {
+      generalError = e.toString();
+      isLoading = false;
+      notifyListeners();
+      return false;
+    }
+  }
+
+  // Helper: upload profile picture bytes to Firebase Storage and return download URL
+  Future<String?> _uploadProfilePicBytes(String uid, Uint8List bytes) async {
+    final ext = '.jpg';
+    final storageRef = FirebaseStorage.instance.ref().child('$role/$uid/profilePic$ext');
+    final meta = SettableMetadata(contentType: 'image/jpeg');
+    final uploadTask = await storageRef.putData(bytes, meta);
+    final url = await storageRef.getDownloadURL();
+    return url;
   }
 
   // ---------- Clear all (call after successful signup or on screen entry) ----------
@@ -452,6 +705,7 @@ class SignupProvider extends ChangeNotifier {
     passwordError = null;
     generalError = null;
     isLoading = false;
+    secondaryEmail = null;
     notifyListeners();
   }
 
@@ -470,63 +724,45 @@ class SignupProvider extends ChangeNotifier {
     super.dispose();
   }
 
+  // Web image picker helper (kept from your original implementation)
   Future<Map<String, dynamic>?> pickImageWebImpl({int maxBytes = 2 * 1024 * 1024}) async {
     try {
       final uploadInput = html.FileUploadInputElement();
       uploadInput.accept = 'image/*';
       uploadInput.multiple = false;
-
-      // Hide and attach to DOM so some browsers behave consistently.
       uploadInput.style.display = 'none';
       html.document.body?.append(uploadInput);
-
-      // Trigger the file picker (user gesture because this runs from a button tap).
       uploadInput.click();
-
-      // Wait for user selection (or cancel)
       await uploadInput.onChange.first;
       final files = uploadInput.files;
       if (files == null || files.isEmpty) {
         uploadInput.remove();
-        return null; // user cancelled
+        return null;
       }
-
       final file = files.first;
-
-      // Size validation
       if (file.size > maxBytes) {
         uploadInput.remove();
         final maxMb = (maxBytes / (1024 * 1024)).toStringAsFixed(1);
         return {'error': 'Selected image exceeds $maxMb MB'};
       }
-
-      // Read as Data URL (for preview)
       final readerDataUrl = html.FileReader();
       readerDataUrl.readAsDataUrl(file);
       await readerDataUrl.onLoad.first;
       final dataUrl = readerDataUrl.result as String?;
-
-      // Read as ArrayBuffer (for bytes)
       final readerBinary = html.FileReader();
       readerBinary.readAsArrayBuffer(file);
       await readerBinary.onLoad.first;
       final resultBuffer = readerBinary.result;
-
-      // Convert result to Uint8List robustly
       Uint8List bytes;
       if (resultBuffer is ByteBuffer) {
         bytes = resultBuffer.asUint8List();
       } else if (resultBuffer is List) {
-        // sometimes it's a List<int>
         bytes = Uint8List.fromList(List<int>.from(resultBuffer));
       } else {
         uploadInput.remove();
         return {'error': 'Unable to read file bytes (unsupported result type)'};
       }
-
-      // Clean up the DOM element
       uploadInput.remove();
-
       return {
         'dataUrl': dataUrl,
         'bytes': bytes,

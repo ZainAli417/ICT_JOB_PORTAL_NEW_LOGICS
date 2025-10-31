@@ -20,7 +20,7 @@ import 'Screens/Recruiter/Signup_Provider_Recruiter.dart';
 import 'Screens/Recruiter/login_provider_Recruiter.dart';
 import 'Screens/Recruiter/R_Initials_provider.dart';
 import 'SignUp /signup_provider.dart';
-import 'Signup_Provider.dart';
+import 'Signup_Provider_OLD.dart';
 import 'Screens/Job_Seeker/JS_Initials_provider.dart';
 import 'Web_routes.dart';
 import 'firebase_options.dart';
@@ -31,7 +31,7 @@ import 'login_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await dotenv.load(fileName: ".env"); // loads .env
+  await dotenv.load(fileName: 'env/.env'); // loads .env
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
@@ -53,7 +53,7 @@ void main() async {
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => RoleProvider()),
-        ChangeNotifierProvider(create: (_) => SignUpProvider()),
+        ChangeNotifierProvider(create: (_) => SignUpProvider_old()),
         ChangeNotifierProvider(create: (_) => LoginProvider()),
         ChangeNotifierProvider(create: (_) => ForgotPasswordProvider()),
         ChangeNotifierProvider(create: (_) => SignUpProvider_Recruiter()),
@@ -135,7 +135,6 @@ class RoleProvider extends ChangeNotifier {
 class Env {
   // Never call dotenv.env directly throughout app — use these getters.
   static String get geminiApiKey => dotenv.env['GEMINI_API_KEY'] ?? '';
-  static String get cloudConvertApiKey => dotenv.env['CLOUDCONVERT_API_KEY'] ?? '';
 
   // Optional helper to check presence
   static bool get hasGeminiKey => geminiApiKey.isNotEmpty;

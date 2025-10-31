@@ -12,16 +12,16 @@ import 'package:provider/provider.dart';
 import 'Constant/Header_Nav.dart';
 import 'widgets/signup_steps.dart';
 import 'widgets/signup_widgets.dart';
-import 'Signup_Provider.dart';
+import 'Signup_Provider_OLD.dart';
 
-class SignUp_Screen extends StatefulWidget {
-  const SignUp_Screen({Key? key}) : super(key: key);
+class SignUp_Screen_OLD extends StatefulWidget {
+  const SignUp_Screen_OLD({Key? key}) : super(key: key);
 
   @override
-  State<SignUp_Screen> createState() => _SignUp_ScreenState();
+  State<SignUp_Screen_OLD> createState() => _SignUp_Screen_OLDState();
 }
 
-class _SignUp_ScreenState extends State<SignUp_Screen> with TickerProviderStateMixin {
+class _SignUp_Screen_OLDState extends State<SignUp_Screen_OLD> with TickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
   late AnimationController _fadeController;
   late Animation<double> _fadeAnimation;
@@ -375,7 +375,7 @@ class _SignUp_ScreenState extends State<SignUp_Screen> with TickerProviderStateM
   }
 
   Future<void> _register() async {
-    final provider = Provider.of<SignUpProvider>(context, listen: false);
+    final provider = Provider.of<SignUpProvider_old>(context, listen: false);
 
     final userData = {
       'name': _nameController.text.trim(),
@@ -400,9 +400,7 @@ class _SignUp_ScreenState extends State<SignUp_Screen> with TickerProviderStateM
       context,
       email: _emailController.text.trim(),
       password: _passwordController.text,
-      role: role,
-      userData: userData,
-      profileData: profileData,
+      role: role, user_data: userData, profileData: profileData,
     );
 
     if (success) {
