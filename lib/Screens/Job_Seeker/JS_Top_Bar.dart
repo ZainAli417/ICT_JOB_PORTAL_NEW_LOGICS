@@ -249,7 +249,7 @@ class _MainLayoutState extends State<MainLayout>
                     ],
                   ),
                 ),
-                
+
                 const SizedBox(width: 16),
                 _buildGlassmorphicIconButton(
                   tooltip: 'Quick Links',
@@ -588,7 +588,7 @@ class _MainLayoutState extends State<MainLayout>
           radius: 18,
           backgroundColor: primaryColor,
           child: Text(
-            initials.isNotEmpty ? initials : 'RC',
+            initials.isNotEmpty ? initials : 'JS',
             style: GoogleFonts.poppins(
               fontSize: 14,
               fontWeight: FontWeight.w600,

@@ -104,7 +104,6 @@ class _JobSeekerLoginScreenState extends State<JobSeekerLoginScreen>
       final normalizedEmail = _email.text.trim().toLowerCase();
 
       final success = await provider.login(
-        context: context,
         email: normalizedEmail,
         password: _password.text,
         expectedRole: _role == 'Job Seeker' ? 'Job Seeker' : 'Recruiter',
@@ -112,7 +111,7 @@ class _JobSeekerLoginScreenState extends State<JobSeekerLoginScreen>
 
       if (!mounted) return;
 
-      if (success) {
+      if (success != null) {
         _snack('Welcome back! 🎉');
       } else {
         _snack(provider.errorMessage ?? 'Invalid credentials', error: true);

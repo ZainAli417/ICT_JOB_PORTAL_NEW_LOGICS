@@ -1,4 +1,3 @@
-
 // TopNavProvider.dart
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -15,51 +14,86 @@ class JS_TopNavProvider extends ChangeNotifier {
   Future<void> _fetchInitials() async {
     try {
       final user = FirebaseAuth.instance.currentUser;
-      if (user == null) return;
-      final uid = user.uid;
-      final fs = FirebaseFirestore.instance;
+      if (user == null) {
+        _updateInitials('');
+        return;
+      }
 
-      // Read the recruiter document
-      final docSnap = await fs.collection('job_seeker').doc(uid).get();
+      final docSnap = await FirebaseFirestore.instance
+          .collection('job_seeker')
+          .doc(user.uid)
+          .get();
+
       if (!docSnap.exists) {
-        _initials = '';
-        notifyListeners();
+        _updateInitials('');
         return;
       }
 
       final data = docSnap.data();
-      String? fullName;
+      final fullName = _extractName(data);
 
-      if (data != null) {
-        // If 'user_data' is a nested map on the recruiter doc
-        if (data['user_data'] is Map && (data['user_data'] as Map).containsKey('name')) {
-          final v = (data['user_data'] as Map)['name'];
-          if (v is String && v.trim().isNotEmpty) fullName = v.trim();
-        }
-
-        // Also support the case where 'name' is stored directly on the recruiter doc
-        if (fullName == null && data['name'] is String && (data['name'] as String).trim().isNotEmpty) {
-          fullName = (data['name'] as String).trim();
-        }
-      }
-
-      if (fullName != null && fullName.isNotEmpty) {
-        final letters = fullName.replaceAll(RegExp(r'\s+'), '');
-        _initials = letters.substring(0, letters.length >= 2 ? 2 : 1).toUpperCase();
-      } else {
-        _initials = '';
-      }
-
-      notifyListeners();
+      _updateInitials(_generateInitials(fullName));
     } catch (e) {
-      _initials = '';
-      notifyListeners();
+      debugPrint('TopNavProvider: Error fetching initials: $e');
+      _updateInitials('');
     }
   }
+
+  String? _extractName(Map<String, dynamic>? data) {
+    if (data == null) return null;
+
+    // Check nested user_data.personalProfile.name
+    if (data['user_data'] is Map) {
+      final userData = data['user_data'] as Map<String, dynamic>;
+
+      if (userData['personalProfile'] is Map) {
+        final personalProfile = userData['personalProfile'] as Map<String, dynamic>;
+        final name = personalProfile['name'];
+        if (name is String && name.trim().isNotEmpty) {
+          return name.trim();
+        }
+      }
+
+      // Fallback: check user_data.name directly
+      final userName = userData['name'];
+      if (userName is String && userName.trim().isNotEmpty) {
+        return userName.trim();
+      }
+    }
+
+    // Fallback: check direct name field
+    final directName = data['name'];
+    if (directName is String && directName.trim().isNotEmpty) {
+      return directName.trim();
+    }
+
+    return null;
+  }
+
+  String _generateInitials(String? fullName) {
+    if (fullName == null || fullName.isEmpty) return '';
+
+    final parts = fullName.split(RegExp(r'\s+'));
+
+    if (parts.length >= 2) {
+      // First name + Last name initials
+      return '${parts.first[0]}${parts.last[0]}'.toUpperCase();
+    } else if (parts.length == 1 && parts.first.length >= 2) {
+      // First two letters of single name
+      return parts.first.substring(0, 2).toUpperCase();
+    } else if (parts.first.isNotEmpty) {
+      // Single letter
+      return parts.first[0].toUpperCase();
+    }
+
+    return '';
+  }
+
+  void _updateInitials(String value) {
+    _initials = value;
+    notifyListeners();
+  }
+
+  // Public method to refresh initials (useful after profile updates)
+  Future<void> refresh() => _fetchInitials();
 }
-
-
-
-
-
-

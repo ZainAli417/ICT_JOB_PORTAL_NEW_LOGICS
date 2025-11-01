@@ -5,6 +5,7 @@ import 'dart:math';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:job_portal/SignUp%20/signup_UI.dart';
 import 'package:job_portal/SignUp%20/signup_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -21,8 +22,7 @@ class SignUp_Screen2 extends StatefulWidget {
   State<SignUp_Screen2> createState() => _SignUp_Screen2State();
 }
 
-class _SignUp_Screen2State extends State<SignUp_Screen2>
-    with TickerProviderStateMixin {
+class _SignUp_Screen2State extends State<SignUp_Screen2> with TickerProviderStateMixin {
   final _formKeyAccount = GlobalKey<FormState>();
   final _personalFormKey = GlobalKey<FormState>();
   final _educationFormKey = GlobalKey<FormState>();
@@ -71,7 +71,6 @@ class _SignUp_Screen2State extends State<SignUp_Screen2>
       p.clearAll();
     });
   }
-
   @override
   void dispose() {
     _fadeController.dispose();
@@ -82,14 +81,12 @@ class _SignUp_Screen2State extends State<SignUp_Screen2>
     _editMarks.dispose();
     super.dispose();
   }
-
   void _animateStepChange() {
     _fadeController.reset();
     _slideController.reset();
     _fadeController.forward();
     _slideController.forward();
   }
-
   Future<void> onPickImage() async {
     final p = Provider.of<SignupProvider>(context, listen: false);
     p.generalError = null;
@@ -110,26 +107,91 @@ class _SignUp_Screen2State extends State<SignUp_Screen2>
     }
   }
 
+  /*
+
   void _showSnackBar(String message, {required bool isError}) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Row(
           children: [
-            Icon(
-              isError ? Icons.error_outline : Icons.check_circle_outline,
-              color: Colors.white,
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(
+                isError ? Icons.error_outline_rounded : Icons.check_circle_outline_rounded,
+                color: Colors.white,
+                size: 20,
+              ),
             ),
             const SizedBox(width: 12),
-            Expanded(child: Text(message)),
+            Expanded(
+              child: Text(
+                message,
+                style: GoogleFonts.poppins(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.white,
+                ),
+              ),
+            ),
           ],
         ),
         backgroundColor: isError ? Colors.red.shade600 : Colors.green.shade600,
         behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        duration: Duration(milliseconds: isError ? 3000 : 1500),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        elevation: 8,
+        margin: const EdgeInsets.all(16),
+        duration: Duration(milliseconds: isError ? 3500 : 2000),
       ),
     );
   }
+
+
+   */
+  void _showSnackBar(String message, {required bool isError}) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(
+                isError ? Icons.error_outline_rounded : Icons.check_circle_outline_rounded,
+                color: Colors.white,
+                size: 22,
+              ),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Text(
+                message,
+                style: GoogleFonts.poppins(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.white,
+                  letterSpacing: 0.2,
+                ),
+              ),
+            ),
+          ],
+        ),
+        backgroundColor: isError ? Colors.red.shade600 : Colors.green.shade600,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        elevation: 8,
+        margin: const EdgeInsets.all(16),
+        duration: Duration(milliseconds: isError ? 3500 : 2500),
+      ),
+    );
+  }
+
 
   Widget leftPanel(BuildContext context) {
     final screenHeight = MediaQuery.of(context).size.height;
@@ -194,7 +256,7 @@ class _SignUp_Screen2State extends State<SignUp_Screen2>
                     center: Alignment.topRight,
                     radius: 1.5,
                     colors: [
-                      Colors.purple.withOpacity(0.35),
+                      Colors.indigo.withOpacity(0.35),
                       Colors.transparent,
                     ],
                   ),
@@ -278,7 +340,7 @@ class _SignUp_Screen2State extends State<SignUp_Screen2>
                       colors: [
                         Colors.blue.withOpacity(0.05),
                         Colors.transparent,
-                        Colors.purple.withOpacity(0.05),
+                        Colors.indigo.withOpacity(0.05),
                       ],
                     ),
                   ),
@@ -371,7 +433,7 @@ class _SignUp_Screen2State extends State<SignUp_Screen2>
                                             colors: [
                                               Colors.white,
                                               Colors.blue.shade100,
-                                              Colors.purple.shade100,
+                                              Colors.indigo.shade100,
                                             ],
                                           ).createShader(bounds),
                                       child: const Icon(
@@ -396,7 +458,7 @@ class _SignUp_Screen2State extends State<SignUp_Screen2>
                                                 colors: [
                                                   Colors.white,
                                                   Colors.blue.shade50,
-                                                  Colors.purple.shade50,
+                                                  Colors.indigo.shade50,
                                                 ],
                                               ).createShader(bounds),
                                           child: Text(
@@ -434,7 +496,7 @@ class _SignUp_Screen2State extends State<SignUp_Screen2>
                                             gradient: LinearGradient(
                                               colors: [
                                                 Colors.blue.shade300,
-                                                Colors.purple.shade300,
+                                                Colors.indigo.shade300,
                                                 Colors.pink.shade300,
                                               ],
                                             ),
@@ -723,7 +785,6 @@ class _SignUp_Screen2State extends State<SignUp_Screen2>
       ),
     );
   }
-
   // Enhanced stat card with color-coded icons
   Widget _buildEnhancedStatCardSmall({
     required IconData icon,
@@ -854,7 +915,6 @@ class _SignUp_Screen2State extends State<SignUp_Screen2>
       ),
     );
   }
-
   Widget _buildFeatureRow({
     required IconData icon,
     required String text,
@@ -908,7 +968,6 @@ class _SignUp_Screen2State extends State<SignUp_Screen2>
       ),
     );
   }
-
   // Enhanced animated blobs with more variety
   Widget _buildAnimatedBlobs() {
     return Stack(
@@ -924,8 +983,8 @@ class _SignUp_Screen2State extends State<SignUp_Screen2>
               shape: BoxShape.circle,
               gradient: RadialGradient(
                 colors: [
-                  Colors.purple.withOpacity(0.35),
-                  Colors.purple.withOpacity(0.15),
+                  Colors.indigo.withOpacity(0.35),
+                  Colors.indigo.withOpacity(0.15),
                   Colors.transparent,
                 ],
               ),
@@ -988,7 +1047,6 @@ class _SignUp_Screen2State extends State<SignUp_Screen2>
       ],
     );
   }
-
   // Enhanced floating particles with more variety
   Widget _buildEnhancedFloatingParticles() {
     return Positioned.fill(
@@ -1033,9 +1091,15 @@ class _SignUp_Screen2State extends State<SignUp_Screen2>
     );
   }
 
+
+
+
+
+
+  // ========== ACCOUNT PANEL ==========
+
   // ========== ACCOUNT PANEL ==========
   Widget accountPanel(BuildContext context, SignupProvider p) {
-    // make build reactive to provider changes
     final provider = context.watch<SignupProvider>();
 
     return Form(
@@ -1043,51 +1107,106 @@ class _SignUp_Screen2State extends State<SignUp_Screen2>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Create Account',
-            style: GoogleFonts.poppins(
-              fontSize: 28,
-              fontWeight: FontWeight.w700,
-              color: const Color(0xFF6366F1),
+          // Header Section
+          Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  const Color(0xFF6366F1).withOpacity(0.1),
+                  const Color(0xFF8B5CF6).withOpacity(0.05),
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: const Color(0xFF6366F1).withOpacity(0.2),
+                width: 1,
+              ),
             ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Start your journey to find the perfect opportunity',
-            style: GoogleFonts.poppins(
-              fontSize: 14,
-              color: Colors.grey.shade600,
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        const Color(0xFF6366F1),
+                        const Color(0xFF8B5CF6),
+                      ],
+                    ),
+                    borderRadius: BorderRadius.circular(14),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFF6366F1).withOpacity(0.3),
+                        blurRadius: 12,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: const Icon(
+                    Icons.account_circle_outlined,
+                    color: Colors.white,
+                    size: 28,
+                  ),
+                ),
+                const SizedBox(width: 18),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Create Account',
+                        style: GoogleFonts.poppins(
+                          fontSize: 26,
+                          fontWeight: FontWeight.w700,
+                          color: const Color(0xFF1E293B),
+                          letterSpacing: -0.5,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Start your journey to find the perfect opportunity',
+                        style: GoogleFonts.poppins(
+                          fontSize: 13,
+                          color: Colors.grey.shade600,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
           ),
 
-          const SizedBox(height: 32),
+          const SizedBox(height: 28),
 
-          // Role selector with modern design (user can still choose role)
+          // Role selector
           _buildRoleSelector(p),
 
-          const SizedBox(height: 24),
+          const SizedBox(height: 28),
 
-          // IF recruiter -> show NAME + EMAIL + PASSWORDS + SIGNUP (no CV row)
+          // RECRUITER FLOW
           if (provider.role == 'recruiter') ...[
-            // Name field (ensure provider has nameController)
             _buildEnhancedTextField(
               controller: provider.nameController,
               label: 'Full Name',
-              hint: 'Enter full name',
-              icon: Icons.person_outline,
-
+              hint: 'Enter your full name',
+              icon: Icons.person_outline_rounded,
               validator: (v) {
                 if (v == null || v.trim().isEmpty) return 'Name required';
                 return null;
               },
             ),
 
-            const SizedBox(height: 16),
+            const SizedBox(height: 18),
 
             _buildEnhancedTextField(
               controller: provider.emailController,
               label: 'Email Address',
-              hint: 'Enter your email',
+              hint: 'your.email@company.com',
               icon: Icons.email_outlined,
               keyboardType: TextInputType.emailAddress,
               errorText: provider.emailError,
@@ -1099,12 +1218,12 @@ class _SignUp_Screen2State extends State<SignUp_Screen2>
               },
             ),
 
-            const SizedBox(height: 16),
+            const SizedBox(height: 18),
 
             _buildEnhancedTextField(
               controller: provider.passwordController,
               label: 'Password',
-              hint: 'Create a strong password',
+              hint: 'Create a strong password (min. 8 characters)',
               icon: Icons.lock_outline_rounded,
               obscureText: true,
               errorText: provider.passwordError,
@@ -1115,7 +1234,7 @@ class _SignUp_Screen2State extends State<SignUp_Screen2>
               },
             ),
 
-            const SizedBox(height: 16),
+            const SizedBox(height: 18),
 
             _buildEnhancedTextField(
               controller: provider.confirmPasswordController,
@@ -1132,203 +1251,117 @@ class _SignUp_Screen2State extends State<SignUp_Screen2>
               },
             ),
 
-            const SizedBox(height: 24),
+            const SizedBox(height: 32),
 
-            // SIGNUP button for recruiters
-            Padding(
-              padding: const EdgeInsets.fromLTRB(40, 5, 40, 5),
-              child: Align(
-                alignment: Alignment
-                    .center, // center the small button inside the padded area
-                child: SizedBox(
-                  width: 200, // choose any width you like
-                  height: 40, // matches your button's height
-                  child: _buildActionButton(
-                    label: 'Sign Up as Recruiter',
-                    icon: Icons.person_add,
-                    isPrimary: true,
+            // FIXED SIGNUP BUTTON FOR RECRUITERS
+            Center(
+              child: Container(
+                width: 280,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      const Color(0xFF6366F1),
+                      const Color(0xFF8B5CF6),
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(14),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF6366F1).withOpacity(0.3),
+                      blurRadius: 16,
+                      offset: const Offset(0, 8),
+                    ),
+                  ],
+                ),
+                child: ElevatedButton.icon(
+                  onPressed: () async {
+                    // Validate form
+                    final okForm = _formKeyAccount.currentState?.validate() ?? false;
+                    final okEmail = provider.validateEmail();
+                    final okPass = provider.validatePasswords();
+                    final okName = provider.nameController.text.trim().isNotEmpty;
 
-                    onPressed: () async {
-                      // validate form fields
-                      final okForm =
-                          _formKeyAccount.currentState?.validate() ?? false;
-                      final okEmail = provider.validateEmail();
-                      final okPass = provider.validatePasswords();
-                      final okName = provider.nameController.text
-                          .trim()
-                          .isNotEmpty;
+                    if (!okForm || !okEmail || !okPass || !okName) {
+                      _showSnackBar(
+                        'Please fix all errors before proceeding',
+                        isError: true,
+                      );
+                      return;
+                    }
 
-                      if (!okForm || !okEmail || !okPass || !okName) {
-                        _showSnackBar(
-                          'Please fix all errors before proceeding',
-                          isError: true,
-                        );
-                        return;
+                    // Show loading dialog
+                    showDialog(
+                      context: context,
+                      barrierDismissible: false,
+                      builder: (dialogCtx) => _buildLoadingDialog(),
+                    );
+
+                    try {
+                      // Register recruiter
+                      final success = await provider.registerRecruiter();
+
+                      // Close loading dialog
+                      if (mounted && Navigator.of(context, rootNavigator: true).canPop()) {
+                        Navigator.of(context, rootNavigator: true).pop();
                       }
 
-                      // Status messages to cycle through while processing
-                      final List<String> messages = [
-                        'Creating account...',
-                        'Setting up profile...',
-                        'Finalizing...',
-                      ];
-                      int msgIndex = 0;
+                      // Small delay for smooth transition
+                      await Future.delayed(const Duration(milliseconds: 300));
 
-                      // ValueNotifier to update dialog text
-                      final statusNotifier = ValueNotifier<String>(
-                        messages[msgIndex],
-                      );
-
-                      // Start a periodic timer to update the status text
-                      Timer? ticker = Timer.periodic(
-                        const Duration(seconds: 1),
-                        (_) {
-                          msgIndex = (msgIndex + 1) % messages.length;
-                          statusNotifier.value = messages[msgIndex];
-                        },
-                      );
-
-                      // Launch the registration in background. When it completes it will pop the dialog.
-                      provider
-                          .registerRecruiter()
-                          .then((success) {
-                            // stop the ticker
-                            ticker.cancel();
-
-                            if (!success) {
-                              statusNotifier.value =
-                                  'Account created successfully!';
-                              // short pause so user sees the final message
-                              Future.delayed(
-                                const Duration(milliseconds: 700),
-                                () {
-                                  // close the dialog and return true
-                                  if (Navigator.of(
-                                    context,
-                                    rootNavigator: true,
-                                  ).canPop()) {
-                                    Navigator.of(
-                                      context,
-                                      rootNavigator: true,
-                                    ).pop(true);
-                                  }
-                                },
-                              );
-                            } else {
-                              statusNotifier.value =
-                                  provider.generalError ??
-                                  'Account created successfully!';
-                              Future.delayed(
-                                const Duration(milliseconds: 700),
-                                () {
-                                  if (Navigator.of(
-                                    context,
-                                    rootNavigator: true,
-                                  ).canPop()) {
-                                    Navigator.of(
-                                      context,
-                                      rootNavigator: true,
-                                    ).pop(false);
-                                  }
-                                },
-                              );
-                            }
-                          })
-                          .catchError((e) {
-                            ticker?.cancel();
-                            statusNotifier.value = 'Error: ${e.toString()}';
-                            Future.delayed(
-                              const Duration(milliseconds: 700),
-                              () {
-                                if (Navigator.of(
-                                  context,
-                                  rootNavigator: true,
-                                ).canPop()) {
-                                  Navigator.of(
-                                    context,
-                                    rootNavigator: true,
-                                  ).pop(false);
-                                }
-                              },
-                            );
-                          });
-
-                      // Show processing dialog (will be popped by the background future above)
-                      final result = await showDialog<bool>(
-                        context: context,
-                        barrierDismissible: false,
-                        builder: (dialogCtx) {
-                          return AlertDialog(
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            content: ValueListenableBuilder<String>(
-                              valueListenable: statusNotifier,
-                              builder: (_, text, __) {
-                                return SizedBox(
-                                  width: 260,
-                                  child: Row(
-                                    children: [
-                                      const SizedBox(
-                                        width: 22,
-                                        height: 22,
-                                        child: CircularProgressIndicator(
-                                          strokeWidth: 2,
-                                        ),
-                                      ),
-                                      const SizedBox(width: 12),
-                                      Expanded(
-                                        child: Text(
-                                          text,
-                                          style: GoogleFonts.poppins(
-                                            fontSize: 14,
-                                            fontWeight: FontWeight.w600,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                );
-                              },
-                            ),
-                          );
-                        },
-                      );
-
-                      // cleanup
-                      ticker?.cancel();
-                      statusNotifier.dispose();
-
-                      // show final UI feedback
-                      if (result == true) {
+                      if (success) {
                         _showSnackBar(
-                          'Recruiter account created',
+                          '✓ Recruiter account created successfully!',
                           isError: false,
                         );
-                        // do NOT navigate automatically; user can tap login. If you still want to auto-navigate:
-                        // context.go('/login');
+
+                        // Navigation happens automatically via router
+                        // The router will detect auth state and redirect to dashboard
                       } else {
                         _showSnackBar(
-                          provider.generalError ??
-                              'Failed to create recruiter account',
+                          provider.generalError ?? 'Failed to create account',
                           isError: true,
                         );
                       }
-                    },
+                    } catch (e) {
+                      // Close loading dialog on error
+                      if (mounted && Navigator.of(context, rootNavigator: true).canPop()) {
+                        Navigator.of(context, rootNavigator: true).pop();
+                      }
+
+                      _showSnackBar(
+                        'Error: ${e.toString()}',
+                        isError: true,
+                      );
+                    }
+                  },
+                  icon: const Icon(Icons.person_add_rounded, size: 20),
+                  label: Text(
+                    'Create Recruiter Account',
+                    style: GoogleFonts.poppins(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 15,
+                    ),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 18),
+                    backgroundColor: Colors.transparent,
+                    shadowColor: Colors.transparent,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
                   ),
                 ),
               ),
             ),
+            SizedBox(height: 20,)
           ]
 
-
-
+          // JOB SEEKER FLOW
           else ...[
-            // ===== existing job seeker view (email/password/confirm + CV row)
             _buildEnhancedTextField(
               controller: p.emailController,
               label: 'Email Address',
-              hint: 'Enter your email',
+              hint: 'your.email@example.com',
               icon: Icons.email_outlined,
               keyboardType: TextInputType.emailAddress,
               errorText: p.emailError,
@@ -1340,12 +1373,12 @@ class _SignUp_Screen2State extends State<SignUp_Screen2>
               },
             ),
 
-            const SizedBox(height: 24),
+            const SizedBox(height: 18),
 
             _buildEnhancedTextField(
               controller: p.passwordController,
               label: 'Password',
-              hint: 'Create a strong password',
+              hint: 'Create a strong password (min. 8 characters)',
               icon: Icons.lock_outline_rounded,
               obscureText: true,
               errorText: p.passwordError,
@@ -1356,7 +1389,7 @@ class _SignUp_Screen2State extends State<SignUp_Screen2>
               },
             ),
 
-            const SizedBox(height: 24),
+            const SizedBox(height: 18),
 
             _buildEnhancedTextField(
               controller: p.confirmPasswordController,
@@ -1373,55 +1406,97 @@ class _SignUp_Screen2State extends State<SignUp_Screen2>
               },
             ),
 
-            const SizedBox(height: 32),
+            const SizedBox(height: 28),
 
-            // CV card + Yes/No buttons (unchanged)
+            // CV Upload Section
             Container(
-              padding: const EdgeInsets.all(20),
+              padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [Colors.indigo.shade50, Colors.indigo.shade50],
+                  colors: [
+                    Colors.indigo.shade50,
+                    Colors.purple.shade50.withOpacity(0.3),
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
                 ),
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(color: Colors.indigo.shade100),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.grey.shade200,
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
                     children: [
-                      Icon(
-                        Icons.description_outlined,
-                        color: Colors.indigo.shade700,
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              Colors.indigo.shade500,
+                              Colors.purple.shade500,
+                            ],
+                          ),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Icon(
+                          Icons.description_outlined,
+                          color: Colors.white,
+                          size: 24,
+                        ),
                       ),
-                      const SizedBox(width: 12),
-                      Text(
-                        'Do you have a CV?',
-                        style: GoogleFonts.poppins(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.indigo.shade900,
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Do you have a CV/Resume?',
+                              style: GoogleFonts.poppins(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                                color: const Color(0xFF1E293B),
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              'Upload for faster registration',
+                              style: GoogleFonts.poppins(
+                                fontSize: 12,
+                                color: Colors.grey.shade600,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 20),
                   Row(
                     children: [
                       Expanded(
                         child: _buildActionButton(
-                          label: 'Yes, Upload CV',
+                          label: 'Upload CV',
                           icon: Icons.upload_file_rounded,
                           isPrimary: false,
                           onPressed: () {
                             p.revealCvUpload(reveal: true);
                             WidgetsBinding.instance.addPostFrameCallback((_) {
                               final ctx = _cvSectionKey.currentContext;
-                              if (ctx != null)
+                              if (ctx != null) {
                                 Scrollable.ensureVisible(
                                   ctx,
-                                  duration: Duration(milliseconds: 300),
+                                  duration: const Duration(milliseconds: 400),
+                                  curve: Curves.easeInOut,
                                 );
+                              }
                             });
                           },
                         ),
@@ -1429,13 +1504,12 @@ class _SignUp_Screen2State extends State<SignUp_Screen2>
                       const SizedBox(width: 12),
                       Expanded(
                         child: _buildActionButton(
-                          label: 'No, Continue Manually',
+                          label: 'Continue Manually',
+
                           icon: Icons.arrow_forward_rounded,
                           isPrimary: true,
                           onPressed: () {
-                            final okForm =
-                                _formKeyAccount.currentState?.validate() ??
-                                false;
+                            final okForm = _formKeyAccount.currentState?.validate() ?? false;
                             final okEmail = p.validateEmail();
                             final okPass = p.validatePasswords();
 
@@ -1456,15 +1530,20 @@ class _SignUp_Screen2State extends State<SignUp_Screen2>
                     ],
                   ),
 
-                  // Add CV upload section (consumer ensures rebuild)
-                  const SizedBox(height: 12),
+                  // CV Upload Section
                   Consumer<SignupProvider>(
                     builder: (_, provider, __) {
-                      if (!provider.showCvUploadSection)
-                        return const SizedBox.shrink();
+                      if (!provider.showCvUploadSection) return const SizedBox.shrink();
+
                       return Container(
                         key: _cvSectionKey,
-                        padding: const EdgeInsets.only(top: 24),
+                        margin: const EdgeInsets.only(top: 20),
+                        padding: const EdgeInsets.all(20),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(color: Colors.indigo.shade100),
+                        ),
                         child: CvUploadSection(
                           extractor: extractor,
                           provider: provider,
@@ -1490,12 +1569,68 @@ class _SignUp_Screen2State extends State<SignUp_Screen2>
     );
   }
 
+  Widget _buildLoadingDialog() {
+    return Dialog(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+      ),
+      backgroundColor: Colors.white,
+      elevation: 16,
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    const Color(0xFF6366F1).withOpacity(0.2),
+                    const Color(0xFF8B5CF6).withOpacity(0.2),
+                  ],
+                ),
+                shape: BoxShape.circle,
+              ),
+              child: const SizedBox(
+                width: 40,
+                height: 40,
+                child: CircularProgressIndicator(
+                  strokeWidth: 3,
+                  valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF6366F1)),
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
+            Text(
+              'Creating Your Account',
+              style: GoogleFonts.poppins(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                color: const Color(0xFF1E293B),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Please wait...',
+              style: GoogleFonts.poppins(
+                fontSize: 14,
+                color: Colors.grey.shade600,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildRoleSelector(SignupProvider p) {
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(6),
       decoration: BoxDecoration(
         color: Colors.grey.shade100,
         borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.grey.shade200),
       ),
       child: Row(
         children: [
@@ -1507,7 +1642,7 @@ class _SignUp_Screen2State extends State<SignUp_Screen2>
               onTap: () => p.setRole('job_seeker'),
             ),
           ),
-          const SizedBox(width: 10),
+          const SizedBox(width: 6),
           Expanded(
             child: _buildRoleChip(
               label: 'Recruiter',
@@ -1530,23 +1665,43 @@ class _SignUp_Screen2State extends State<SignUp_Screen2>
     return AnimatedContainer(
       duration: const Duration(milliseconds: 300),
       curve: Curves.easeInOut,
+      decoration: BoxDecoration(
+        gradient: isSelected
+            ? LinearGradient(
+          colors: [
+            const Color(0xFF6366F1),
+            const Color(0xFF8B5CF6),
+          ],
+        )
+            : null,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: isSelected
+            ? [
+          BoxShadow(
+            color: const Color(0xFF6366F1).withOpacity(0.3),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          ),
+        ]
+            : null,
+      ),
       child: Material(
-        color: isSelected ? const Color(0xFF6366F1) : Colors.transparent,
+        color: Colors.transparent,
         borderRadius: BorderRadius.circular(12),
         child: InkWell(
           onTap: onTap,
           borderRadius: BorderRadius.circular(12),
           child: Container(
-            padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+            padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 18),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Icon(
                   icon,
                   color: isSelected ? Colors.white : Colors.grey.shade600,
-                  size: 20,
+                  size: 22,
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: 10),
                 Text(
                   label,
                   style: GoogleFonts.poppins(
@@ -1581,12 +1736,12 @@ class _SignUp_Screen2State extends State<SignUp_Screen2>
         Text(
           label,
           style: GoogleFonts.poppins(
-            fontSize: 13,
+            fontSize: 14,
             fontWeight: FontWeight.w600,
-            color: Colors.grey.shade700,
+            color: const Color(0xFF1E293B),
           ),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 10),
         TextFormField(
           controller: controller,
           keyboardType: keyboardType,
@@ -1594,7 +1749,7 @@ class _SignUp_Screen2State extends State<SignUp_Screen2>
           maxLines: maxLines,
           onChanged: onChanged,
           validator: validator,
-          style: GoogleFonts.poppins(fontSize: 15),
+          style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.w500),
           decoration: InputDecoration(
             hintText: hint,
             hintStyle: GoogleFonts.poppins(
@@ -1603,12 +1758,12 @@ class _SignUp_Screen2State extends State<SignUp_Screen2>
             ),
             prefixIcon: Container(
               margin: const EdgeInsets.all(12),
-              padding: const EdgeInsets.all(8),
+              padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
-                    const Color(0xFF6366F1).withOpacity(0.1),
-                    const Color(0xFF3949AB).withOpacity(0.1),
+                    const Color(0xFF6366F1).withOpacity(0.15),
+                    const Color(0xFF8B5CF6).withOpacity(0.15),
                   ],
                 ),
                 borderRadius: BorderRadius.circular(10),
@@ -1616,22 +1771,22 @@ class _SignUp_Screen2State extends State<SignUp_Screen2>
               child: Icon(icon, color: const Color(0xFF6366F1), size: 20),
             ),
             filled: true,
-            fillColor: Colors.grey.shade50,
+            fillColor: Colors.white,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(14),
               borderSide: BorderSide(color: Colors.grey.shade200),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(14),
-              borderSide: BorderSide(color: Colors.grey.shade200),
+              borderSide: BorderSide(color: Colors.grey.shade200, width: 1.5),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(14),
-              borderSide: const BorderSide(color: Color(0xFF3949AB), width: 2),
+              borderSide: const BorderSide(color: Color(0xFF6366F1), width: 2),
             ),
             errorBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(14),
-              borderSide: BorderSide(color: Colors.red.shade300),
+              borderSide: BorderSide(color: Colors.red.shade300, width: 1.5),
             ),
             focusedErrorBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(14),
@@ -1639,7 +1794,7 @@ class _SignUp_Screen2State extends State<SignUp_Screen2>
             ),
             contentPadding: const EdgeInsets.symmetric(
               horizontal: 20,
-              vertical: 16,
+              vertical: 18,
             ),
             errorText: errorText,
           ),
@@ -1648,63 +1803,13 @@ class _SignUp_Screen2State extends State<SignUp_Screen2>
     );
   }
 
-  Widget _buildActionButton({
-    required String label,
-    required IconData icon,
-    required bool isPrimary,
-    required VoidCallback onPressed,
-  }) {
-    return Container(
-      height: 40,
-      decoration: BoxDecoration(
-        gradient: isPrimary
-            ? const LinearGradient(
-                colors: [Color(0xFF6366F1), Color(0xFF3949AB)],
-              )
-            : null,
-        color: isPrimary ? null : Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: isPrimary ? null : Border.all(color: Colors.indigo.shade200),
-        boxShadow: isPrimary
-            ? [
-                BoxShadow(
-                  color: const Color(0xFF3949AB).withOpacity(0.3),
-                  blurRadius: 8,
-                  offset: const Offset(0, 4),
-                ),
-              ]
-            : null,
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onPressed,
-          borderRadius: BorderRadius.circular(12),
-          child: Center(
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  icon,
-                  color: isPrimary ? Colors.white : Colors.indigo.shade700,
-                  size: 18,
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  label,
-                  style: GoogleFonts.poppins(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: isPrimary ? Colors.white : Colors.indigo.shade700,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
+
+
+
+
+
+
+
 
   // ========== PERSONAL PANEL ==========
   Widget personalPanel(BuildContext context, SignupProvider p) {
@@ -1715,287 +1820,296 @@ class _SignUp_Screen2State extends State<SignUp_Screen2>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Personal Profile',
-            style: GoogleFonts.poppins(
-              fontSize: 28,
-              fontWeight: FontWeight.w700,
-              color: const Color(0xFF6366F1),
-            ),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            'Tell us about yourself',
-            style: GoogleFonts.poppins(
-              fontSize: 14,
-              color: Colors.grey.shade600,
-            ),
-          ),
-
-          const SizedBox(height: 20),
-
-          // Progress indicator (unchanged)
+          // Header Section
           Container(
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
               gradient: LinearGradient(
-                colors: [Colors.indigo.shade50, Colors.indigo.shade50],
+                colors: [
+                  const Color(0xFF6366F1).withOpacity(0.1),
+                  const Color(0xFF8B5CF6).withOpacity(0.05),
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
               ),
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: const Color(0xFF6366F1).withOpacity(0.2),
+                width: 1,
+              ),
             ),
-            child: Row(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Profile Completion',
-                        style: GoogleFonts.poppins(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.indigo.shade900,
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            const Color(0xFF6366F1),
+                            const Color(0xFF8B5CF6),
+                          ],
                         ),
-                      ),
-                      const SizedBox(height: 8),
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(8),
-                        child: LinearProgressIndicator(
-                          value: progress,
-                          minHeight: 8,
-                          backgroundColor: Colors.white,
-                          valueColor: AlwaysStoppedAnimation<Color>(
-                            Colors.indigo.shade600,
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFF6366F1).withOpacity(0.3),
+                            blurRadius: 12,
+                            offset: const Offset(0, 4),
                           ),
+                        ],
+                      ),
+                      child: const Icon(
+                        Icons.person_outline_rounded,
+                        color: Colors.white,
+                        size: 24,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Personal Profile',
+                            style: GoogleFonts.poppins(
+                              fontSize: 24,
+                              fontWeight: FontWeight.w700,
+                              color: const Color(0xFF1E293B),
+                              letterSpacing: -0.5,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Tell us about yourself and showcase your expertise',
+                            style: GoogleFonts.poppins(
+                              fontSize: 13,
+                              color: Colors.grey.shade600,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 20),
+                // Progress indicator
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: Colors.indigo.shade100,
+                      width: 1,
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  'Profile Completion',
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.indigo.shade900,
+                                  ),
+                                ),
+                                Text(
+                                  '${(progress * 100).toInt()}%',
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w700,
+                                    color: Colors.indigo.shade700,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 10),
+                            Stack(
+                              children: [
+                                Container(
+                                  height: 10,
+                                  decoration: BoxDecoration(
+                                    color: Colors.grey.shade200,
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                ),
+                                FractionallySizedBox(
+                                  widthFactor: progress,
+                                  child: Container(
+                                    height: 10,
+                                    decoration: BoxDecoration(
+                                      gradient: LinearGradient(
+                                        colors: [
+                                          const Color(0xFF6366F1),
+                                          const Color(0xFF8B5CF6),
+                                        ],
+                                      ),
+                                      borderRadius: BorderRadius.circular(8),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: const Color(0xFF6366F1).withOpacity(0.4),
+                                          blurRadius: 8,
+                                          offset: const Offset(0, 2),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
                         ),
                       ),
                     ],
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Text(
-                  '${(progress * 100).toInt()}%',
-                  style: GoogleFonts.poppins(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w700,
-                    color: Colors.indigo.shade700,
                   ),
                 ),
               ],
             ),
           ),
 
-          const SizedBox(height: 20),
+          const SizedBox(height: 24),
 
-          // -------- Row 1: Name | Contact | Nationality (responsive) ----------
+          // Form Fields
           LayoutBuilder(
             builder: (context, constraints) {
               final isNarrow = constraints.maxWidth < 720;
-              if (isNarrow) {
-                // stack vertically on small screens
-                return Column(
-                  children: [
-                    if (p.personalVisibleIndex >= 0)
-                      _buildEnhancedTextField(
-                        controller: p.nameController,
-                        label: 'Full Name',
-                        hint: 'Enter your full name',
-                        icon: Icons.person_outline_rounded,
-                        onChanged: (v) => p.onFieldTypedAutoReveal(0, v),
-                        validator: (v) => (v == null || v.trim().isEmpty)
-                            ? 'Name required'
-                            : null,
-                      ),
-                    const SizedBox(height: 12),
-                    if (p.personalVisibleIndex >= 1)
-                      _buildEnhancedTextField(
-                        controller: p.contactNumberController,
-                        label: 'Contact Number',
-                        hint: '+92 300 1234567',
-                        icon: Icons.phone_outlined,
-                        keyboardType: TextInputType.phone,
-                        onChanged: (v) => p.onFieldTypedAutoReveal(1, v),
-                        validator: (v) {
-                          if (v == null || v.trim().isEmpty)
-                            return 'Contact required';
-                          final phoneRegex = RegExp(r'^[\d\+\-\s]{5,20}$');
-                          if (!phoneRegex.hasMatch(v.trim()))
-                            return 'Enter valid number';
-                          return null;
-                        },
-                      ),
-                    const SizedBox(height: 12),
-                    if (p.personalVisibleIndex >= 2)
-                      _buildEnhancedTextField(
-                        controller: p.nationalityController,
-                        label: 'Nationality',
-                        hint: 'e.g., Pakistani',
-                        icon: Icons.flag_outlined,
-                        onChanged: (v) => p.onFieldTypedAutoReveal(2, v),
-                        validator: (v) => (v == null || v.trim().isEmpty)
-                            ? 'Nationality required'
-                            : null,
-                      ),
-                  ],
-                );
-              }
 
-              // wide layout - three columns
-              return Row(
+              return Column(
                 children: [
-                  if (p.personalVisibleIndex >= 0)
-                    Expanded(
-                      flex: 3,
-                      child: _buildEnhancedTextField(
-                        controller: p.nameController,
-                        label: 'Full Name',
-                        hint: 'Enter your full name',
-                        icon: Icons.person_outline_rounded,
-                        onChanged: (v) => p.onFieldTypedAutoReveal(0, v),
-                        validator: (v) => (v == null || v.trim().isEmpty)
-                            ? 'Name required'
-                            : null,
-                      ),
+                  // Row 1: Name | Contact | Nationality
+                  _buildFieldRow(
+                    isNarrow: isNarrow,
+                    children: [
+                      if (p.personalVisibleIndex >= 0)
+                        _buildFieldWrapper(
+                          flex: 3,
+                          child: _buildEnhancedTextField(
+                            controller: p.nameController,
+                            label: 'Full Name',
+                            hint: 'Enter your full name',
+                            icon: Icons.person_outline_rounded,
+                            onChanged: (v) => p.onFieldTypedAutoReveal(0, v),
+                            validator: (v) => (v == null || v.trim().isEmpty)
+                                ? 'Name required'
+                                : null,
+                          ),
+                        ),
+                      if (p.personalVisibleIndex >= 1)
+                        _buildFieldWrapper(
+                          flex: 2,
+                          child: _buildEnhancedTextField(
+                            controller: p.contactNumberController,
+                            label: 'Contact Number',
+                            hint: '+92 300 1234567',
+                            icon: Icons.phone_outlined,
+                            keyboardType: TextInputType.phone,
+                            onChanged: (v) => p.onFieldTypedAutoReveal(1, v),
+                            validator: (v) {
+                              if (v == null || v.trim().isEmpty)
+                                return 'Contact required';
+                              final phoneRegex = RegExp(r'^[\d\+\-\s]{5,20}$');
+                              if (!phoneRegex.hasMatch(v.trim()))
+                                return 'Enter valid number';
+                              return null;
+                            },
+                          ),
+                        ),
+                      if (p.personalVisibleIndex >= 2)
+                        _buildFieldWrapper(
+                          flex: 2,
+                          child: _buildEnhancedTextField(
+                            controller: p.nationalityController,
+                            label: 'Nationality',
+                            hint: 'e.g., Pakistani',
+                            icon: Icons.flag_outlined,
+                            onChanged: (v) => p.onFieldTypedAutoReveal(2, v),
+                            validator: (v) => (v == null || v.trim().isEmpty)
+                                ? 'Nationality required'
+                                : null,
+                          ),
+                        ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  // Row 2: Summary
+                  if (p.personalVisibleIndex >= 3)
+                    _buildEnhancedTextField(
+                      controller: p.summaryController,
+                      label: 'Professional Summary',
+                      hint: 'Brief description of your professional background and expertise',
+                      icon: Icons.article_outlined,
+                      maxLines: 3,
+                      onChanged: (v) => p.onFieldTypedAutoReveal(3, v),
+                      validator: (v) =>
+                      (v == null || v.trim().isEmpty) ? 'Summary required' : null,
                     ),
-                  const SizedBox(width: 12),
-                  if (p.personalVisibleIndex >= 1)
-                    Expanded(
-                      flex: 2,
-                      child: _buildEnhancedTextField(
-                        controller: p.contactNumberController,
-                        label: 'Contact Number',
-                        hint: '+92 300 1234567',
-                        icon: Icons.phone_outlined,
-                        keyboardType: TextInputType.phone,
-                        onChanged: (v) => p.onFieldTypedAutoReveal(1, v),
-                        validator: (v) {
-                          if (v == null || v.trim().isEmpty)
-                            return 'Contact required';
-                          final phoneRegex = RegExp(r'^[\d\+\-\s]{5,20}$');
-                          if (!phoneRegex.hasMatch(v.trim()))
-                            return 'Enter valid number';
-                          return null;
-                        },
-                      ),
+
+                  const SizedBox(height: 16),
+
+                  // Row 3: Avatar | Skills
+                  if (p.personalVisibleIndex >= 4)
+                    _buildFieldRow(
+                      isNarrow: isNarrow,
+                      children: [
+                        _buildFieldWrapper(
+                          flex: 3,
+                          child: _buildAvatarCompact(p),
+                        ),
+                        _buildFieldWrapper(
+                          flex: 4,
+                          child: _buildSkillsCompact(p),
+                        ),
+                      ],
                     ),
-                  const SizedBox(width: 12),
-                  if (p.personalVisibleIndex >= 2)
-                    Expanded(
-                      flex: 2,
-                      child: _buildEnhancedTextField(
-                        controller: p.nationalityController,
-                        label: 'Nationality',
-                        hint: 'e.g., Pakistani',
-                        icon: Icons.flag_outlined,
-                        onChanged: (v) => p.onFieldTypedAutoReveal(2, v),
-                        validator: (v) => (v == null || v.trim().isEmpty)
-                            ? 'Nationality required'
-                            : null,
-                      ),
+
+                  const SizedBox(height: 16),
+
+                  // Row 4: Objectives | DOB
+                  if (p.personalVisibleIndex >= 6)
+                    _buildFieldRow(
+                      isNarrow: isNarrow,
+                      children: [
+                        _buildFieldWrapper(
+                          flex: 6,
+                          child: _buildEnhancedTextField(
+                            controller: p.objectivesController,
+                            label: 'Career Objectives',
+                            hint: 'What are your career goals and aspirations?',
+                            icon: Icons.flag_circle_rounded,
+                            maxLines: 3,
+                            onChanged: (v) => p.onFieldTypedAutoReveal(6, v),
+                            validator: (v) => (v == null || v.trim().isEmpty)
+                                ? 'Objectives required'
+                                : null,
+                          ),
+                        ),
+                        _buildFieldWrapper(
+                          flex: 2,
+                          child: _buildDobCompact(p),
+                        ),
+                      ],
                     ),
                 ],
               );
             },
           ),
 
-          const SizedBox(height: 16),
+          const SizedBox(height: 32),
 
-          // -------- Row 2: Summary (full width) ----------
-          if (p.personalVisibleIndex >= 3)
-            _buildEnhancedTextField(
-              controller: p.summaryController,
-              label: 'Professional Summary',
-              hint: 'Brief description of your professional background',
-              icon: Icons.article_outlined,
-              maxLines: 3,
-              onChanged: (v) => p.onFieldTypedAutoReveal(3, v),
-              validator: (v) =>
-                  (v == null || v.trim().isEmpty) ? 'Summary required' : null,
-            ),
-
-          const SizedBox(height: 16),
-
-          // -------- Row 3: Avatar (compact) | Skills (compact) ----------
-          if (p.personalVisibleIndex >= 4)
-            LayoutBuilder(
-              builder: (context, constraints) {
-                final isNarrow = constraints.maxWidth < 720;
-                if (isNarrow) {
-                  // stack vertically on narrow widths
-                  return Column(
-                    children: [
-                      _buildAvatarCompact(p),
-                      const SizedBox(height: 12),
-                      _buildSkillsCompact(p),
-                    ],
-                  );
-                }
-
-                // wide: avatar left, skills right
-                return Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(flex: 3, child: _buildAvatarCompact(p)),
-                    const SizedBox(width: 16),
-                    Expanded(flex: 4, child: _buildSkillsCompact(p)),
-                  ],
-                );
-              },
-            ),
-
-          const SizedBox(height: 16),
-
-          // -------- Row 4: Objectives | DOB (single row responsive) ----------
-          if (p.personalVisibleIndex >= 6)
-            LayoutBuilder(
-              builder: (context, constraints) {
-                final isNarrow = constraints.maxWidth < 720;
-                if (isNarrow) {
-                  return Column(
-                    children: [
-                      _buildEnhancedTextField(
-                        controller: p.objectivesController,
-                        label: 'Career Objectives',
-                        hint: 'What are your career goals?',
-                        icon: Icons.flag_circle_rounded,
-                        maxLines: 3,
-                        onChanged: (v) => p.onFieldTypedAutoReveal(6, v),
-                        validator: (v) => (v == null || v.trim().isEmpty)
-                            ? 'Objectives required'
-                            : null,
-                      ),
-                      const SizedBox(height: 12),
-                      _buildDobCompact(p),
-                    ],
-                  );
-                }
-
-                return Row(
-                  children: [
-                    Expanded(
-                      flex: 6,
-                      child: _buildEnhancedTextField(
-                        controller: p.objectivesController,
-                        label: 'Career Objectives',
-                        hint: 'What are your career goals?',
-                        icon: Icons.flag_circle_rounded,
-                        maxLines: 3,
-                        onChanged: (v) => p.onFieldTypedAutoReveal(6, v),
-                        validator: (v) => (v == null || v.trim().isEmpty)
-                            ? 'Objectives required'
-                            : null,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(flex: 2, child: _buildDobCompact(p)),
-                  ],
-                );
-              },
-            ),
-
-          const SizedBox(height: 22),
-
-          // Buttons (unchanged)
+          // Navigation Buttons
           Row(
             children: [
               Expanded(
@@ -2004,57 +2118,92 @@ class _SignUp_Screen2State extends State<SignUp_Screen2>
                     p.goToStep(0);
                     _animateStepChange();
                   },
-                  icon: const Icon(Icons.arrow_back_rounded),
+                  icon: const Icon(Icons.arrow_back_rounded, size: 20),
                   label: Text(
                     'Back',
-                    style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+                    style: GoogleFonts.poppins(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 15,
+                    ),
                   ),
                   style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    side: BorderSide(color: Colors.grey.shade300, width: 2),
+                    padding: const EdgeInsets.symmetric(vertical: 18),
+                    side: BorderSide(color: Colors.grey.shade300, width: 1.5),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(14),
                     ),
+                    foregroundColor: Colors.grey.shade700,
                   ),
                 ),
               ),
               const SizedBox(width: 12),
               Expanded(
                 flex: 2,
-                child: _buildGradientButton(
-                  label: 'Next: Education',
-                  icon: Icons.arrow_forward_rounded,
-                  onPressed: () {
-                    final okForm =
-                        _personalFormKey.currentState?.validate() ?? false;
+                child: Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        const Color(0xFF6366F1),
+                        const Color(0xFF8B5CF6),
+                      ],
+                    ),
+                    borderRadius: BorderRadius.circular(14),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFF6366F1).withOpacity(0.3),
+                        blurRadius: 12,
+                        offset: const Offset(0, 6),
+                      ),
+                    ],
+                  ),
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      final okForm = _personalFormKey.currentState?.validate() ?? false;
 
-                    if (!okForm) {
-                      _showSnackBar(
-                        'Please complete all required fields',
-                        isError: true,
-                      );
-                      return;
-                    }
+                      if (!okForm) {
+                        _showSnackBar(
+                          'Please complete all required fields',
+                          isError: true,
+                        );
+                        return;
+                      }
 
-                    if (p.skills.isEmpty) {
-                      _showSnackBar(
-                        'Please add at least one skill',
-                        isError: true,
-                      );
-                      return;
-                    }
+                      if (p.skills.isEmpty) {
+                        _showSnackBar(
+                          'Please add at least one skill',
+                          isError: true,
+                        );
+                        return;
+                      }
 
-                    if (p.dob == null) {
-                      _showSnackBar(
-                        'Please select date of birth',
-                        isError: true,
-                      );
-                      return;
-                    }
+                      if (p.dob == null) {
+                        _showSnackBar(
+                          'Please select date of birth',
+                          isError: true,
+                        );
+                        return;
+                      }
 
-                    p.goToStep(2);
-                    _animateStepChange();
-                  },
+                      p.goToStep(2);
+                      _animateStepChange();
+                    },
+                    icon: const Icon(Icons.arrow_forward_rounded, size: 20),
+                    label: Text(
+                      'Next: Education',
+                      style: GoogleFonts.poppins(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 15,
+                      ),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 18),
+                      backgroundColor: Colors.transparent,
+                      shadowColor: Colors.transparent,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                    ),
+                  ),
                 ),
               ),
             ],
@@ -2064,83 +2213,163 @@ class _SignUp_Screen2State extends State<SignUp_Screen2>
     );
   }
 
+  // Helper: Build responsive field row
+  Widget _buildFieldRow({
+    required bool isNarrow,
+    required List<Widget> children,
+  }) {
+    if (isNarrow) {
+      return Column(
+        children: children.map((child) {
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: child,
+          );
+        }).toList(),
+      );
+    }
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: children.map((child) {
+        final isLast = children.indexOf(child) == children.length - 1;
+        return Expanded(
+          flex: (child as _FieldWrapper).flex,
+          child: Padding(
+            padding: EdgeInsets.only(right: isLast ? 0 : 12),
+            child: child.child,
+          ),
+        );
+      }).toList(),
+    );
+  }
+
+  // Helper: Field wrapper to maintain flex values
+  Widget _buildFieldWrapper({required int flex, required Widget child}) {
+    return _FieldWrapper(flex: flex, child: child);
+  }
+
   Widget _buildAvatarCompact(SignupProvider p) {
     Widget avatarPreview() {
       if (p.profilePicBytes != null) {
-        return CircleAvatar(
-          radius: 50,
-          backgroundColor: Colors.grey.shade100,
-          backgroundImage: MemoryImage(p.profilePicBytes!),
+        return Container(
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF6366F1).withOpacity(0.2),
+                blurRadius: 16,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: CircleAvatar(
+            radius: 56,
+            backgroundColor: Colors.grey.shade100,
+            backgroundImage: MemoryImage(p.profilePicBytes!),
+          ),
         );
       }
       if (p.imageDataUrl != null) {
         try {
           final bytes = base64Decode(p.imageDataUrl!.split(',').last);
-          return CircleAvatar(
-            radius: 50,
-            backgroundColor: Colors.grey.shade100,
-            backgroundImage: MemoryImage(bytes),
+          return Container(
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFF6366F1).withOpacity(0.2),
+                  blurRadius: 16,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: CircleAvatar(
+              radius: 56,
+              backgroundColor: Colors.grey.shade100,
+              backgroundImage: MemoryImage(bytes),
+            ),
           );
         } catch (_) {}
       }
-      return CircleAvatar(
-        radius: 50,
-        backgroundColor: Colors.indigo.shade50,
-        child: Icon(
-          Icons.person_outline_rounded,
-          size: 40,
-          color: Colors.indigo.shade300,
+      return Container(
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          gradient: LinearGradient(
+            colors: [
+              Colors.indigo.shade50,
+              Colors.indigo.shade50,
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.indigo.shade100,
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: CircleAvatar(
+          radius: 56,
+          backgroundColor: Colors.transparent,
+          child: Icon(
+            Icons.person_outline_rounded,
+            size: 48,
+            color: Colors.indigo.shade400,
+          ),
         ),
       );
     }
 
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
         color: Colors.white,
-        border: Border.all(color: Colors.indigo.shade50),
-      ),
-      child: Row(
-        children: [
-          Column(
-            children: [
-              avatarPreview(),
-              const SizedBox(height: 8),
-              Text(
-                'Profile Photo',
-                style: GoogleFonts.poppins(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(height: 8),
-            ],
+        border: Border.all(color: Colors.indigo.shade100),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.shade200,
+            blurRadius: 8,
+            offset: const Offset(0, 2),
           ),
-          Row(
+        ],
+      ),
+      child: Column(
+        children: [
+          avatarPreview(),
+          const SizedBox(height: 16),
+          Text(
+            'Profile Photo',
+            style: GoogleFonts.poppins(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: const Color(0xFF1E293B),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Column(
             mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Padding(
-                padding: EdgeInsets.all(10),
-
-                child: _buildActionButton(
-                  label: p.profilePicBytes == null && p.imageDataUrl == null
-                      ? 'Upload'
-                      : 'Change',
-                  icon: Icons.upload_file_rounded,
-                  isPrimary: true,
-                  onPressed: () async {
-                    await p.pickProfilePicture();
-                    if (p.personalVisibleIndex == 4)
-                      p.revealNextPersonalField();
-                  },
-                ),
+              _buildActionButton(
+                label: p.profilePicBytes == null && p.imageDataUrl == null
+                    ? 'Upload'
+                    : 'Change',
+                icon: Icons.upload_file_rounded,
+                isPrimary: true,
+                onPressed: () async {
+                  await p.pickProfilePicture();
+                  if (p.personalVisibleIndex == 4) p.revealNextPersonalField();
+                },
               ),
               if (p.profilePicBytes != null || p.imageDataUrl != null) ...[
                 const SizedBox(width: 8),
                 _buildActionButton(
                   label: 'Remove',
-                  icon: Icons.delete_outline,
+                  icon: Icons.delete_outline_rounded,
                   isPrimary: false,
                   onPressed: () => p.removeProfilePicture(),
                 ),
@@ -2154,81 +2383,150 @@ class _SignUp_Screen2State extends State<SignUp_Screen2>
 
   Widget _buildSkillsCompact(SignupProvider p) {
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
         color: Colors.white,
-        border: Border.all(color: Colors.purple.shade50),
+        border: Border.all(color: Colors.indigo.shade100),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.shade200,
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Icon(Icons.lightbulb_outline, color: Colors.purple.shade700),
-              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      Colors.indigo.shade400,
+                      Colors.indigo.shade600,
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(
+                  Icons.lightbulb_outline_rounded,
+                  color: Colors.white,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 12),
               Text(
                 'Skills',
                 style: GoogleFonts.poppins(
-                  fontSize: 14,
+                  fontSize: 15,
                   fontWeight: FontWeight.w600,
+                  color: const Color(0xFF1E293B),
+                ),
+              ),
+              const Spacer(),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.indigo.shade50,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  '${p.skills.length} added',
+                  style: GoogleFonts.poppins(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.indigo.shade700,
+                  ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 16),
           if (p.skills.isNotEmpty)
             Wrap(
               spacing: 8,
               runSpacing: 8,
               children: p.skills.asMap().entries.map((e) {
-                return Chip(
-                  label: Text(
-                    e.value,
-                    style: GoogleFonts.poppins(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w500,
+                return Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        Colors.indigo.shade50,
+                        Colors.indigo.shade100.withOpacity(0.5),
+                      ],
+                    ),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                      color: Colors.indigo.shade200,
+                      width: 1,
                     ),
                   ),
-                  deleteIcon: const Icon(Icons.close_rounded, size: 16),
-                  onDeleted: () => p.removeSkillAt(e.key),
-                  backgroundColor: Colors.purple.shade50,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        e.value,
+                        style: GoogleFonts.poppins(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                          color: Colors.indigo.shade900,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      InkWell(
+                        onTap: () => p.removeSkillAt(e.key),
+                        child: Icon(
+                          Icons.close_rounded,
+                          size: 16,
+                          color: Colors.indigo.shade600,
+                        ),
+                      ),
+                    ],
+                  ),
                 );
               }).toList(),
             ),
-          const SizedBox(height: 8),
-          TextField(
-            controller: p.skillInputController,
-            textInputAction: TextInputAction.done,
-            style: GoogleFonts.poppins(fontSize: 14),
-            decoration: InputDecoration(
-              hintText: 'Type skill and press Enter',
-              hintStyle: GoogleFonts.poppins(
-                color: Colors.grey.shade400,
-                fontSize: 13,
-              ),
-              prefixIcon: Icon(
-                Icons.add_circle_outline,
-                color: Colors.purple.shade600,
-              ),
-              filled: true,
-              fillColor: Colors.white,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide.none,
-              ),
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: 16,
-                vertical: 12,
-              ),
+          const SizedBox(height: 12),
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.grey.shade50,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.indigo.shade100),
             ),
-            onChanged: (v) => p.onFieldTypedAutoReveal(5, v),
-            onSubmitted: (v) {
-              if (v.trim().isNotEmpty) {
-                p.addSkill(v);
-                p.skillInputController.clear();
-              }
-            },
+            child: TextField(
+              controller: p.skillInputController,
+              textInputAction: TextInputAction.done,
+              style: GoogleFonts.poppins(fontSize: 14),
+              decoration: InputDecoration(
+                hintText: 'Type skill and press Enter',
+                hintStyle: GoogleFonts.poppins(
+                  color: Colors.grey.shade400,
+                  fontSize: 13,
+                ),
+                prefixIcon: Icon(
+                  Icons.add_circle_outline_rounded,
+                  color: Colors.indigo.shade600,
+                  size: 22,
+                ),
+                border: InputBorder.none,
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 14,
+                ),
+              ),
+              onChanged: (v) => p.onFieldTypedAutoReveal(5, v),
+              onSubmitted: (v) {
+                if (v.trim().isNotEmpty) {
+                  p.addSkill(v);
+                  p.skillInputController.clear();
+                }
+              },
+            ),
           ),
         ],
       ),
@@ -2237,68 +2535,189 @@ class _SignUp_Screen2State extends State<SignUp_Screen2>
 
   Widget _buildDobCompact(SignupProvider p) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+      height: 100,
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
         color: Colors.white,
-        border: Border.all(color: Colors.orange.shade50),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: Colors.orange.shade50,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Icon(Icons.cake_outlined, color: Colors.orange.shade700),
+        border: Border.all(color: Colors.orange.shade100),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.shade200,
+            blurRadius: 8,
+            offset: const Offset(0, 2),
           ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      Colors.orange.shade400,
+                      Colors.orange.shade600,
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(
+                  Icons.cake_outlined,
+                  color: Colors.white,
+                  size: 18,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
                   'Date of Birth',
                   style: GoogleFonts.poppins(
-                    fontSize: 12,
+                    fontSize: 13,
                     fontWeight: FontWeight.w600,
-                    color: Colors.orange.shade900,
+                    color: const Color(0xFF1E293B),
                   ),
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  p.dob == null
-                      ? 'Not selected'
-                      : DateFormat.yMMMMd().format(p.dob!),
-                  style: GoogleFonts.poppins(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
+              ),
+            ],
+          ),
+          const Spacer(),
+          Text(
+            p.dob == null ? 'Not selected' : DateFormat.yMMMMd().format(p.dob!),
+            style: GoogleFonts.poppins(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: p.dob == null ? Colors.grey.shade500 : const Color(0xFF1E293B),
             ),
           ),
-          _buildActionButton(
-            label: 'Select',
-            icon: Icons.calendar_today_outlined,
-            isPrimary: true,
-            onPressed: () async {
-              final now = DateTime.now();
-              final initial = DateTime(now.year - 22);
-              final picked = await showDatePicker(
-                context: context,
-                initialDate: initial,
-                firstDate: DateTime(1900),
-                lastDate: DateTime(now.year - 13),
-              );
-              if (picked != null) p.setDob(picked);
-            },
+          const SizedBox(height: 8),
+          SizedBox(
+            width: double.infinity,
+            child: TextButton.icon(
+              onPressed: () async {
+                final now = DateTime.now();
+                final initial = DateTime(now.year - 22);
+                final picked = await showDatePicker(
+                  context: context,
+                  initialDate: initial,
+                  firstDate: DateTime(1900),
+                  lastDate: DateTime(now.year - 13),
+                  builder: (context, child) {
+                    return Theme(
+                      data: Theme.of(context).copyWith(
+                        colorScheme: ColorScheme.light(
+                          primary: const Color(0xFF6366F1),
+                          onPrimary: Colors.white,
+                          surface: Colors.white,
+                          onSurface: Colors.black,
+                        ),
+                      ),
+                      child: child!,
+                    );
+                  },
+                );
+                if (picked != null) p.setDob(picked);
+              },
+              icon: Icon(
+                Icons.calendar_today_outlined,
+                size: 16,
+                color: Colors.orange.shade700,
+              ),
+              label: Text(
+                'Select Date',
+                style: GoogleFonts.poppins(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.orange.shade700,
+                ),
+              ),
+              style: TextButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                backgroundColor: Colors.orange.shade50,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+            ),
           ),
         ],
       ),
     );
   }
+
+  Widget _buildActionButton({
+    required String label,
+    required IconData icon,
+    required bool isPrimary,
+    required VoidCallback onPressed,
+  }) {
+    if (isPrimary) {
+      return Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              const Color(0xFF6366F1),
+              const Color(0xFF8B5CF6),
+            ],
+          ),
+          borderRadius: BorderRadius.circular(10),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF6366F1).withOpacity(0.3),
+              blurRadius: 8,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: ElevatedButton.icon(
+          onPressed: onPressed,
+          icon: Icon(icon, size: 18),
+          label: Text(
+            label,
+            style: GoogleFonts.poppins(
+              fontSize: 14,
+              color: Colors.white,
+
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.transparent,
+            shadowColor: Colors.transparent,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+          ),
+        ),
+      );
+    }
+
+    return OutlinedButton.icon(
+      onPressed: onPressed,
+      icon: Icon(icon, size: 18),
+      label: Text(
+        label,
+        style: GoogleFonts.poppins(
+          fontSize: 14,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+      style: OutlinedButton.styleFrom(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+        side: BorderSide(color: Colors.grey.shade400, width: 1.5),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10),
+        ),
+        foregroundColor: Colors.grey.shade700,
+      ),
+    );
+  }
+
+
 
   // ========== EDUCATION PANEL ==========
   Widget educationPanel(BuildContext context, SignupProvider p) {
@@ -2782,6 +3201,9 @@ class _SignUp_Screen2State extends State<SignUp_Screen2>
       ),
     );
   }
+
+
+
 
   // ========== REVIEW PANEL ==========
   Widget reviewPanel(BuildContext context, SignupProvider p) {
@@ -3437,6 +3859,10 @@ class _SignUp_Screen2State extends State<SignUp_Screen2>
     );
   }
 
+
+
+
+
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
@@ -3469,6 +3895,7 @@ class _SignUp_Screen2Inner extends StatelessWidget {
         default:
           return state.accountPanel(context, p);
       }
+
     }
 
     return Scaffold(
@@ -3585,17 +4012,20 @@ class _SignUp_Screen2Inner extends StatelessWidget {
                                 ),
 
                                 const SizedBox(height: 12),
-
                                 // Main content card - fills the middle area
                                 // Use Flexible if you want it to shrink-wrap when content small.
-                                Flexible(
+                               Flexible(
                                   child: SingleChildScrollView(
-                                    padding: const EdgeInsets.all(5),
+                                    padding: const EdgeInsets.fromLTRB(30,5,30,5),
                                     child: bodyForStep(),
+
                                   ),
+
                                 ),
 
-                                const SizedBox(height: 10),
+
+
+                                const SizedBox(height: 20),
 
                                 // Footer - stays at the bottom (because of spaceBetween)
                                 Row(
@@ -3681,4 +4111,13 @@ class _EnhancedBackgroundPatternPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+class _FieldWrapper extends StatelessWidget {
+  final int flex;
+  final Widget child;
+
+  const _FieldWrapper({required this.flex, required this.child});
+
+  @override
+  Widget build(BuildContext context) => child;
 }

@@ -4,9 +4,10 @@ import 'dart:convert';
 import 'dart:typed_data';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:http/http.dart' as http;
-import 'package:google_fonts/google_fonts.dart'; // (optional, keeps linter happy if used elsewhere)
-import '../file_converter/type_detect.dart';
-import '../file_converter/parser_doc.dart';
+import 'package:google_fonts/google_fonts.dart';
+
+import '../File_converter/parser_doc.dart';
+import '../File_converter/type_detect.dart'; // (optional, keeps linter happy if used elsewhere)
 
 class CvExtractionResult {
   final String rawText;

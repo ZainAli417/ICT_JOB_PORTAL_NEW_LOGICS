@@ -1,8 +1,7 @@
 // lib/providers/signup_provider.dart
 import 'dart:convert';
 import 'dart:typed_data';
-import 'dart:async';
-import 'dart:html' as html; // for web image picker
+import 'dart:html' as html;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
@@ -10,131 +9,56 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
-
-import '../extractor_CV/cv_extractor.dart'; // ensure path matches your project
+import '../extractor_CV/cv_extractor.dart';
 
 class SignupProvider extends ChangeNotifier {
-  // Role selection
+  // ========== STATE ==========
   String role = 'job_seeker';
+  int personalVisibleIndex = 0;
+  int currentStep = 0;
   bool showCvUploadSection = false;
+  bool isLoading = false;
 
-  void revealCvUpload({bool reveal = true}) {
-    showCvUploadSection = reveal;
-    notifyListeners();
-  }
-  // Step trackers
-  int personalVisibleIndex = 0; // controls reveal stepwise
-  int currentStep = 0; // 0: account, 1: personal, 2: education, 3: review
+  // ========== CONTROLLERS ==========
+  final emailController = TextEditingController();
+  final passwordController = TextEditingController();
+  final confirmPasswordController = TextEditingController();
+  final nameController = TextEditingController();
+  final contactNumberController = TextEditingController();
+  final nationalityController = TextEditingController();
+  final summaryController = TextEditingController();
+  final objectivesController = TextEditingController();
+  final skillInputController = TextEditingController();
+  final socialInputController = TextEditingController();
 
-  // Account controllers
-  final TextEditingController emailController = TextEditingController();
-  final TextEditingController passwordController = TextEditingController();
-  final TextEditingController confirmPasswordController = TextEditingController();
-
-  // Personal controllers
-  final TextEditingController nameController = TextEditingController();
-  final TextEditingController contactNumberController = TextEditingController();
-  final TextEditingController nationalityController = TextEditingController();
-  final TextEditingController summaryController = TextEditingController(); // short professional summary
-  final TextEditingController objectivesController = TextEditingController();
-
-  // Skills & social inputs
-  final TextEditingController skillInputController = TextEditingController();
-  final List<String> skills = [];
-  final TextEditingController socialInputController = TextEditingController();
-  final List<String> socialLinks = [];
-
-  // DOB
+  // ========== DATA ==========
+  final skills = <String>[];
+  final socialLinks = <String>[];
+  final educationalProfile = <Map<String, dynamic>>[];
   DateTime? dob;
-
-  // Image (web + mobile)
-  Uint8List? profilePicBytes; // used for preview & upload
-  String? imageDataUrl; // data:<mime>;base64,<payload> for MemoryImage hint style
-  String? profilePicUrl; // final URL in Firebase Storage (nullable)
-
-  // Secondary extracted email (from CV)
+  Uint8List? profilePicBytes;
+  String? imageDataUrl;
+  String? profilePicUrl;
   String? secondaryEmail;
 
-  // Education
-  final List<Map<String, dynamic>> educationalProfile = [];
-
-  // Validation state
+  // ========== ERRORS ==========
   String? emailError;
   String? passwordError;
   String? generalError;
 
-  bool isLoading = false;
+  final _picker = ImagePicker();
 
-  // Image picker
-  final ImagePicker _picker = ImagePicker();
-
-  SignupProvider();
-
-  // ---------- State helpers ----------
+  // ========== ROLE & NAVIGATION ==========
   void setRole(String newRole) {
-    if (role == 'recruiter') showCvUploadSection = false;
-
-    if (newRole != 'job_seeker' && newRole != 'recruiter') return;
+    if (!['job_seeker', 'recruiter'].contains(newRole)) return;
     role = newRole;
-
+    if (newRole == 'recruiter') showCvUploadSection = false;
     notifyListeners();
   }
 
-  // REGISTER RECRUITER
-  Future<bool> registerRecruiter() async {
-    try {
-      generalError = null;
-      notifyListeners();
-
-      // 1) create auth user
-      final cred = await FirebaseAuth.instance.createUserWithEmailAndPassword(
-        email: emailController.text.trim(),
-        password: passwordController.text,
-      );
-      final uid = cred.user?.uid;
-      if (uid == null) {
-        generalError = 'Failed to obtain user id after signup.';
-        notifyListeners();
-        return false;
-      }
-
-      // 2) build canonical user_data map
-      final user_data = {
-        'uid': uid,
-        'name': nameController.text.trim(),
-        'email': emailController.text.trim(),
-        'role': role, // uses provider.role (should be 'recruiter' here)
-        'createdAt': FieldValue.serverTimestamp(),
-      };
-
-      final firestore = FirebaseFirestore.instance;
-
-      // 3) write canonical doc under: /{role}/{uid}/user_data
-      // We'll put the structured map inside a `user_data` field to match your described layout.
-      await firestore.collection(role).doc(uid).set({
-        'user_data': user_data,
-      }, SetOptions(merge: true));
-
-      // 4) shadow copy under 'users' (auto-id) - unchanged
-      await firestore.collection('users').add({
-        'name': user_data['name'],
-        'email': user_data['email'],
-        'uid': uid,
-        'role': role,
-        'createdAt': FieldValue.serverTimestamp(),
-      });
-
-      notifyListeners();
-      return true;
-    } on FirebaseAuthException catch (e) {
-      generalError = e.message;
-      notifyListeners();
-      return false;
-    } catch (e) {
-      generalError = e.toString();
-      notifyListeners();
-      return false;
-    }
+  void revealCvUpload({bool reveal = true}) {
+    showCvUploadSection = reveal;
+    notifyListeners();
   }
 
   void goToStep(int step) {
@@ -143,14 +67,12 @@ class SignupProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  void revealNextPersonalField() {
-    personalVisibleIndex = personalVisibleIndex + 1;
-    notifyListeners();
-  }
+  void revealNextPersonalField() => _updatePersonalIndex(personalVisibleIndex + 1);
+  void revealPreviousPersonalField() => _updatePersonalIndex(personalVisibleIndex - 1);
 
-  void revealPreviousPersonalField() {
-    if (personalVisibleIndex > 0) {
-      personalVisibleIndex = personalVisibleIndex - 1;
+  void _updatePersonalIndex(int index) {
+    if (index >= 0) {
+      personalVisibleIndex = index;
       notifyListeners();
     }
   }
@@ -166,11 +88,11 @@ class SignupProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  // ---------- Image pick (web + mobile) ----------
+  // ========== IMAGE HANDLING ==========
   Future<void> pickProfilePicture() async {
     try {
       if (kIsWeb) {
-        final res = await pickImageWebImpl();
+        final res = await _pickImageWeb();
         if (res == null) return;
         if (res.containsKey('error')) {
           generalError = res['error'] as String?;
@@ -179,17 +101,12 @@ class SignupProvider extends ChangeNotifier {
         }
         profilePicBytes = res['bytes'] as Uint8List?;
         imageDataUrl = res['dataUrl'] as String?;
-        profilePicUrl = null;
-        notifyListeners();
-        return;
+      } else {
+        final picked = await _picker.pickImage(source: ImageSource.gallery, imageQuality: 80);
+        if (picked == null) return;
+        profilePicBytes = await picked.readAsBytes();
+        imageDataUrl = 'data:${picked.mimeType ?? 'image/jpeg'};base64,${base64Encode(profilePicBytes!)}';
       }
-
-      final XFile? picked = await _picker.pickImage(source: ImageSource.gallery, imageQuality: 80);
-      if (picked == null) return;
-      final bytes = await picked.readAsBytes();
-      profilePicBytes = bytes;
-      final mime = picked.mimeType ?? 'image/jpeg';
-      imageDataUrl = 'data:$mime;base64,${base64Encode(bytes)}';
       profilePicUrl = null;
       notifyListeners();
     } catch (e) {
@@ -205,38 +122,39 @@ class SignupProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  // ---------- Skills & Social chips ----------
-  void addSkill(String raw) {
+  Future<String?> _uploadProfilePic(String uid) async {
+    if (profilePicBytes == null || profilePicBytes!.isEmpty) return null;
+    try {
+      final ref = FirebaseStorage.instance.ref('$role/$uid/profilePic.jpg');
+      await ref.putData(profilePicBytes!, SettableMetadata(contentType: 'image/jpeg'));
+      return await ref.getDownloadURL();
+    } catch (_) {
+      return null;
+    }
+  }
+
+  // ========== SKILLS & SOCIAL LINKS ==========
+  void addSkill(String raw) => _addToList(skills, raw);
+  void removeSkillAt(int idx) => _removeFromList(skills, idx);
+  void addSocialLink(String raw) => _addToList(socialLinks, raw);
+  void removeSocialLinkAt(int idx) => _removeFromList(socialLinks, idx);
+
+  void _addToList(List<String> list, String raw) {
     final v = raw.trim();
-    if (v.isEmpty) return;
-    if (!skills.contains(v)) {
-      skills.add(v);
+    if (v.isNotEmpty && !list.contains(v)) {
+      list.add(v);
       notifyListeners();
     }
   }
 
-  void removeSkillAt(int idx) {
-    if (idx < 0 || idx >= skills.length) return;
-    skills.removeAt(idx);
-    notifyListeners();
-  }
-
-  void addSocialLink(String raw) {
-    final v = raw.trim();
-    if (v.isEmpty) return;
-    if (!socialLinks.contains(v)) {
-      socialLinks.add(v);
+  void _removeFromList(List<String> list, int idx) {
+    if (idx >= 0 && idx < list.length) {
+      list.removeAt(idx);
       notifyListeners();
     }
   }
 
-  void removeSocialLinkAt(int idx) {
-    if (idx < 0 || idx >= socialLinks.length) return;
-    socialLinks.removeAt(idx);
-    notifyListeners();
-  }
-
-  // ---------- Education ----------
+  // ========== EDUCATION ==========
   void addEducation({
     required String institutionName,
     required String duration,
@@ -253,506 +171,384 @@ class SignupProvider extends ChangeNotifier {
   }
 
   void updateEducation(int index, Map<String, dynamic> newEntry) {
-    if (index < 0 || index >= educationalProfile.length) return;
-    educationalProfile[index] = newEntry;
-    notifyListeners();
+    if (index >= 0 && index < educationalProfile.length) {
+      educationalProfile[index] = newEntry;
+      notifyListeners();
+    }
   }
 
   void removeEducation(int index) {
-    if (index < 0 || index >= educationalProfile.length) return;
-    educationalProfile.removeAt(index);
-    notifyListeners();
+    if (index >= 0 && index < educationalProfile.length) {
+      educationalProfile.removeAt(index);
+      notifyListeners();
+    }
   }
 
-  // ---------- Validations ----------
+  // ========== VALIDATION ==========
   bool validateEmail() {
     final email = emailController.text.trim();
     if (email.isEmpty) {
       emailError = 'Email is required';
-      notifyListeners();
-      return false;
-    }
-    final emailRegex = RegExp(r"^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$");
-    if (!emailRegex.hasMatch(email)) {
+    } else if (!RegExp(r"^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$").hasMatch(email)) {
       emailError = 'Enter a valid email';
-      notifyListeners();
-      return false;
+    } else {
+      emailError = null;
     }
-    emailError = null;
     notifyListeners();
-    return true;
+    return emailError == null;
   }
 
   bool validatePasswords() {
     final p = passwordController.text;
     final cp = confirmPasswordController.text;
+
     if (p.isEmpty || cp.isEmpty) {
       passwordError = 'Password and confirm password are required';
-      notifyListeners();
-      return false;
-    }
-    if (p.length < 8) {
+    } else if (p.length < 8) {
       passwordError = 'Password must be at least 8 characters';
-      notifyListeners();
-      return false;
-    }
-    if (p != cp) {
+    } else if (p != cp) {
       passwordError = 'Passwords do not match';
-      notifyListeners();
-      return false;
+    } else {
+      passwordError = null;
     }
-    passwordError = null;
     notifyListeners();
-    return true;
+    return passwordError == null;
   }
 
   bool validatePersonalFieldAtIndex(int index) {
     switch (index) {
-      case 0:
-        return nameController.text.trim().isNotEmpty;
-      case 1:
-        final s = contactNumberController.text.trim();
-        final phoneRegex = RegExp(r'^[\d\+\-\s]{5,20}$');
-        return s.isNotEmpty && phoneRegex.hasMatch(s);
-      case 2:
-        return nationalityController.text.trim().isNotEmpty;
-      case 3:
-        return summaryController.text.trim().isNotEmpty;
-      case 4:
-        return skills.isNotEmpty;
-      case 5:
-        return objectivesController.text.trim().isNotEmpty;
-      case 6:
-        return dob != null;
-      default:
-        return false;
+      case 0: return nameController.text.trim().isNotEmpty;
+      case 1: return _isValidPhone(contactNumberController.text.trim());
+      case 2: return nationalityController.text.trim().isNotEmpty;
+      case 3: return summaryController.text.trim().isNotEmpty;
+      case 4: return skills.isNotEmpty;
+      case 5: return objectivesController.text.trim().isNotEmpty;
+      case 6: return dob != null;
+      default: return false;
     }
   }
 
+  bool _isValidPhone(String s) => s.isNotEmpty && RegExp(r'^[\d\+\-\s]{5,20}$').hasMatch(s);
+
   bool personalSectionIsComplete() {
-    final required = [0, 1, 2, 3, 4, 5, 6];
-    for (final i in required) {
-      if (!validatePersonalFieldAtIndex(i)) return false;
-    }
-    return true;
+    return [0, 1, 2, 3, 4, 5, 6].every((i) => validatePersonalFieldAtIndex(i));
   }
 
   bool educationSectionIsComplete() {
     if (educationalProfile.isEmpty) return false;
-    for (final e in educationalProfile) {
-      if ((e['institutionName'] as String?)?.isEmpty ?? true) return false;
-      if ((e['duration'] as String?)?.isEmpty ?? true) return false;
-      if ((e['majorSubjects'] as String?)?.isEmpty ?? true) return false;
-      if ((e['marksOrCgpa'] as String?)?.isEmpty ?? true) return false;
-    }
-    return true;
+    return educationalProfile.every((e) =>
+    _isNotEmpty(e['institutionName']) &&
+        _isNotEmpty(e['duration']) &&
+        _isNotEmpty(e['majorSubjects']) &&
+        _isNotEmpty(e['marksOrCgpa'])
+    );
   }
+
+  bool _isNotEmpty(dynamic value) => (value as String?)?.trim().isNotEmpty ?? false;
 
   double computeProgress() {
-    final personalIndices = [0, 1, 2, 3, 4, 5, 6];
-    int personalDone = 0;
-    for (final i in personalIndices) {
-      if (validatePersonalFieldAtIndex(i)) personalDone++;
-    }
+    final personalDone = [0, 1, 2, 3, 4, 5, 6].where((i) => validatePersonalFieldAtIndex(i)).length;
     final educationDone = educationSectionIsComplete() ? 1 : 0;
-    return (personalDone + educationDone) / (personalIndices.length + 1);
+    return (personalDone + educationDone) / 8;
   }
 
-  // ---------- Firebase submit for manual signup (existing) ----------
+  // ========== FIREBASE OPERATIONS ==========
+  Future<bool> registerRecruiter() async {
+    return _executeWithLoading(() async {
+      final cred = await FirebaseAuth.instance.createUserWithEmailAndPassword(
+        email: emailController.text.trim(),
+        password: passwordController.text,
+      );
+
+      final uid = cred.user?.uid;
+      if (uid == null) throw Exception('Failed to obtain user id');
+
+      await _saveUserData(uid, _buildRecruiterData(uid));
+      return true;
+    });
+  }
+
   Future<bool> submitAllAndCreateAccount() async {
-    generalError = null;
-    isLoading = true;
-    notifyListeners();
+    if (!_validateBeforeSubmit()) return false;
 
-    try {
-      if (!validateEmail()) {
-        generalError = emailError;
-        isLoading = false;
-        notifyListeners();
-        return false;
-      }
-      if (!validatePasswords()) {
-        generalError = passwordError;
-        isLoading = false;
-        notifyListeners();
-        return false;
-      }
-      if (!personalSectionIsComplete()) {
-        generalError = 'Please complete all required personal fields.';
-        isLoading = false;
-        notifyListeners();
-        return false;
-      }
-      if (!educationSectionIsComplete()) {
-        generalError = 'Please add at least one education entry and fill all its fields.';
-        isLoading = false;
-        notifyListeners();
-        return false;
-      }
-
-      final auth = FirebaseAuth.instance;
-      UserCredential uc;
-      try {
-        uc = await auth.createUserWithEmailAndPassword(
-          email: emailController.text.trim(),
-          password: passwordController.text,
-        );
-      } on FirebaseAuthException catch (e) {
-        generalError = e.message ?? 'Authentication failed';
-        isLoading = false;
-        notifyListeners();
-        return false;
-      }
+    return _executeWithLoading(() async {
+      final uc = await FirebaseAuth.instance.createUserWithEmailAndPassword(
+        email: emailController.text.trim(),
+        password: passwordController.text,
+      );
 
       final uid = uc.user?.uid;
-      if (uid == null) {
-        generalError = 'Unable to obtain user id after signup.';
-        isLoading = false;
-        notifyListeners();
-        return false;
-      }
+      if (uid == null) throw Exception('Unable to obtain user id');
 
-      // Upload image if present
-      if (profilePicBytes != null && profilePicBytes!.isNotEmpty) {
-        try {
-          final url = await _uploadProfilePicBytes(uid, profilePicBytes!);
-          profilePicUrl = url;
-        } catch (_) {
-          profilePicUrl = null;
-        }
-      }
-
-      final personalProfile = {
-        'fullName': nameController.text.trim(),
-        'email': emailController.text.trim(),
-        'contactNumber': contactNumberController.text.trim(),
-        'nationality': nationalityController.text.trim(),
-        'summary': summaryController.text.trim(),
-        'profilePicUrl': profilePicUrl,
-        'skills': skills,
-        'objectives': objectivesController.text.trim(),
-        'socialLinks': socialLinks,
-        'dob': dob != null ? DateFormat('yyyy-MM-dd').format(dob!) : null,
-        'createdAt': FieldValue.serverTimestamp(),
-      };
-
-      final educationList = educationalProfile
-          .map((e) => {
-        'institutionName': (e['institutionName'] as String).trim(),
-        'duration': (e['duration'] as String).trim(),
-        'majorSubjects': (e['majorSubjects'] as String).trim(),
-        'marksOrCgpa': (e['marksOrCgpa'] as String).trim(),
-      })
-          .toList();
-
-      final firestore = FirebaseFirestore.instance;
-      final userDocRef = firestore.collection(role).doc(uid);
-      await userDocRef.set({
-        'user_data': {
-          'personalProfile': personalProfile,
-          'educationalProfile': educationList,
-        }
-      }, SetOptions(merge: true));
-
-      // shadow copy
-      try {
-        final shadowData = {
-          'fullName': nameController.text.trim(),
-          'email': emailController.text.trim(),
-          'uid': uid,
-          'role': role,
-          'createdAt': FieldValue.serverTimestamp(),
-        };
-        await firestore.collection('users').add(shadowData);
-      } catch (e) {
-        generalError = 'Warning: shadow copy failed.';
-      }
-
-      isLoading = false;
-      notifyListeners();
+      profilePicUrl = await _uploadProfilePic(uid);
+      await _saveUserData(uid, _buildManualUserData(uid));
       return true;
-    } catch (e, st) {
-      generalError = e.toString();
-      isLoading = false;
-      notifyListeners();
-      return false;
-    }
+    });
   }
-
-  // ---------- NEW: submit extracted CV, create user and save the full 8 sections ----------
-// inside SignupProvider
 
   Future<bool> submitExtractedCvAndCreateAccount(
       CvExtractionResult result, {
         String? overrideEmail,
         String? overridePassword,
-      })
-  async {
+      }) async {
+    return _executeWithLoading(() async {
+      _populateFromCvResult(result);
+
+      final authEmail = _determineAuthEmail(overrideEmail);
+      final authPass = _determineAuthPassword(overridePassword);
+
+      if (authEmail.isEmpty || authPass.isEmpty) {
+        throw Exception('Email and password required to create account');
+      }
+
+      _updateControllersWithOverrides(overrideEmail, overridePassword);
+
+      final uc = await FirebaseAuth.instance.createUserWithEmailAndPassword(
+        email: authEmail,
+        password: authPass,
+      );
+
+      final uid = uc.user?.uid;
+      if (uid == null) throw Exception('Unable to obtain user id');
+
+      await _handleCvProfilePic(result.personalProfile);
+      profilePicUrl = await _uploadProfilePic(uid);
+
+      await _saveUserData(uid, _buildCvUserData(uid, result, authEmail));
+      return true;
+    });
+  }
+
+  // ========== PRIVATE HELPERS ==========
+  Future<bool> _executeWithLoading(Future<bool> Function() operation) async {
     generalError = null;
     isLoading = true;
     notifyListeners();
 
     try {
-      // 1) Populate provider fields (so UI updates immediately)
-      final personal = result.personalProfile;
-      nameController.text = (personal['name'] ?? nameController.text).toString();
-      contactNumberController.text = (personal['contactNumber'] ?? contactNumberController.text).toString();
-      nationalityController.text = (personal['nationality'] ?? nationalityController.text).toString();
-      summaryController.text = (personal['summary'] ?? result.professionalSummary ?? summaryController.text).toString();
-
-      // social links
-      socialLinks.clear();
-      if (personal['socialLinks'] is List) {
-        socialLinks.addAll((personal['socialLinks'] as List).map((e) => e.toString()));
-      } else if (personal['socialLinks'] is String && (personal['socialLinks'] as String).isNotEmpty) {
-        socialLinks.addAll((personal['socialLinks'] as String)
-            .split(RegExp(r'[\n,;]'))
-            .map((s) => s.trim())
-            .where((s) => s.isNotEmpty));
-      }
-
-      // skills
-      skills.clear();
-      if (personal['skills'] is List) {
-        skills.addAll((personal['skills'] as List).map((e) => e.toString()));
-      } else if (personal['skills'] is String && (personal['skills'] as String).isNotEmpty) {
-        skills.addAll((personal['skills'] as String)
-            .split(RegExp(r'[,;\n]'))
-            .map((s) => s.trim())
-            .where((s) => s.isNotEmpty));
-      }
-
-      // set secondary email (extracted email from CV)
-      secondaryEmail = (personal['email'] ?? '').toString();
-
-      // education
-      educationalProfile.clear();
-      for (final edu in result.educationalProfile) {
-        educationalProfile.add({
-          'institutionName': (edu['institutionName'] ?? '').toString(),
-          'duration': (edu['duration'] ?? '').toString(),
-          'majorSubjects': (edu['majorSubjects'] ?? '').toString(),
-          'marksOrCgpa': (edu['marksOrCgpa'] ?? '').toString(),
-        });
-      }
-
-      notifyListeners();
-
-      // 2) Determine auth credentials (override -> controller -> extracted secondary)
-      final String authEmail = (overrideEmail != null && overrideEmail.trim().isNotEmpty)
-          ? overrideEmail.trim()
-          : (emailController.text.trim().isNotEmpty ? emailController.text.trim() : (secondaryEmail ?? ''));
-
-      final String authPass = (overridePassword != null && overridePassword.isNotEmpty)
-          ? overridePassword
-          : passwordController.text;
-
-      // If overrides were provided, reflect them into controllers so UI shows them
-      if (overrideEmail != null && overrideEmail.trim().isNotEmpty) {
-        emailController.text = overrideEmail.trim();
-      }
-      if (overridePassword != null && overridePassword.isNotEmpty) {
-        passwordController.text = overridePassword;
-        confirmPasswordController.text = overridePassword;
-      }
-
-      if (authEmail.isEmpty || authPass.isEmpty) {
-        generalError = 'Email and password required to create account. Provide them in the account step or fill before proceeding.';
-        isLoading = false;
-        notifyListeners();
-        return false;
-      }
-
-      // 3) Create Firebase Auth user
-      UserCredential uc;
-      try {
-        uc = await FirebaseAuth.instance.createUserWithEmailAndPassword(email: authEmail, password: authPass);
-      } on FirebaseAuthException catch (e) {
-        generalError = e.message ?? 'Authentication failed';
-        isLoading = false;
-        notifyListeners();
-        return false;
-      }
-
-      final uid = uc.user?.uid;
-      if (uid == null) {
-        generalError = 'Unable to obtain user id after signup.';
-        isLoading = false;
-        notifyListeners();
-        return false;
-      }
-
-      // 4) Handle profile picture: prefer provider.profilePicBytes (user-picked), else try to read from extracted data
-      if (profilePicBytes == null && personal['profilePic'] != null) {
-        try {
-          final dynamic picVal = personal['profilePic'];
-          if (picVal is String && picVal.startsWith('data:')) {
-            final parts = picVal.split(',');
-            if (parts.length == 2) {
-              final b64 = parts[1];
-              profilePicBytes = base64Decode(b64);
-              imageDataUrl = picVal;
-            }
-          } else if (picVal is String) {
-            try {
-              profilePicBytes = base64Decode(picVal);
-              imageDataUrl = 'data:image/jpeg;base64,$picVal';
-            } catch (_) {}
-          }
-        } catch (_) {}
-      }
-
-      // upload profile pic to Firebase Storage if present
-      if (profilePicBytes != null && profilePicBytes!.isNotEmpty) {
-        try {
-          final storageRef = FirebaseStorage.instance.ref().child('$role/$uid/profilePic.jpg');
-          final meta = SettableMetadata(contentType: 'image/jpeg');
-          await storageRef.putData(profilePicBytes!, meta);
-          profilePicUrl = await storageRef.getDownloadURL();
-        } catch (e) {
-          // non-fatal: leave profilePicUrl null
-          profilePicUrl = null;
-        }
-      }
-
-      // 5) Build full document structure and persist to Firestore
-      final Map<String, dynamic> user_data = {
-        'personalProfile': {
-          'name': nameController.text.trim(),
-          'email': authEmail,
-          'secondary_email': secondaryEmail ?? '',
-          'contactNumber': contactNumberController.text.trim(),
-          'nationality': nationalityController.text.trim(),
-          'profilePicUrl': profilePicUrl,
-          'skills': skills,
-          'objectives': objectivesController.text.trim(),
-          'socialLinks': socialLinks,
-          'summary': summaryController.text.trim(),
-          'dob': dob != null ? DateFormat('yyyy-MM-dd').format(dob!) : null,
-        },
-        'educationalProfile': educationalProfile,
-        'professionalProfile': {
-          'summary': result.professionalSummary ?? '',
-        },
-        'professionalExperience': result.experiences,
-        'certifications': result.certifications,
-        'publications': result.publications,
-        'awards': result.awards,
-        'references': result.references,
-        'createdAt': FieldValue.serverTimestamp(),
-      };
-
-      final firestore = FirebaseFirestore.instance;
-      final userDocRef = firestore.collection(role).doc(uid);
-      await userDocRef.set({'user_data': user_data, 'secondary_email': secondaryEmail ?? ''}, SetOptions(merge: true));
-
-      // 6) Shadow copy in 'users' collection
-      try {
-        final shadowData = {
-          'fullName': nameController.text.trim(),
-          'email': authEmail,
-          'secondary_email': secondaryEmail ?? '',
-          'uid': uid,
-          'role': role,
-          'createdAt': FieldValue.serverTimestamp(),
-        };
-        await firestore.collection('users').add(shadowData);
-      } catch (_) {}
-
-      isLoading = false;
-      notifyListeners();
-      return true;
-    } catch (e, st) {
-      generalError = e.toString();
-      isLoading = false;
-      notifyListeners();
+      return await operation();
+    } on FirebaseAuthException catch (e) {
+      generalError = e.message ?? 'Authentication failed';
       return false;
+    } catch (e) {
+      generalError = e.toString();
+      return false;
+    } finally {
+      isLoading = false;
+      notifyListeners();
     }
   }
 
-  // Helper: upload profile picture bytes to Firebase Storage and return download URL
-  Future<String?> _uploadProfilePicBytes(String uid, Uint8List bytes) async {
-    final ext = '.jpg';
-    final storageRef = FirebaseStorage.instance.ref().child('$role/$uid/profilePic$ext');
-    final meta = SettableMetadata(contentType: 'image/jpeg');
-    final uploadTask = await storageRef.putData(bytes, meta);
-    final url = await storageRef.getDownloadURL();
-    return url;
+  bool _validateBeforeSubmit() {
+    if (!validateEmail()) {
+      generalError = emailError;
+      notifyListeners();
+      return false;
+    }
+    if (!validatePasswords()) {
+      generalError = passwordError;
+      notifyListeners();
+      return false;
+    }
+    if (!personalSectionIsComplete()) {
+      generalError = 'Please complete all required personal fields.';
+      notifyListeners();
+      return false;
+    }
+    if (!educationSectionIsComplete()) {
+      generalError = 'Please add at least one education entry and fill all its fields.';
+      notifyListeners();
+      return false;
+    }
+    return true;
   }
 
-  // ---------- Clear all (call after successful signup or on screen entry) ----------
-  void clearAll() {
-    emailController.clear();
-    passwordController.clear();
-    confirmPasswordController.clear();
-    nameController.clear();
-    contactNumberController.clear();
-    nationalityController.clear();
-    summaryController.clear();
-    objectivesController.clear();
-    skillInputController.clear();
-    socialInputController.clear();
-    skills.clear();
-    socialLinks.clear();
+  Future<void> _saveUserData(String uid, Map<String, dynamic> userData) async {
+    final firestore = FirebaseFirestore.instance;
+
+    // Save to role-based collection: {role}/{uid}/user_data
+    await firestore.collection(role).doc(uid).set(
+      {'user_data': userData},
+      SetOptions(merge: true),
+    );
+
+    // Shadow copy to users collection
+    try {
+      await firestore.collection('users').add(_buildShadowData(uid, userData));
+    } catch (_) {
+      // Non-fatal: shadow copy is optional
+    }
+  }
+
+  Map<String, dynamic> _buildRecruiterData(String uid) => {
+    'uid': uid,
+    'name': nameController.text.trim(),
+    'email': emailController.text.trim(),
+    'role': role,
+    'createdAt': FieldValue.serverTimestamp(),
+  };
+
+  Map<String, dynamic> _buildManualUserData(String uid) => {
+    'personalProfile': {
+      'fullName': nameController.text.trim(),
+      'email': emailController.text.trim(),
+      'contactNumber': contactNumberController.text.trim(),
+      'nationality': nationalityController.text.trim(),
+      'summary': summaryController.text.trim(),
+      'profilePicUrl': profilePicUrl,
+      'skills': skills,
+      'objectives': objectivesController.text.trim(),
+      'socialLinks': socialLinks,
+      'dob': dob != null ? DateFormat('yyyy-MM-dd').format(dob!) : null,
+      'createdAt': FieldValue.serverTimestamp(),
+    },
+    'educationalProfile': educationalProfile,
+  };
+
+  Map<String, dynamic> _buildCvUserData(String uid, CvExtractionResult result, String authEmail) => {
+    'personalProfile': {
+      'name': nameController.text.trim(),
+      'email': authEmail,
+      'secondary_email': secondaryEmail ?? '',
+      'contactNumber': contactNumberController.text.trim(),
+      'nationality': nationalityController.text.trim(),
+      'profilePicUrl': profilePicUrl,
+      'skills': skills,
+      'objectives': objectivesController.text.trim(),
+      'socialLinks': socialLinks,
+      'summary': summaryController.text.trim(),
+      'dob': dob != null ? DateFormat('yyyy-MM-dd').format(dob!) : null,
+    },
+    'educationalProfile': educationalProfile,
+    'professionalProfile': {'summary': result.professionalSummary ?? ''},
+    'professionalExperience': result.experiences,
+    'certifications': result.certifications,
+    'publications': result.publications,
+    'awards': result.awards,
+    'references': result.references,
+    'createdAt': FieldValue.serverTimestamp(),
+  };
+
+  Map<String, dynamic> _buildShadowData(String uid, Map<String, dynamic> userData) {
+    final personalProfile = userData['personalProfile'] as Map<String, dynamic>?;
+    return {
+      'fullName': personalProfile?['name'] ?? personalProfile?['fullName'] ?? nameController.text.trim(),
+      'email': personalProfile?['email'] ?? emailController.text.trim(),
+      'secondary_email': personalProfile?['secondary_email'] ?? secondaryEmail ?? '',
+      'uid': uid,
+      'role': role,
+      'createdAt': FieldValue.serverTimestamp(),
+    };
+  }
+
+  void _populateFromCvResult(CvExtractionResult result) {
+    final personal = result.personalProfile;
+
+    nameController.text = _getStringValue(personal['name'], nameController.text);
+    contactNumberController.text = _getStringValue(personal['contactNumber'], contactNumberController.text);
+    nationalityController.text = _getStringValue(personal['nationality'], nationalityController.text);
+    summaryController.text = _getStringValue(personal['summary'] ?? result.professionalSummary, summaryController.text);
+    secondaryEmail = _getStringValue(personal['email'], '');
+
+    _populateListFromDynamic(socialLinks, personal['socialLinks']);
+    _populateListFromDynamic(skills, personal['skills']);
+
     educationalProfile.clear();
-    profilePicBytes = null;
-    imageDataUrl = null;
-    profilePicUrl = null;
-    dob = null;
-    personalVisibleIndex = 0;
-    currentStep = 0;
-    emailError = null;
-    passwordError = null;
-    generalError = null;
-    isLoading = false;
-    secondaryEmail = null;
+    educationalProfile.addAll(result.educationalProfile.map((edu) => {
+      'institutionName': _getStringValue(edu['institutionName'], ''),
+      'duration': _getStringValue(edu['duration'], ''),
+      'majorSubjects': _getStringValue(edu['majorSubjects'], ''),
+      'marksOrCgpa': _getStringValue(edu['marksOrCgpa'], ''),
+    }));
+
     notifyListeners();
   }
 
-  @override
-  void dispose() {
-    emailController.dispose();
-    passwordController.dispose();
-    confirmPasswordController.dispose();
-    nameController.dispose();
-    contactNumberController.dispose();
-    nationalityController.dispose();
-    summaryController.dispose();
-    objectivesController.dispose();
-    skillInputController.dispose();
-    socialInputController.dispose();
-    super.dispose();
+  String _getStringValue(dynamic value, String fallback) =>
+      (value?.toString().trim().isNotEmpty ?? false) ? value.toString() : fallback;
+
+  void _populateListFromDynamic(List<String> target, dynamic source) {
+    target.clear();
+    if (source is List) {
+      target.addAll(source.map((e) => e.toString()));
+    } else if (source is String && source.isNotEmpty) {
+      target.addAll(
+          source.split(RegExp(r'[,;\n]')).map((s) => s.trim()).where((s) => s.isNotEmpty)
+      );
+    }
   }
 
-  // Web image picker helper (kept from your original implementation)
-  Future<Map<String, dynamic>?> pickImageWebImpl({int maxBytes = 2 * 1024 * 1024}) async {
+  String _determineAuthEmail(String? override) {
+    if (override?.trim().isNotEmpty ?? false) return override!.trim();
+    if (emailController.text.trim().isNotEmpty) return emailController.text.trim();
+    return secondaryEmail ?? '';
+  }
+
+  String _determineAuthPassword(String? override) {
+    return (override?.isNotEmpty ?? false) ? override! : passwordController.text;
+  }
+
+  void _updateControllersWithOverrides(String? email, String? password) {
+    if (email?.trim().isNotEmpty ?? false) emailController.text = email!.trim();
+    if (password?.isNotEmpty ?? false) {
+      passwordController.text = password!;
+      confirmPasswordController.text = password;
+    }
+  }
+
+  Future<void> _handleCvProfilePic(Map<String, dynamic> personal) async {
+    if (profilePicBytes != null || personal['profilePic'] == null) return;
+
     try {
-      final uploadInput = html.FileUploadInputElement();
-      uploadInput.accept = 'image/*';
-      uploadInput.multiple = false;
-      uploadInput.style.display = 'none';
+      final picVal = personal['profilePic'];
+      if (picVal is String) {
+        if (picVal.startsWith('data:')) {
+          final parts = picVal.split(',');
+          if (parts.length == 2) {
+            profilePicBytes = base64Decode(parts[1]);
+            imageDataUrl = picVal;
+          }
+        } else {
+          try {
+            profilePicBytes = base64Decode(picVal);
+            imageDataUrl = 'data:image/jpeg;base64,$picVal';
+          } catch (_) {}
+        }
+      }
+    } catch (_) {}
+  }
+
+  Future<Map<String, dynamic>?> _pickImageWeb({int maxBytes = 2 * 1024 * 1024}) async {
+    try {
+      final uploadInput = html.FileUploadInputElement()
+        ..accept = 'image/*'
+        ..multiple = false
+        ..style.display = 'none';
+
       html.document.body?.append(uploadInput);
       uploadInput.click();
       await uploadInput.onChange.first;
+
       final files = uploadInput.files;
       if (files == null || files.isEmpty) {
         uploadInput.remove();
         return null;
       }
+
       final file = files.first;
       if (file.size > maxBytes) {
         uploadInput.remove();
-        final maxMb = (maxBytes / (1024 * 1024)).toStringAsFixed(1);
-        return {'error': 'Selected image exceeds $maxMb MB'};
+        return {'error': 'Selected image exceeds ${(maxBytes / (1024 * 1024)).toStringAsFixed(1)} MB'};
       }
-      final readerDataUrl = html.FileReader();
-      readerDataUrl.readAsDataUrl(file);
+
+      final readerDataUrl = html.FileReader()..readAsDataUrl(file);
       await readerDataUrl.onLoad.first;
       final dataUrl = readerDataUrl.result as String?;
-      final readerBinary = html.FileReader();
-      readerBinary.readAsArrayBuffer(file);
+
+      final readerBinary = html.FileReader()..readAsArrayBuffer(file);
       await readerBinary.onLoad.first;
       final resultBuffer = readerBinary.result;
+
       Uint8List bytes;
       if (resultBuffer is ByteBuffer) {
         bytes = resultBuffer.asUint8List();
@@ -760,8 +556,9 @@ class SignupProvider extends ChangeNotifier {
         bytes = Uint8List.fromList(List<int>.from(resultBuffer));
       } else {
         uploadInput.remove();
-        return {'error': 'Unable to read file bytes (unsupported result type)'};
+        return {'error': 'Unable to read file bytes'};
       }
+
       uploadInput.remove();
       return {
         'dataUrl': dataUrl,
@@ -772,5 +569,37 @@ class SignupProvider extends ChangeNotifier {
     } catch (e) {
       return {'error': 'Image pick failed: $e'};
     }
+  }
+
+  // ========== CLEANUP ==========
+  void clearAll() {
+    [emailController, passwordController, confirmPasswordController, nameController,
+      contactNumberController, nationalityController, summaryController, objectivesController,
+      skillInputController, socialInputController].forEach((c) => c.clear());
+
+    skills.clear();
+    socialLinks.clear();
+    educationalProfile.clear();
+
+    profilePicBytes = null;
+    imageDataUrl = null;
+    profilePicUrl = null;
+    dob = null;
+    secondaryEmail = null;
+    personalVisibleIndex = 0;
+    currentStep = 0;
+    emailError = null;
+    passwordError = null;
+    generalError = null;
+    isLoading = false;
+    notifyListeners();
+  }
+
+  @override
+  void dispose() {
+    [emailController, passwordController, confirmPasswordController, nameController,
+      contactNumberController, nationalityController, summaryController, objectivesController,
+      skillInputController, socialInputController].forEach((c) => c.dispose());
+    super.dispose();
   }
 }
