@@ -193,7 +193,7 @@ class _LandingPageState extends State<LandingPage> with TickerProviderStateMixin
   // ==================== TOP BAR ====================
   Widget _buildTopBar() {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 80, vertical: 20),
+      padding: const EdgeInsets.symmetric(horizontal: 65, vertical: 10),
       decoration: BoxDecoration(
         color: isDarkMode
             ? const Color(0xFF1E293B).withOpacity(0.95)
@@ -216,66 +216,30 @@ class _LandingPageState extends State<LandingPage> with TickerProviderStateMixin
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          _buildLogo(),
+          _buildEnhancedLogo(),
           _buildNavigation(),
         ],
       ),
     );
   }
-  Widget _buildLogo() {
-    // simplified logo: small indigo circle with white icon + plain text (no gradient shader, no shadow)
+  Widget _buildEnhancedLogo() {
     return Row(
       children: [
-        AnimatedBuilder(
-          animation: _rotationController,
-          builder: (context, child) {
-            return Transform.rotate(
-              angle: _rotationAnimation.value * 0.02, // tiny rotate for subtle motion
-              child: Container(
-                width: 48,
-                height: 48,
-                decoration: BoxDecoration(
-                  color: const Color(0xFF6366F1), // flat indigo square
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Icon(
-                  Icons.auto_awesome_outlined,
-                  color: pureWhite,
-                  size: 26,
-                ),
-              ),
-            );
-          },
-        ),
+        // --- Replace shimmer container with your logo image
+         Image.asset(
+            'images/logo.png',
+            width: 180,
+            height: 60,
+            fit: BoxFit.fill,
+          ),
+
         const SizedBox(width: 14),
-        Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // plain text (no ShaderMask / gradient)
-            Text(
-              'Maha Services',
-              style: GoogleFonts.poppins(
-                fontSize: 22,
-                fontWeight: FontWeight.w600,
-                color: isDarkMode ? Colors.white : charcoalGray,
-                letterSpacing: 0.4,
-              ),
-            ),
-            Text(
-              'Professional Excellence',
-              style: GoogleFonts.poppins(
-                fontSize: 11,
-                fontWeight: FontWeight.w300,
-                color: isDarkMode ? Colors.white : charcoalGray.withOpacity(0.4),
-                letterSpacing: 1.2,
-              ),
-            ),
-          ],
-        ),
+
+        // --- Brand title and subtitle
       ],
     );
   }
+
   Widget _buildNavigation() {
     return Row(
       children: [
@@ -440,7 +404,7 @@ class _LandingPageState extends State<LandingPage> with TickerProviderStateMixin
               title,
               style: GoogleFonts.poppins(
                 fontSize: 15,
-                fontWeight: FontWeight.w600,
+                fontWeight: FontWeight.w500,
                 color: isDarkMode ? const Color(0xFF94A3B8) : const Color(
                     0xFF6B7280),
               ),

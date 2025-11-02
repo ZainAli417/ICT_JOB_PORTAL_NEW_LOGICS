@@ -210,18 +210,18 @@ class _MainLayoutState extends State<MainLayout>
                       _buildModernNavItem(
                         icon: Icons.post_add_rounded,
                         label: 'Profile',
-                        isActive: widget.activeIndex == 2,
+                        isActive: widget.activeIndex == 1,
                         onTap: () {
-                          if (widget.activeIndex != 2) context.go('/profile');
+                          if (widget.activeIndex != 1) context.go('/profile');
                         },
                       ),
                       const SizedBox(width: 16),
                       _buildModernNavItem(
                         icon: Icons.auto_awesome_outlined,
                         label: 'AI Tools',
-                        isActive: widget.activeIndex == 1,
+                        isActive: widget.activeIndex == 2,
                         onTap: () {
-                          if (widget.activeIndex != 1) {
+                          if (widget.activeIndex != 2) {
                             context.go('/ai-tools');
                           }
                         },
@@ -240,7 +240,7 @@ class _MainLayoutState extends State<MainLayout>
                       const SizedBox(width: 16),
                       _buildModernNavItem(
                         icon: Icons.video_call_rounded,
-                        label: 'Job Alerts',
+                        label: 'Interviews',
                         isActive: widget.activeIndex == 4,
                         onTap: () {
                           if (widget.activeIndex != 4) context.go('/alerts');
@@ -310,83 +310,24 @@ class _MainLayoutState extends State<MainLayout>
       ),
     );
   }
-
   Widget _buildEnhancedLogo() {
     return Row(
       children: [
-        AnimatedBuilder(
-          animation: _shimmerController,
-          builder: (context, child) {
-            return Container(
-              width: 52,
-              height: 52,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    const Color(0xFF6366F1),
-                    const Color(0xFF8B5CF6),
-                    const Color(0xFF6366F1),
-                  ],
-                  stops: [
-                    0.0,
-                    _shimmerController.value,
-                    1.0,
-                  ],
-                ),
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: const Color(0xFF6366F1).withOpacity(0.4),
-                    blurRadius: 16,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: const Icon(
-                Icons.auto_awesome_rounded,
-                color: Colors.white,
-                size: 28,
-              ),
-            );
-          },
+        // --- Replace shimmer container with your logo image
+        Image.asset(
+          'images/logo.png',
+          width: 180,
+          height: 60,
+          fit: BoxFit.fill,
         ),
+
         const SizedBox(width: 14),
-        Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            ShaderMask(
-              shaderCallback: (bounds) => const LinearGradient(
-                colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
-              ).createShader(bounds),
-              child: Text(
-                'Maha Services',
-                style: GoogleFonts.poppins(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w700,
-                  color: Colors.white,
-                  letterSpacing: -0.5,
-                ),
-              ),
-            ),
-            Text(
-              'Professional Excellence',
-              style: GoogleFonts.poppins(
-                fontSize: 10,
-                fontWeight: FontWeight.w500,
-                color: _isDarkMode
-                    ? Colors.white.withOpacity(0.5)
-                    : Colors.black54,
-                letterSpacing: 1.5,
-              ),
-            ),
-          ],
-        ),
+
+        // --- Brand title and subtitle
       ],
     );
   }
+
 
   Widget _buildModernNavItem({
     required IconData icon,

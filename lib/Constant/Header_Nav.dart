@@ -61,7 +61,7 @@ class _HeaderNavState extends State<HeaderNav> with TickerProviderStateMixin {
           child: ClipRRect(
             // keep clip but remove blur/backdrop to make header visually separate
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 20),
+              padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 0),
               // solid white background (no transparent gradient)
               decoration: const BoxDecoration(
                 color: Colors.white,
@@ -113,7 +113,7 @@ class _HeaderNavState extends State<HeaderNav> with TickerProviderStateMixin {
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(color: Colors.transparent),
                     ),
-                    child: _buildCleanLogo(),
+                    child: _buildEnhancedLogo(),
                   ),
                 ),
               ),
@@ -300,61 +300,24 @@ class _HeaderNavState extends State<HeaderNav> with TickerProviderStateMixin {
       ],
     );
   }
-
-  Widget _buildCleanLogo() {
-    // simplified logo: small indigo circle with white icon + plain text (no gradient shader, no shadow)
+  Widget _buildEnhancedLogo() {
     return Row(
       children: [
-        AnimatedBuilder(
-          animation: _rotationController,
-          builder: (context, child) {
-            return Transform.rotate(
-              angle: _rotationAnimation.value * 0.02, // tiny rotate for subtle motion
-              child: Container(
-                width: 48,
-                height: 48,
-                decoration: BoxDecoration(
-                  color: const Color(0xFF6366F1), // flat indigo square
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Icon(
-                  Icons.auto_awesome_outlined,
-                  color: pureWhite,
-                  size: 26,
-                ),
-              ),
-            );
-          },
+        // --- Replace shimmer container with your logo image
+        Image.asset(
+          'images/logo.png',
+          width: 180,
+          height: 60,
+          fit: BoxFit.fill,
         ),
+
         const SizedBox(width: 14),
-        Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // plain text (no ShaderMask / gradient)
-            Text(
-              'Maha Services',
-              style: GoogleFonts.poppins(
-                fontSize: 22,
-                fontWeight: FontWeight.w600,
-                color: charcoalGray,
-                letterSpacing: 0.4,
-              ),
-            ),
-            Text(
-              'Professional Excellence',
-              style: GoogleFonts.poppins(
-                fontSize: 11,
-                fontWeight: FontWeight.w300,
-                color: charcoalGray.withOpacity(0.6),
-                letterSpacing: 1.2,
-              ),
-            ),
-          ],
-        ),
+
+        // --- Brand title and subtitle
       ],
     );
   }
+
 
   Widget _buildMobileMenu(BuildContext context) {
     return Container(

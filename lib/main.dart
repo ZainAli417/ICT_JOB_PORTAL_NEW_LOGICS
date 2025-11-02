@@ -10,8 +10,9 @@ import 'Constant/cv_analysis_provider.dart';
 import 'Screens/Admin/admin_dashboard_provider.dart';
 import 'Screens/Admin/admin_login.dart';
 import 'Screens/Admin/admin_login_provider.dart';
+import 'Screens/Job_Seeker/JS_Profile/JS_Profile_Provider.dart';
 import 'Screens/Job_Seeker/List_applied_jobs_provider.dart';
-import 'Screens/Job_Seeker/Profile_Provider.dart';
+import 'Screens/Job_Seeker/JS_Profile_Provider_OLD.dart';
 import 'Screens/Job_Seeker/job_seeker_provider.dart';
 import 'Screens/Job_Seeker/jobs_application_provider.dart';
 import 'Screens/Recruiter/LIst_of_Applicants_provider.dart';
@@ -60,6 +61,7 @@ void main() async {
         ChangeNotifierProvider(create: (_) => LoginProvider_Recruiter()),
         ChangeNotifierProvider(create: (_) => JS_TopNavProvider()),
         ChangeNotifierProvider(create: (_) => ProfileProvider()),
+        ChangeNotifierProvider(create: (_) => ProfileProvider_NEW()),
         ChangeNotifierProvider(create: (_) => AuthNotifier()),
         ChangeNotifierProvider(create: (_) => CVAnalyzerBackendProvider()),
         ChangeNotifierProvider(create: (_) => AdminAuthProvider()),

@@ -10,7 +10,8 @@ import 'Constant/Forget Password.dart';
 import 'Constant/cv_analysis.dart';
 import 'Screens/Admin/admin_dashbaord.dart';
 import 'Screens/Admin/admin_login.dart';
-import 'Screens/Job_Seeker/JS_Profile.dart';
+import 'Screens/Job_Seeker/JS_Profile/JS_Profile.dart';
+import 'Screens/Job_Seeker/JS_Profile_OLD.dart';
 import 'Login.dart';
 import 'Screens/Recruiter/Recruiter_Job_Listing.dart';
 import 'SignUp_Screen_OLD.dart';
@@ -363,24 +364,28 @@ final GoRouter router = GoRouter(
     // ========== JOB SEEKER ROUTES ==========
     GoRoute(
       path: '/dashboard',
-      pageBuilder: (c, s) => _buildPage(child: const job_seeker_dashboard(), context: c, state: s),
+      pageBuilder: (c, s) => _buildPage(child: const job_seeker_dashboard(), context: c, state: s),//index0
     ),
-    GoRoute(
+  /*  GoRoute(
       path: '/profile',
-      pageBuilder: (c, s) => _buildPage(child: const ProfileScreen(), context: c, state: s),
-    ),
+      pageBuilder: (c, s) => _buildPage(child: const ProfileScreen(), context: c, state: s),//index1
+    ),*/
     GoRoute(
-      path: '/job-hub',
-      pageBuilder: (c, s) => _buildPage(child: job_hub(), context: c, state: s),
+
+      path: '/profile',
+     // pageBuilder: (c, s) => _buildPage(child: const ProfileScreen_NEW(), context: c, state: s),//index1
+      pageBuilder: (c, s) => _buildPage(child: const CVGeneratorButton(), context: c, state: s),//index1
     ),
     GoRoute(
       path: '/ai-tools',
-      pageBuilder: (c, s) => _buildPage(child: CVAnalysisScreen(), context: c, state: s),
+      pageBuilder: (c, s) => _buildPage(child: CVAnalysisScreen(), context: c, state: s),//index2
     ),
     GoRoute(
-      path: '/download-cv',
-      pageBuilder: (c, s) => _buildPage(child: const CVGeneratorDialog(), context: c, state: s),
+      path: '/job-hub',
+      pageBuilder: (c, s) => _buildPage(child: job_hub(), context: c, state: s),//index3
     ),
+
+
 
     // ========== RECRUITER ROUTES ==========
     GoRoute(

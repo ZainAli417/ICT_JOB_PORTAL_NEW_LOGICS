@@ -147,7 +147,7 @@ class _CVAnalysisScreenState extends State<CVAnalysisScreen>
                 right: 0,
                 height: topBarHeight,
                 child: MainLayout(
-                  activeIndex: 1,
+                  activeIndex: 2,
                   child: const SizedBox.shrink(),
                 ),
               ),

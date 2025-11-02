@@ -4,6 +4,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:fl_chart/fl_chart.dart';
+import '../../Constant/profile_Completeness.dart';
+import 'JS_Profile/JS_Profile_Provider.dart';
 import 'JS_Top_Bar.dart';
 import 'List_applied_jobs_provider.dart';
 
@@ -138,7 +140,7 @@ class _job_seeker_dashboardState extends State<job_seeker_dashboard>
               right: 0,
               height: topBarHeight,
               child: MainLayout(
-                activeIndex: 3,
+                activeIndex: 0,
                 child: const SizedBox.shrink(),
               ),
             ),
@@ -420,7 +422,7 @@ class _job_seeker_dashboardState extends State<job_seeker_dashboard>
                           decoration: BoxDecoration(
                             gradient: LinearGradient(
                               colors: [
-                                const Color(0xFF003366),
+                                const Color(0xFF6366F1),
                                 const Color(0xFF08529B).withOpacity(0.7),
                               ],
                             ),
@@ -473,7 +475,7 @@ class _job_seeker_dashboardState extends State<job_seeker_dashboard>
               const SizedBox(height: 28),
 
               // Date Filters
-              _buildSectionHeader('Date Range', Icons.date_range_outlined, const Color(0xFF003366)),
+              _buildSectionHeader('Date Range', Icons.date_range_outlined, const Color(0xFF6366F1)),
               const SizedBox(height: 12),
               _buildDateFilter('Applied Date', _appliedRange),
               const SizedBox(height: 12),
@@ -654,7 +656,7 @@ class _job_seeker_dashboardState extends State<job_seeker_dashboard>
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: Color(0xFF003366), width: 2),
+                    borderSide: const BorderSide(color: Color(0xFF6366F1), width: 2),
                   ),
                   contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                 ),
@@ -805,7 +807,7 @@ class _job_seeker_dashboardState extends State<job_seeker_dashboard>
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: Color(0xFF003366), width: 2),
+                    borderSide: const BorderSide(color: Color(0xFF6366F1), width: 2),
                   ),
                   contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                 ),
@@ -1749,8 +1751,9 @@ class _job_seeker_dashboardState extends State<job_seeker_dashboard>
 
 
   Widget _buildStatsSidebar(ListAppliedJobsProvider prov) {
+    final profileProv = Provider.of<ProfileProvider_NEW>(context, listen: true);
     return Container(
-      width: 520,
+      width: 600,
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
@@ -1768,6 +1771,7 @@ class _job_seeker_dashboardState extends State<job_seeker_dashboard>
         ],
       ),
       child: SingleChildScrollView(
+
         physics: const BouncingScrollPhysics(),
         child: Padding(
           padding: const EdgeInsets.all(16), // from 24 → 16
@@ -1777,19 +1781,20 @@ class _job_seeker_dashboardState extends State<job_seeker_dashboard>
               // Compact header
               Row(
                 children: [
+
                   Container(
                     padding: const EdgeInsets.all(6), // from 8 → 6
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         colors: [
-                          const Color(0xFF003366),
-                          const Color(0xFF004488),
+                          const Color(0xFF6366F1),
+                          const Color(0xFF2E3077),
                         ],
                       ),
                       borderRadius: BorderRadius.circular(10),
                       boxShadow: [
                         BoxShadow(
-                          color: const Color(0xFF003366).withOpacity(0.3),
+                          color: const Color(0xFF6366F1).withOpacity(0.3),
                           blurRadius: 8,
                           offset: const Offset(0, 3),
                         ),
@@ -1803,7 +1808,7 @@ class _job_seeker_dashboardState extends State<job_seeker_dashboard>
                   ),
                   const SizedBox(width: 10), // from 12 → 10
                   Text(
-                    'Statistics',
+                    'Overview',
                     style: GoogleFonts.poppins(
                       fontSize: 20,      // from 22 → 20
                       fontWeight: FontWeight.w700,
@@ -1814,6 +1819,11 @@ class _job_seeker_dashboardState extends State<job_seeker_dashboard>
                 ],
               ),
               const SizedBox(height: 20), // from 24 → 20
+              SizedBox(
+                width: 350,
+                child: ProfileCompletenessCard.fromProvider(profileProv),
+              ),
+              const SizedBox(height: 15), // from 24 → 20
 
               // Application Status Chart
               _buildStatusChart(prov),

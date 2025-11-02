@@ -1,370 +1,452 @@
 // cv_generator.dart
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart'; // For rootBundle
+import 'package:flutter/services.dart' show rootBundle;
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
-import '../Screens/Job_Seeker/Profile_Provider.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
-class CVGeneratorDialog extends StatelessWidget {
-  const CVGeneratorDialog({super.key});
+// <-- Adjust this import path if your provider file is elsewhere -->
+import '../Screens/Job_Seeker/JS_Profile/JS_Profile_Provider.dart';
+
+class CVGeneratorButton extends StatelessWidget {
+  const CVGeneratorButton({super.key});
+
+  int computeTotalScore(ProfileProvider_NEW p) {
+    // Segments: personal, education, experience, certifications, skills
+    const int segments = 5;
+    int filled = 0;
+
+    final personalComplete = p.name.trim().isNotEmpty && p.personalSummary.trim().isNotEmpty;
+    if (personalComplete) filled++;
+
+    if (p.educationalProfile.isNotEmpty) filled++;
+    if (p.professionalExperience.isNotEmpty) filled++;
+    if (p.certifications.isNotEmpty) filled++;
+    if (p.skillsList.isNotEmpty) filled++;
+
+    final percent = (filled / segments * 100).round();
+    return percent;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<ProfileProvider_NEW>(
+      builder: (context, provider, _) {
+        final totalScore = computeTotalScore(provider);
+
+        return SizedBox(
+          width: double.infinity,
+          height: 60,
+          child: ElevatedButton.icon(
+            style: ElevatedButton.styleFrom(
+              backgroundColor:
+              totalScore >= 65 ? const Color(0xFF1E3A8A) : const Color(0xFF9CA3AF),
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            onPressed: totalScore >= 65
+                ? () => showDialog(
+              context: context,
+              builder: (_) => CVPreviewDialog(provider: provider),
+            )
+                : null,
+            icon: const FaIcon(FontAwesomeIcons.download, size: 18, color: Colors.white),
+            label: Text(
+              'Download CV',
+              style: const TextStyle(
+                fontSize: 14,
+                color: Colors.white,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class CVPreviewDialog extends StatelessWidget {
+  final ProfileProvider_NEW provider;
+  const CVPreviewDialog({super.key, required this.provider});
 
   @override
   Widget build(BuildContext context) {
     return Dialog(
-      insetPadding: const EdgeInsets.symmetric(horizontal: 40, vertical: 60),
+      insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 400),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Consumer<ProfileProvider>(
-            builder: (context, provider, _) {
-              final bool personalComplete = provider.firstName.isNotEmpty &&
-                  provider.lastName.isNotEmpty &&
-                  provider.email.isNotEmpty &&
-                  provider.phone.isNotEmpty &&
-                  provider.summary.isNotEmpty &&
-                  provider.current_job.isNotEmpty;
-              final bool educationComplete = provider.educationList.isNotEmpty;
-              final bool experienceComplete =
-                  provider.experienceList.isNotEmpty;
-              final bool certificationsComplete =
-                  provider.certificationsList.isNotEmpty;
-              final bool skillsComplete = provider.skillsList.isNotEmpty;
-              final bool isComplete = personalComplete &&
-                  educationComplete &&
-                  experienceComplete &&
-                  certificationsComplete &&
-                  skillsComplete;
-
-              double completenessPercent = 0;
-              const int segments = 5;
-              int filledSegments = 0;
-              if (personalComplete) filledSegments++;
-              if (educationComplete) filledSegments++;
-              if (experienceComplete) filledSegments++;
-              if (certificationsComplete) filledSegments++;
-              if (skillsComplete) filledSegments++;
-              completenessPercent = filledSegments / segments;
-
-              return Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
+        constraints: const BoxConstraints(maxWidth: 900, maxHeight: 700),
+        child: Column(
+          children: [
+            // Header with avatar & name
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              child: Row(
                 children: [
-                  Text(
-                    'Generate Your CV',
-                    style: GoogleFonts.montserrat(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w600,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    'Profile Completion: ${(completenessPercent * 100).round()}%',
-                    style: GoogleFonts.montserrat(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 8),
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(4),
-                    child: LinearProgressIndicator(
-                      value: completenessPercent,
-                      minHeight: 8,
-                      backgroundColor: Colors.grey.shade300,
-                      valueColor: AlwaysStoppedAnimation<Color>(
-                        completenessPercent > 0.7
-                            ? Colors.green
-                            : (completenessPercent > 0.4
-                            ? Colors.orange
-                            : Colors.red),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    isComplete
-                        ? 'Tap below to download your PDF CV.'
-                        : 'Complete all sections before generating the CV.',
-                    style: GoogleFonts.montserrat(
-                      fontSize: 12,
-                      color: isComplete ? Colors.black87 : Colors.redAccent,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 24),
-                  ElevatedButton.icon(
-                    onPressed: isComplete
-                        ? () async {
-                      final Uint8List pdfData = await _buildPdf(provider);
-                      await Printing.layoutPdf(
-                        onLayout: (format) async => pdfData,
-                      );
-                      Navigator.of(context).pop();
-                    }
+                  // Circular avatar preview (in-app)
+                  CircleAvatar(
+                    radius: 28,
+                    backgroundColor: Colors.grey.shade200,
+                    backgroundImage: provider.profilePicUrl.isNotEmpty
+                        ? NetworkImage(provider.profilePicUrl)
                         : null,
-                    icon: const Icon(Icons.picture_as_pdf, size: 18),
-                    label: const Text('Download CV'),
-                    style: ButtonStyle(
-                      backgroundColor: WidgetStateProperty.resolveWith(
-                            (states) {
-                          if (!isComplete) return Colors.grey;
-                          return Theme.of(context).primaryColor;
-                        },
-                      ),
-                      foregroundColor: WidgetStateProperty.all(Colors.white),
-                      shape: WidgetStateProperty.all(
-                        RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8)),
-                      ),
-                      elevation: WidgetStateProperty.all(4),
-                      padding: WidgetStateProperty.all(
-                        const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 12),
-                      ),
+                    child: provider.profilePicUrl.isEmpty
+                        ? Text(
+                      _initials(provider.fullName),
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    )
+                        : null,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          provider.fullName.isNotEmpty ? provider.fullName : 'Unnamed',
+                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          // show first role or fallback to professionalProfileSummary preview
+                          provider.professionalExperience.isNotEmpty
+                              ? (provider.professionalExperience.first['role'] ?? '')
+                              : (provider.professionalProfileSummary.isNotEmpty
+                              ? provider.professionalProfileSummary
+                              : ''),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(color: Colors.grey.shade700),
+                        ),
+                      ],
                     ),
                   ),
-                  const SizedBox(height: 12),
-                  TextButton(
+                  IconButton(
+                    icon: const Icon(Icons.close),
                     onPressed: () => Navigator.of(context).pop(),
-                    child: Text(
-                      'Cancel',
-                      style: GoogleFonts.montserrat(
-                        fontSize: 14,
-                        color: Colors.grey.shade600,
-                      ),
-                    ),
+                    tooltip: 'Close',
                   ),
                 ],
-              );
-            },
-          ),
+              ),
+            ),
+
+            const Divider(height: 1),
+
+            // PDF preview area
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: PdfPreview(
+                  allowPrinting: true,
+                  allowSharing: true,
+                  maxPageWidth: 700,
+                  canChangePageFormat: false,
+                  build: (format) => _generatePdf(provider),
+                ),
+              ),
+            ),
+
+            // Footer with date and explicit download instruction (PdfPreview already has actions)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              child: Row(
+                children: [
+                  Text(
+                    'Generated on ${DateFormat('yyyy-MM-dd').format(DateTime.now())}',
+                    style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+                  ),
+                  const Spacer(),
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: const Text('Close'),
+                  )
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
 
-  static Future<Uint8List> _buildPdf(ProfileProvider p) async {
-    // Load Open Sans for text (ATS‐friendly, Unicode)
+  // small helper
+  String _initials(String name) {
+    final parts = name.trim().split(RegExp(r'\s+')).where((s) => s.isNotEmpty).toList();
+    if (parts.isEmpty) return '';
+    if (parts.length == 1) return parts[0][0].toUpperCase();
+    return (parts[0][0] + parts[1][0]).toUpperCase();
+  }
+
+  /// Builds professional PDF. IMPORTANT: hides contact details in the contact area,
+  /// replacing them with "Contact admin for this information".
+  Future<Uint8List> _generatePdf(ProfileProvider_NEW p) async {
+    final doc = pw.Document();
+
+    // Load fonts (ensure pdf_google_fonts is in pubspec)
     final pw.Font regular = await PdfGoogleFonts.openSansRegular();
     final pw.Font bold = await PdfGoogleFonts.openSansBold();
 
-    // Load MaterialIcons TTF from assets for icon glyphs
-    final fontData =
-    await rootBundle.load('images/MaterialIcons-Regular.ttf');
-    final pw.Font iconFont = pw.Font.ttf(fontData);
+    // Fetch avatar as pw.ImageProvider for PDF usage
+    pw.ImageProvider? avatarImage;
+    if (p.profilePicUrl.isNotEmpty) {
+      try {
+        // networkImage (from printing) returns a pw.ImageProvider suitable for pw.Image
+        avatarImage = await networkImage(p.profilePicUrl);
+      } catch (_) {
+        avatarImage = null;
+      }
+    }
 
-    // MaterialIcons code points
-    const emailCode = 0xe0be;      // “email” glyph
-    const phoneCode = 0xe0b0;      // “phone” glyph
-    const locationCode = 0xe55f;   // “place” glyph
+    // Helper to render education entries with flexible fields
+    List<pw.Widget> _buildEducation() {
+      final List<pw.Widget> widgets = [];
+      for (final e in p.educationalProfile) {
+        final school = (e['institutionName'] ?? e['school'] ?? '').toString();
+        final degree = (e['marksOrCgpa'] ?? e['degree'] ?? '').toString();
+        final field = (e['majorSubjects'] ?? e['fieldOfStudy'] ?? '').toString();
+        final start = (e['eduStart'] ?? '').toString();
+        final end = (e['eduEnd'] ?? e['duration'] ?? '').toString();
 
-    final pw.Document doc = pw.Document();
+        widgets.add(pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.start,
+            children: [
+              pw.Row(mainAxisAlignment: pw.MainAxisAlignment.spaceBetween, children: [
+                pw.Text('$degree${field.isNotEmpty ? ' — $field' : ''}',
+                    style: pw.TextStyle(font: bold, fontSize: 12)),
+                pw.Text(
+                    start.isNotEmpty || end.isNotEmpty
+                        ? '$start${start.isNotEmpty && end.isNotEmpty ? ' - ' : ''}$end'
+                        : '',
+                    style: pw.TextStyle(font: regular, fontSize: 10)),
+              ]),
+              if (school.isNotEmpty)
+                pw.Text(school, style: pw.TextStyle(font: regular, fontSize: 11)),
+              pw.SizedBox(height: 6),
+            ]));
+      }
+      if (widgets.isEmpty) {
+      widgets.add(pw.Text('No education entries provided', style: pw.TextStyle(font: regular, fontSize: 11)));
+      }
+      return widgets;
+    }
+
+    List<pw.Widget> _buildExperience() {
+      final List<pw.Widget> widgets = [];
+      for (final exp in p.professionalExperience) {
+        final role = (exp['role'] ?? exp['title'] ?? '').toString();
+        final company = (exp['company'] ?? '').toString();
+        final start = (exp['expStart'] ?? '').toString();
+        final end = (exp['expEnd'] ?? '').toString();
+        final text = (exp['text'] ?? exp['expDescription'] ?? '').toString();
+
+        widgets.add(pw.Column(crossAxisAlignment: pw.CrossAxisAlignment.start, children: [
+          pw.Text('$role at $company', style: pw.TextStyle(font: bold, fontSize: 12)),
+          pw.Text(
+              (start.isNotEmpty || end.isNotEmpty)
+                  ? '($start${start.isNotEmpty && end.isNotEmpty ? ' – ' : ''}$end)'
+                  : '',
+              style: pw.TextStyle(font: regular, fontSize: 10)),
+          if (text.isNotEmpty)
+            pw.Padding(
+              padding: const pw.EdgeInsets.only(top: 4, bottom: 6),
+              child: pw.Text(text, style: pw.TextStyle(font: regular, fontSize: 11), textAlign: pw.TextAlign.justify),
+            )
+        ]));
+      }
+      if (widgets.isEmpty) {
+        widgets.add(pw.Text('No professional experience listed', style: pw.TextStyle(font: regular, fontSize: 11)));
+      }
+      return widgets;
+    }
+
+    // Build the PDF page(s)
     doc.addPage(
       pw.MultiPage(
         pageFormat: PdfPageFormat.a4,
-        margin: const pw.EdgeInsets.symmetric(horizontal: 30, vertical: 20),
-        build: (pw.Context context) {
-          return [
-            // ------- Header -------
-            pw.Center(
-              child: pw.Text(
-                '${p.firstName} ${p.lastName} (${p.current_job})',
-                style: pw.TextStyle(font: bold, fontSize: 24),
+        margin: const pw.EdgeInsets.symmetric(horizontal: 34, vertical: 26),
+        build: (context) {
+          return <pw.Widget>[
+            // Header
+            pw.Row(crossAxisAlignment: pw.CrossAxisAlignment.start, children: [
+              // Left: name & title
+              pw.Expanded(
+                flex: 7,
+                child: pw.Column(crossAxisAlignment: pw.CrossAxisAlignment.start, children: [
+                  pw.Text(p.fullName.isNotEmpty ? p.fullName : 'Unnamed',
+                      style: pw.TextStyle(font: bold, fontSize: 22)),
+                  pw.SizedBox(height: 6),
+                  pw.Text(
+                    // prefer current role or professionalProfileSummary snippet
+                    p.professionalExperience.isNotEmpty
+                        ? (p.professionalExperience.first['role'] ?? '')
+                        : (p.professionalProfileSummary.isNotEmpty ? p.professionalProfileSummary : ''),
+                    style: pw.TextStyle(font: regular, fontSize: 11, color: PdfColors.grey700),
+                  ),
+                ]),
               ),
+              // Right: avatar (PDF)
+              if (avatarImage != null)
+                pw.Container(
+                  width: 72,
+                  height: 72,
+                  decoration: pw.BoxDecoration(shape: pw.BoxShape.circle),
+                  child: pw.ClipOval(
+                    child: pw.Image(avatarImage, fit: pw.BoxFit.cover),
+                  ),
+                )
+              else
+                pw.Container(
+                  width: 72,
+                  height: 72,
+                  alignment: pw.Alignment.center,
+                  decoration: pw.BoxDecoration(
+                    shape: pw.BoxShape.circle,
+                    color: PdfColors.grey300,
+                  ),
+                  child: pw.Text(_initialsForPdf(p.fullName), style: pw.TextStyle(font: bold, fontSize: 18)),
+                ),
+            ]),
+            pw.SizedBox(height: 12),
+
+            // Contact row: HIDDEN contact details, show admin message
+            pw.Container(
+              padding: const pw.EdgeInsets.symmetric(vertical: 8),
+              child: pw.Row(children: [
+                pw.Text('Contact admin for this information', style: pw.TextStyle(font: regular, fontSize: 11)),
+              ]),
             ),
+
             pw.SizedBox(height: 8),
 
-            // ------- Contact Info Row with MaterialIcons -------
-            pw.Center(
-              child: pw.Row(
-                mainAxisAlignment: pw.MainAxisAlignment.center,
-                children: [
-                  // Email icon + address
-                  pw.Text(
-                    String.fromCharCode(emailCode),
-                    style: pw.TextStyle(font: iconFont, fontSize: 12),
-                  ),
-                  pw.SizedBox(width: 4),
-                  pw.Text(p.email,
-                      style: pw.TextStyle(font: regular, fontSize: 11)),
-
-                  pw.SizedBox(width: 12),
-
-                  // Phone icon + number
-                  pw.Text(
-                    String.fromCharCode(phoneCode),
-                    style: pw.TextStyle(font: iconFont, fontSize: 12),
-                  ),
-                  pw.SizedBox(width: 4),
-                  pw.Text(p.phone,
-                      style: pw.TextStyle(font: regular, fontSize: 11)),
-
-                  pw.SizedBox(width: 12),
-
-                  // Location icon + city/country
-                  pw.Text(
-                    String.fromCharCode(locationCode),
-                    style: pw.TextStyle(font: iconFont, fontSize: 12),
-                  ),
-                  pw.SizedBox(width: 4),
-                  pw.Text(p.location,
-                      style: pw.TextStyle(font: regular, fontSize: 11)),
-                ],
-              ),
-            ),
-
-            pw.SizedBox(height: 20),
-
-            // ------- Summary -------
-            pw.Align(
-              alignment: pw.Alignment.centerLeft,
-              child: pw.Text(
-                'Professional Summary',
-                style: pw.TextStyle(font: bold, fontSize: 14),
-              ),
-            ),
-            pw.Divider(),
-            pw.SizedBox(height: 6),
-            pw.Text(
-              p.summary,
-              style: pw.TextStyle(font: regular, fontSize: 11),
-              textAlign: pw.TextAlign.justify,
-            ),
-
-            pw.SizedBox(height: 16),
-
-            // ------- Education -------
-            pw.Align(
-              alignment: pw.Alignment.centerLeft,
-              child: pw.Text(
-                'Education',
-                style: pw.TextStyle(font: bold, fontSize: 14),
-              ),
-            ),
-            pw.Divider(),
-            pw.SizedBox(height: 6),
-            ...p.educationList.map((edu) {
-              return pw.Column(
-                crossAxisAlignment: pw.CrossAxisAlignment.start,
-                children: [
-                  pw.Text(
-                    '${edu['degree']} in ${edu['fieldOfStudy']}',
-                    style: pw.TextStyle(font: bold, fontSize: 12),
-                  ),
-                  pw.Text(
-                    '${edu['school']}   (${edu['eduStart']} – ${edu['eduEnd']})',
-                    style: pw.TextStyle(font: regular, fontSize: 12),
-                  ),
+            // Two-column layout: Left main content, Right sidebar
+            pw.Row(crossAxisAlignment: pw.CrossAxisAlignment.start, children: [
+              // Left column (main): Summary, Experience, Education
+              pw.Expanded(
+                flex: 7,
+                child: pw.Column(crossAxisAlignment: pw.CrossAxisAlignment.start, children: [
+                  // Summary
+                  pw.Text('Professional Summary', style: pw.TextStyle(font: bold, fontSize: 14)),
+                  pw.Divider(),
                   pw.SizedBox(height: 6),
-                ],
-              );
-            }),
+                  pw.Text(
+                      p.personalSummary.isNotEmpty
+                          ? p.personalSummary
+                          : (p.professionalProfileSummary.isNotEmpty ? p.professionalProfileSummary : 'No summary provided.'),
+                      style: pw.TextStyle(font: regular, fontSize: 11),
+                      textAlign: pw.TextAlign.justify),
+                  pw.SizedBox(height: 14),
 
-            pw.SizedBox(height: 16),
-
-            // ------- Professional Experience -------
-            pw.Align(
-              alignment: pw.Alignment.centerLeft,
-              child: pw.Text(
-                'Professional Experience',
-                style: pw.TextStyle(font: bold, fontSize: 14),
-              ),
-            ),
-            pw.Divider(),
-            pw.SizedBox(height: 6),
-            ...p.experienceList.map((exp) {
-              return pw.Column(
-                crossAxisAlignment: pw.CrossAxisAlignment.start,
-                children: [
-                  pw.Text(
-                    '${exp['role']} at ${exp['company']}',
-                    style: pw.TextStyle(font: bold, fontSize: 12),
-                  ),
-                  pw.Text(
-                    '(${exp['expStart']} – ${exp['expEnd']})',
-                    style: pw.TextStyle(font: regular, fontSize: 12),
-                  ),
-                  pw.Text(
-                    exp['expDescription'] ?? '',
-                    style: pw.TextStyle(
-                      font: regular,
-                      fontSize: 11,
-                      fontStyle: pw.FontStyle.italic,
-                    ),
-                    textAlign: pw.TextAlign.justify,
-                  ),
+                  // Experience
+                  pw.Text('Professional Experience', style: pw.TextStyle(font: bold, fontSize: 14)),
+                  pw.Divider(),
                   pw.SizedBox(height: 6),
-                ],
-              );
-            }),
+                  ..._buildExperience(),
+                  pw.SizedBox(height: 10),
 
-            pw.SizedBox(height: 16),
-
-            // ------- Certifications -------
-            pw.Align(
-              alignment: pw.Alignment.centerLeft,
-              child: pw.Text(
-                'Certifications',
-                style: pw.TextStyle(font: bold, fontSize: 14),
+                  // Education
+                  pw.Text('Education', style: pw.TextStyle(font: bold, fontSize: 14)),
+                  pw.Divider(),
+                  pw.SizedBox(height: 6),
+                  ..._buildEducation(),
+                ]),
               ),
-            ),
-            pw.Divider(),
-            pw.SizedBox(height: 6),
-            ...p.certificationsList.map((cert) {
-              return pw.Bullet(
-                text:
-                '${cert['certName']} — ${cert['certInstitution']} (${cert['certYear']})',
-                style: pw.TextStyle(font: regular, fontSize: 12),
-              );
-            }),
 
-            pw.SizedBox(height: 16),
+              pw.SizedBox(width: 18),
 
-            // ------- Skills & Interests (bulleted, inline wrap) -------
-            pw.Align(
-              alignment: pw.Alignment.centerLeft,
-              child: pw.Text(
-                'Skills & Interests',
-                style: pw.TextStyle(font: bold, fontSize: 14),
+              // Right column (sidebar): Skills, Certifications, Publications, Awards, References
+              pw.Expanded(
+                flex: 4,
+                child: pw.Column(crossAxisAlignment: pw.CrossAxisAlignment.start, children: [
+                  // Skills
+                  pw.Container(
+                    decoration: pw.BoxDecoration(border: pw.Border.all(color: PdfColors.grey300)),
+                    padding: const pw.EdgeInsets.all(8),
+                    child: pw.Column(crossAxisAlignment: pw.CrossAxisAlignment.start, children: [
+                      pw.Text('Skills', style: pw.TextStyle(font: bold, fontSize: 12)),
+                      pw.SizedBox(height: 6),
+                      if (p.skillsList.isNotEmpty)
+                        pw.Wrap(
+                          spacing: 6,
+                          runSpacing: 6,
+                          children: p.skillsList
+                              .map((s) => pw.Container(
+                            padding: const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                            decoration: pw.BoxDecoration(borderRadius: pw.BorderRadius.circular(6), color: PdfColors.grey100),
+                            child: pw.Text(s, style: pw.TextStyle(font: regular, fontSize: 10)),
+                          ))
+                              .toList(),
+                        )
+                      else
+                        pw.Text('No skills listed', style: pw.TextStyle(font: regular, fontSize: 10))
+                    ]),
+                  ),
+
+                  pw.SizedBox(height: 10),
+
+                  // Certifications
+                  pw.Text('Certifications', style: pw.TextStyle(font: bold, fontSize: 12)),
+                  pw.Divider(),
+                  if (p.certifications.isNotEmpty)
+                    pw.Column(children: p.certifications.map((c) => pw.Bullet(text: c.toString(), style: pw.TextStyle(font: regular, fontSize: 10))).toList())
+                  else
+                    pw.Text('No certifications listed', style: pw.TextStyle(font: regular, fontSize: 10)),
+
+                  pw.SizedBox(height: 10),
+
+                  // Publications
+                  pw.Text('Publications', style: pw.TextStyle(font: bold, fontSize: 12)),
+                  pw.Divider(),
+                  if (p.publications.isNotEmpty)
+                    pw.Column(children: p.publications.map((c) => pw.Bullet(text: c.toString(), style: pw.TextStyle(font: regular, fontSize: 10))).toList())
+                  else
+                    pw.Text('No publications listed', style: pw.TextStyle(font: regular, fontSize: 10)),
+
+                  pw.SizedBox(height: 10),
+
+                  // Awards & References
+                  pw.Text('Awards', style: pw.TextStyle(font: bold, fontSize: 12)),
+                  pw.Divider(),
+                  if (p.awards.isNotEmpty)
+                    pw.Column(children: p.awards.map((c) => pw.Bullet(text: c.toString(), style: pw.TextStyle(font: regular, fontSize: 10))).toList())
+                  else
+                    pw.Text('No awards listed', style: pw.TextStyle(font: regular, fontSize: 10)),
+
+                  pw.SizedBox(height: 10),
+                  pw.Text('References', style: pw.TextStyle(font: bold, fontSize: 12)),
+                  pw.Divider(),
+                  if (p.references.isNotEmpty)
+                    pw.Column(children: p.references.map((c) => pw.Bullet(text: c.toString(), style: pw.TextStyle(font: regular, fontSize: 10))).toList())
+                  else
+                    pw.Text('No references listed', style: pw.TextStyle(font: regular, fontSize: 10)),
+                ]),
               ),
-            ),
-            pw.Divider(),
+            ]),
 
-            pw.SizedBox(height: 6),
-            pw.Wrap(
-              spacing: 12,
-              runSpacing: 8,
-              children: p.skillsList.map((skill) {
-                return pw.Text(
-                  '• $skill',
-                  style: pw.TextStyle(font: regular, fontSize: 12),
-                );
-              }).toList(),
-            ),
-
-            pw.SizedBox(height: 24),
-
-            // ------- Footer with generation date -------
+            // Footer - small generation timestamp
+            pw.SizedBox(height: 18),
             pw.Align(
               alignment: pw.Alignment.centerRight,
-              child: pw.Text(
-                'Generated on ${DateFormat('yyyy-MM-dd').format(DateTime.now())}',
-                style:
-                pw.TextStyle(font: regular, fontSize: 10, color: PdfColors.grey600),
-              ),
+              child: pw.Text('Generated on ${DateFormat('yyyy-MM-dd').format(DateTime.now())}',
+                  style: pw.TextStyle(font: regular, fontSize: 9, color: PdfColors.grey600)),
             ),
           ];
         },
       ),
     );
+
     return doc.save();
+  }
+
+  // Small initials helper for PDF fallback avatar
+  String _initialsForPdf(String name) {
+    final parts = name.trim().split(RegExp(r'\s+')).where((s) => s.isNotEmpty).toList();
+    if (parts.isEmpty) return '';
+    if (parts.length == 1) return parts[0][0].toUpperCase();
+    return (parts[0][0] + parts[1][0]).toUpperCase();
   }
 }

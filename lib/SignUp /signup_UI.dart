@@ -11,6 +11,7 @@ import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 
+import '../Constant/Header_Nav.dart';
 import '../extractor_CV/cv_extraction_UI.dart';
 import '../extractor_CV/cv_extractor.dart';
 import '../main.dart';
@@ -3877,6 +3878,7 @@ class _SignUp_Screen2Inner extends StatelessWidget {
   const _SignUp_Screen2Inner({Key? key}) : super(key: key);
 
   @override
+  @override
   Widget build(BuildContext context) {
     final p = Provider.of<SignupProvider>(context);
     final state = context.findAncestorStateOfType<_SignUp_Screen2State>()!;
@@ -3895,170 +3897,169 @@ class _SignUp_Screen2Inner extends StatelessWidget {
         default:
           return state.accountPanel(context, p);
       }
-
     }
 
     return Scaffold(
       backgroundColor: Colors.grey.shade50,
       body: SafeArea(
-        child: Row(
+        child: Column(
           children: [
-            if (isWide)
-              Flexible(
-                flex: 5,
-                child: RepaintBoundary(child: state.leftPanel(context)),
-              ),
+            // ---------- Header (full width) ----------
+            const HeaderNav(),
 
-            Flexible(
-              flex: 5,
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  return SingleChildScrollView(
-                    padding: const EdgeInsets.all(32),
-                    child: ConstrainedBox(
-                      // Ensure the inner child is at least the viewport height so
-                      // we can place footer at the bottom when there's extra space.
-                      constraints: BoxConstraints(
-                        minHeight: constraints.maxHeight,
-                      ),
-                      child: SizedBox(
-                        // Give a concrete height (bounded) so children like "Expanded"
-                        // are not required — we will use spaceBetween instead.
-                        height: constraints.maxHeight,
-                        child: FadeTransition(
-                          opacity: state._fadeAnimation,
-                          child: SlideTransition(
-                            position: state._slideAnimation,
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              // spaceBetween keeps the footer pinned to bottom when possible.
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                // Header
-                                Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    if (!isWide)
-                                      Row(
-                                        children: [
-                                          Container(
-                                            padding: const EdgeInsets.all(12),
-                                            decoration: BoxDecoration(
-                                              gradient: const LinearGradient(
-                                                colors: [
-                                                  Color(0xFF6366F1),
-                                                  Color(0xFF3949AB),
+            // ---------- Page body ----------
+            Expanded(
+              child: Row(
+                children: [
+                  // Left column (only on wide screens)
+                  if (isWide)
+                    Flexible(
+                      flex: 5,
+                      child: RepaintBoundary(child: state.leftPanel(context)),
+                    ),
+
+                  // Right/Main column
+                  Flexible(
+                    flex: 5,
+                    child: LayoutBuilder(
+                      builder: (context, constraints) {
+                        return SingleChildScrollView(
+                          padding: const EdgeInsets.all(32),
+                          child: ConstrainedBox(
+                            constraints: BoxConstraints(
+                              minHeight: constraints.maxHeight,
+                            ),
+                            child: SizedBox(
+                              height: constraints.maxHeight,
+                              child: FadeTransition(
+                                opacity: state._fadeAnimation,
+                                child: SlideTransition(
+                                  position: state._slideAnimation,
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      // Keep the compact header inside the right column
+                                      // (shown only when narrow, because HeaderNav is full-width)
+                                      if (!isWide)
+                                        Row(
+                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            Row(
+                                              children: [
+                                                Container(
+                                                  padding: const EdgeInsets.all(12),
+                                                  decoration: BoxDecoration(
+                                                    gradient: const LinearGradient(
+                                                      colors: [
+                                                        Color(0xFF6366F1),
+                                                        Color(0xFF3949AB),
+                                                      ],
+                                                    ),
+                                                    borderRadius: BorderRadius.circular(12),
+                                                  ),
+                                                  child: const Icon(
+                                                    Icons.work_outline_rounded,
+                                                    color: Colors.white,
+                                                    size: 24,
+                                                  ),
+                                                ),
+                                                const SizedBox(width: 12),
+                                                Text(
+                                                  'Maha Services',
+                                                  style: GoogleFonts.poppins(
+                                                    fontSize: 24,
+                                                    fontWeight: FontWeight.w700,
+                                                    color: const Color(0xFF6366F1),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+
+                                            Container(
+                                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                              decoration: BoxDecoration(
+                                                gradient: LinearGradient(
+                                                  colors: [
+                                                    Colors.indigo.shade50,
+                                                    Colors.indigo.shade50,
+                                                  ],
+                                                ),
+                                                borderRadius: BorderRadius.circular(20),
+                                                border: Border.all(
+                                                  color: Colors.indigo.shade100,
+                                                ),
+                                              ),
+                                              child: Row(
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: [
+                                                  Icon(
+                                                    Icons.info_outline,
+                                                    size: 16,
+                                                    color: Colors.indigo.shade700,
+                                                  ),
+                                                  const SizedBox(width: 8),
+                                                  Text(
+                                                    'Step ${p.currentStep + 1} of 4',
+                                                    style: GoogleFonts.poppins(
+                                                      fontSize: 12,
+                                                      fontWeight: FontWeight.w600,
+                                                      color: Colors.indigo.shade700,
+                                                    ),
+                                                  ),
                                                 ],
                                               ),
-                                              borderRadius:
-                                                  BorderRadius.circular(12),
                                             ),
-                                            child: const Icon(
-                                              Icons.work_outline_rounded,
-                                              color: Colors.white,
-                                              size: 24,
-                                            ),
-                                          ),
-                                          const SizedBox(width: 12),
-                                          Text(
-                                            'Maha Services',
-                                            style: GoogleFonts.poppins(
-                                              fontSize: 24,
-                                              fontWeight: FontWeight.w700,
-                                              color: const Color(0xFF6366F1),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 16,
-                                        vertical: 8,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        gradient: LinearGradient(
-                                          colors: [
-                                            Colors.indigo.shade50,
-                                            Colors.indigo.shade50,
                                           ],
                                         ),
-                                        borderRadius: BorderRadius.circular(20),
-                                        border: Border.all(
-                                          color: Colors.indigo.shade100,
+
+                                      if (!isWide) const SizedBox(height: 12),
+
+                                      // Main content card area (scrollable)
+                                      Flexible(
+                                        child: SingleChildScrollView(
+                                          padding: const EdgeInsets.fromLTRB(30, 5, 30, 5),
+                                          child: bodyForStep(),
                                         ),
                                       ),
-                                      child: Row(
-                                        mainAxisSize: MainAxisSize.min,
+
+                                      const SizedBox(height: 20),
+
+                                      // Footer
+                                      Row(
+                                        mainAxisAlignment: MainAxisAlignment.center,
                                         children: [
-                                          Icon(
-                                            Icons.info_outline,
-                                            size: 16,
-                                            color: Colors.indigo.shade700,
-                                          ),
-                                          const SizedBox(width: 8),
                                           Text(
-                                            'Step ${p.currentStep + 1} of 4',
+                                            'Already have an account?',
                                             style: GoogleFonts.poppins(
-                                              fontSize: 12,
-                                              fontWeight: FontWeight.w600,
-                                              color: Colors.indigo.shade700,
+                                              fontSize: 14,
+                                              color: Colors.grey.shade600,
+                                            ),
+                                          ),
+                                          TextButton(
+                                            onPressed: () => context.go('/login'),
+                                            child: Text(
+                                              'Login',
+                                              style: GoogleFonts.poppins(
+                                                fontSize: 14,
+                                                fontWeight: FontWeight.w700,
+                                                color: const Color(0xFF6366F1),
+                                              ),
                                             ),
                                           ),
                                         ],
                                       ),
-                                    ),
-                                  ],
-                                ),
-
-                                const SizedBox(height: 12),
-                                // Main content card - fills the middle area
-                                // Use Flexible if you want it to shrink-wrap when content small.
-                               Flexible(
-                                  child: SingleChildScrollView(
-                                    padding: const EdgeInsets.fromLTRB(30,5,30,5),
-                                    child: bodyForStep(),
-
+                                    ],
                                   ),
-
                                 ),
-
-
-
-                                const SizedBox(height: 20),
-
-                                // Footer - stays at the bottom (because of spaceBetween)
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Text(
-                                      'Already have an account?',
-                                      style: GoogleFonts.poppins(
-                                        fontSize: 14,
-                                        color: Colors.grey.shade600,
-                                      ),
-                                    ),
-                                    TextButton(
-                                      onPressed: () => context.go('/login'),
-                                      child: Text(
-                                        'Login',
-                                        style: GoogleFonts.poppins(
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.w700,
-                                          color: const Color(0xFF6366F1),
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ],
+                              ),
                             ),
                           ),
-                        ),
-                      ),
+                        );
+                      },
                     ),
-                  );
-                },
+                  ),
+                ],
               ),
             ),
           ],

@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../../Constant/Profile_Sidebar.dart';
 import 'job_hub.dart';
 import 'JS_Top_Bar.dart';
-import 'Profile_Provider.dart';
+import 'JS_Profile_Provider_OLD.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -161,7 +160,7 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
                 right: 0,
                 height: topBarHeight,
                 child: MainLayout(
-                  activeIndex: 2,
+                  activeIndex: 1,
                   child: const SizedBox.shrink(),
                 ),
               ),
@@ -228,8 +227,8 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
 
               const SizedBox(width: 32),
 
-              // Right column — sidebar
-              Flexible(child: ProfileSidebar(provider: provider)),
+              // Right column — sidebar KEEP AS IT IS
+             // Flexible(child: ProfileSidebar(provider: provider)),
             ],
           );
         },

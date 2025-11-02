@@ -107,7 +107,7 @@ class _job_hubState extends State<job_hub>
     return ScrollConfiguration(
       behavior: SmoothScrollBehavior(),
       child: MainLayout(
-        activeIndex: 0,
+        activeIndex: 3,
         child: FadeTransition(
           opacity: _fadeAnimation,
           child: SlideTransition(
