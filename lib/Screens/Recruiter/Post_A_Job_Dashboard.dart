@@ -279,12 +279,7 @@ class _JobPostingScreenState extends State<JobPostingScreen>
     );
   }
 
-  void _openPostJobDialog() {
-    showDialog(
-      context: context,
-      builder: (_) => const PostJobDialog(),
-    );
-  }
+
 }
 
 

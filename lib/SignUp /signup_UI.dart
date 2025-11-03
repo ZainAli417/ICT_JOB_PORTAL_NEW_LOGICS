@@ -1340,6 +1340,7 @@ class _SignUp_Screen2State extends State<SignUp_Screen2> with TickerProviderStat
                     'Create Recruiter Account',
                     style: GoogleFonts.poppins(
                       fontWeight: FontWeight.w600,
+                      color: Colors.white,
                       fontSize: 15,
                     ),
                   ),
