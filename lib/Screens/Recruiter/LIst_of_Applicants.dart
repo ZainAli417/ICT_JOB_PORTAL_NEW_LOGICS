@@ -7,7 +7,6 @@ import 'package:provider/provider.dart';
 
 import '../../widgets/downloadcv.dart';
 import '../../widgets/view_js_profile.dart';
-import '../Job_Seeker/JS_Top_Bar.dart';
 import 'LIst_of_Applicants_provider.dart';
 
 class SmoothScrollBehavior extends MaterialScrollBehavior {
@@ -428,7 +427,7 @@ class _ApplicantsScreenState extends State<ApplicantsScreen>
   }
 
   Widget _buildExperienceFilter(ApplicantsProvider provider) {
-    final experiences = ['All', ...provider.availableExperiences.toList()];
+    final experiences = ['All', ...provider.availableExperiences];
     return _buildDropdownFilter(
       title: 'Experience Level',
       icon: Icons.trending_up_outlined,
@@ -464,7 +463,7 @@ class _ApplicantsScreenState extends State<ApplicantsScreen>
   }
 
   Widget _buildWorkTypeFilter(ApplicantsProvider provider) {
-    final workTypes = ['All', ...provider.availableWorkTypes.toList()];
+    final workTypes = ['All', ...provider.availableWorkTypes];
     return _buildDropdownFilter(
       title: 'Work Type',
       icon: Icons.schedule_outlined,
@@ -1615,14 +1614,14 @@ class _ApplicantsScreenState extends State<ApplicantsScreen>
       hasDob,
     ].where((ok) => !ok).length;
 
-    Widget _chip(String text, {Color? color, IconData? icon}) {
+    Widget chip(String text, {Color? color, IconData? icon}) {
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
         margin: const EdgeInsets.only(right: 6, bottom: 6),
         decoration: BoxDecoration(
           color: (color ?? Colors.grey[200])!.withOpacity(0.25),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: (color ?? Colors.grey)!.withOpacity(0.18)),
+          border: Border.all(color: (color ?? Colors.grey).withOpacity(0.18)),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -1747,14 +1746,14 @@ class _ApplicantsScreenState extends State<ApplicantsScreen>
                       child: Wrap(
                         runSpacing: 6,
                         children: [
-                          _chip(hasEmail ? 'Email: ${applicant.email}' : 'Email: missing',
+                          chip(hasEmail ? 'Email: ${applicant.email}' : 'Email: missing',
                               color: hasEmail ? const Color(0xFF2563EB) : const Color(0xFFEF4444), icon: Icons.email_outlined),
-                          _chip(hasPhone ? 'Phone: ${applicant.phone}' : 'Phone: missing',
+                          chip(hasPhone ? 'Phone: ${applicant.phone}' : 'Phone: missing',
                               color: hasPhone ? const Color(0xFF059669) : const Color(0xFFEF4444), icon: Icons.phone_outlined),
-                          _chip(hasNationality ? 'Nationality: ${applicant.nationality}' : 'Nationality: missing',
+                          chip(hasNationality ? 'Nationality: ${applicant.nationality}' : 'Nationality: missing',
                               color: hasNationality ? const Color(0xFF7C3AED) : const Color(0xFFEF4444), icon: Icons.flag_outlined),
-                          _chip(hasDob ? 'DOB' : 'DOB missing', color: hasDob ? Colors.orange : const Color(0xFFEF4444), icon: Icons.cake_outlined),
-                          _chip(hasCv ? 'CV attached' : 'CV missing', color: hasCv ? const Color(0xFF10B981) : const Color(0xFFEF4444), icon: Icons.description_outlined),
+                          chip(hasDob ? 'DOB' : 'DOB missing', color: hasDob ? Colors.orange : const Color(0xFFEF4444), icon: Icons.cake_outlined),
+                          chip(hasCv ? 'CV attached' : 'CV missing', color: hasCv ? const Color(0xFF10B981) : const Color(0xFFEF4444), icon: Icons.description_outlined),
                         ],
                       ),
                     ),
@@ -2586,7 +2585,7 @@ class _ApplicantsScreenState extends State<ApplicantsScreen>
                   ],
                 ),
               );
-            }).toList(),
+            }),
         ],
       ),
     );

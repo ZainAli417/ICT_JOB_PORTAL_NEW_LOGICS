@@ -573,9 +573,11 @@ class SignupProvider extends ChangeNotifier {
 
   // ========== CLEANUP ==========
   void clearAll() {
-    [emailController, passwordController, confirmPasswordController, nameController,
+    for (var c in [emailController, passwordController, confirmPasswordController, nameController,
       contactNumberController, nationalityController, summaryController, objectivesController,
-      skillInputController, socialInputController].forEach((c) => c.clear());
+      skillInputController, socialInputController]) {
+      c.clear();
+    }
 
     skills.clear();
     socialLinks.clear();
@@ -597,9 +599,11 @@ class SignupProvider extends ChangeNotifier {
 
   @override
   void dispose() {
-    [emailController, passwordController, confirmPasswordController, nameController,
+    for (var c in [emailController, passwordController, confirmPasswordController, nameController,
       contactNumberController, nationalityController, summaryController, objectivesController,
-      skillInputController, socialInputController].forEach((c) => c.dispose());
+      skillInputController, socialInputController]) {
+      c.dispose();
+    }
     super.dispose();
   }
 }

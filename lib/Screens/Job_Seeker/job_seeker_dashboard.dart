@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
-import 'package:fl_chart/fl_chart.dart';
 import '../../Constant/profile_Completeness.dart';
 import 'JS_Profile/JS_Profile_Provider.dart';
 import 'JS_Top_Bar.dart';
@@ -71,8 +70,11 @@ class _job_seeker_dashboardState extends State<job_seeker_dashboard>
     );
     if (result != null) {
       setState(() {
-        if (isApplied) _appliedRange = result;
-        else _createdRange = result;
+        if (isApplied) {
+          _appliedRange = result;
+        } else {
+          _createdRange = result;
+        }
       });
     }
   }
@@ -785,7 +787,7 @@ class _job_seeker_dashboardState extends State<job_seeker_dashboard>
                 ],
               ),
               child: DropdownButtonFormField<String>(
-                value: _selectedCompany,
+                initialValue: _selectedCompany,
                 decoration: InputDecoration(
                   filled: true,
                   fillColor: Colors.white,
@@ -967,10 +969,11 @@ class _job_seeker_dashboardState extends State<job_seeker_dashboard>
                     if (range != null)
                       GestureDetector(
                         onTap: () => setState(() {
-                          if (label.contains('Applied'))
+                          if (label.contains('Applied')) {
                             _appliedRange = null;
-                          else
+                          } else {
                             _createdRange = null;
+                          }
                         }),
                         child: Container(
                           padding: const EdgeInsets.all(6),
@@ -1070,12 +1073,12 @@ class _job_seeker_dashboardState extends State<job_seeker_dashboard>
                   ),
                   child: StatefulBuilder(
                     builder: (context, setDialogState) {
-                      void _syncControllers() {
+                      void syncControllers() {
                         startController.text = DateFormat('MMM dd, yyyy').format(start);
                         endController.text = DateFormat('MMM dd, yyyy').format(end);
                       }
 
-                      Widget _buildCalendarDay(DateTime date) {
+                      Widget buildCalendarDay(DateTime date) {
                         final isSelected = (date.isAtSameMomentAs(start) || date.isAtSameMomentAs(end));
                         final isInRange = date.isAfter(start.subtract(const Duration(days: 1))) &&
                             date.isBefore(end.add(const Duration(days: 1)));
@@ -1095,7 +1098,7 @@ class _job_seeker_dashboardState extends State<job_seeker_dashboard>
                                 start = end;
                                 end = temp;
                               }
-                              _syncControllers();
+                              syncControllers();
                             });
                           },
                           child: AnimatedContainer(
@@ -1168,7 +1171,7 @@ class _job_seeker_dashboardState extends State<job_seeker_dashboard>
                         );
                       }
 
-                      Widget _buildCalendar() {
+                      Widget buildCalendar() {
                         final firstDay = DateTime(displayMonth.year, displayMonth.month, 1);
                         final lastDay = DateTime(displayMonth.year, displayMonth.month + 1, 0);
                         final startWeekday = firstDay.weekday % 7;
@@ -1182,7 +1185,7 @@ class _job_seeker_dashboardState extends State<job_seeker_dashboard>
                         // Add days of the month
                         for (int day = 1; day <= lastDay.day; day++) {
                           final date = DateTime(displayMonth.year, displayMonth.month, day);
-                          days.add(_buildCalendarDay(date));
+                          days.add(buildCalendarDay(date));
                         }
 
                         return Column(
@@ -1385,14 +1388,14 @@ class _job_seeker_dashboardState extends State<job_seeker_dashboard>
                                           setDialogState(() {
                                             end = DateTime.now();
                                             start = end.subtract(const Duration(days: 7));
-                                            _syncControllers();
+                                            syncControllers();
                                           });
                                         }),
                                         _buildQuickSelectButton('Last 30 days', () {
                                           setDialogState(() {
                                             end = DateTime.now();
                                             start = end.subtract(const Duration(days: 30));
-                                            _syncControllers();
+                                            syncControllers();
                                           });
                                         }),
                                         _buildQuickSelectButton('This month', () {
@@ -1400,7 +1403,7 @@ class _job_seeker_dashboardState extends State<job_seeker_dashboard>
                                             final now = DateTime.now();
                                             start = DateTime(now.year, now.month, 1);
                                             end = DateTime(now.year, now.month + 1, 0);
-                                            _syncControllers();
+                                            syncControllers();
                                           });
                                         }),
                                       ],
@@ -1501,7 +1504,7 @@ class _job_seeker_dashboardState extends State<job_seeker_dashboard>
                               const SizedBox(height: 24),
 
                               // Calendar
-                              _buildCalendar(),
+                              buildCalendar(),
                               const SizedBox(height: 24),
 
                               // Action buttons
@@ -1568,10 +1571,11 @@ class _job_seeker_dashboardState extends State<job_seeker_dashboard>
                                           onTap: () {
                                             final selectedRange = DateTimeRange(start: start, end: end);
                                             setState(() {
-                                              if (isAppliedDate)
+                                              if (isAppliedDate) {
                                                 _appliedRange = selectedRange;
-                                              else
+                                              } else {
                                                 _createdRange = selectedRange;
+                                              }
                                             });
                                             Navigator.of(context).pop();
                                           },

@@ -2,10 +2,8 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:job_portal/SignUp%20/signup_UI.dart';
 import 'package:job_portal/SignUp%20/signup_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -17,7 +15,7 @@ import '../extractor_CV/cv_extractor.dart';
 import '../main.dart';
 
 class SignUp_Screen2 extends StatefulWidget {
-  const SignUp_Screen2({Key? key}) : super(key: key);
+  const SignUp_Screen2({super.key});
 
   @override
   State<SignUp_Screen2> createState() => _SignUp_Screen2State();
@@ -1246,8 +1244,9 @@ class _SignUp_Screen2State extends State<SignUp_Screen2> with TickerProviderStat
               errorText: provider.passwordError,
               validator: (v) {
                 if (v == null || v.isEmpty) return 'Confirm your password';
-                if (v != provider.passwordController.text)
+                if (v != provider.passwordController.text) {
                   return 'Passwords must match';
+                }
                 return null;
               },
             ),
@@ -1402,8 +1401,9 @@ class _SignUp_Screen2State extends State<SignUp_Screen2> with TickerProviderStat
               errorText: p.passwordError,
               validator: (v) {
                 if (v == null || v.isEmpty) return 'Confirm your password';
-                if (v != p.passwordController.text)
+                if (v != p.passwordController.text) {
                   return 'Passwords must match';
+                }
                 return null;
               },
             ),
@@ -2018,11 +2018,13 @@ class _SignUp_Screen2State extends State<SignUp_Screen2> with TickerProviderStat
                             keyboardType: TextInputType.phone,
                             onChanged: (v) => p.onFieldTypedAutoReveal(1, v),
                             validator: (v) {
-                              if (v == null || v.trim().isEmpty)
+                              if (v == null || v.trim().isEmpty) {
                                 return 'Contact required';
+                              }
                               final phoneRegex = RegExp(r'^[\d\+\-\s]{5,20}$');
-                              if (!phoneRegex.hasMatch(v.trim()))
+                              if (!phoneRegex.hasMatch(v.trim())) {
                                 return 'Enter valid number';
+                              }
                               return null;
                             },
                           ),
@@ -3876,7 +3878,7 @@ class _SignUp_Screen2State extends State<SignUp_Screen2> with TickerProviderStat
 
 // ========== INNER WIDGET ==========
 class _SignUp_Screen2Inner extends StatelessWidget {
-  const _SignUp_Screen2Inner({Key? key}) : super(key: key);
+  const _SignUp_Screen2Inner();
 
   @override
   @override

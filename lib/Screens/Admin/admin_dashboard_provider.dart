@@ -394,7 +394,7 @@ class AdminDashboardProvider extends ChangeNotifier {
           }
 
           // Attempt to load job_seeker root user_data (best-effort, non-fatal)
-          Map<String, dynamic>? user_data;
+          Map<String, dynamic>? userData;
           try {
             final candidateDocId = (resolvedDocId.isNotEmpty ? resolvedDocId : _lastSegment(origId));
             if (candidateDocId.isNotEmpty) {
@@ -405,9 +405,9 @@ class AdminDashboardProvider extends ChangeNotifier {
               if (doc.exists) {
                 final d = _normalizeMap(doc.data());
                 if (d.containsKey('user_data') && d['user_data'] != null) {
-                  user_data = _normalizeMap(d['user_data']);
+                  userData = _normalizeMap(d['user_data']);
                 } else {
-                  user_data = <String, dynamic>{
+                  userData = <String, dynamic>{
                     'name': d['name'] ?? d['displayName'] ?? profile?['name'] ?? '',
                     'email': d['email'] ?? profile?['email'] ?? '',
                   };
@@ -419,8 +419,8 @@ class AdminDashboardProvider extends ChangeNotifier {
           }
 
           // Build display values using priority: basic -> profile -> user_data
-          final displayName = basic['name'] ?? profile?['name'] ?? user_data?['name'] ?? '';
-          final email = basic['email'] ?? profile?['email'] ?? user_data?['email'] ?? '';
+          final displayName = basic['name'] ?? profile?['name'] ?? userData?['name'] ?? '';
+          final email = basic['email'] ?? profile?['email'] ?? userData?['email'] ?? '';
           final phone = basic['phone'] ?? profile?['phone'] ?? '';
 
           // For the returned 'uid' field we prefer the resolvedDocId (actual doc id) when available,
@@ -437,7 +437,7 @@ class AdminDashboardProvider extends ChangeNotifier {
               'phone': phone,
             },
             'profile': profile ?? {},
-            'user_data': user_data ?? {},
+            'user_data': userData ?? {},
           });
 
           debugPrint('✅ candidate loaded: returnedUid=$returnedUid (orig="$origId") name="$displayName"');
@@ -485,20 +485,20 @@ class AdminDashboardProvider extends ChangeNotifier {
 
       final data = _normalizeMap(snap.data());
 
-      Map<String, dynamic> user_data = {};
+      Map<String, dynamic> userData = {};
       if (data.containsKey('user_data') && data['user_data'] != null) {
-        user_data = _normalizeMap(data['user_data']);
+        userData = _normalizeMap(data['user_data']);
       } else {
-        user_data = {
+        userData = {
           'name': data['name'] ?? data['displayName'] ?? '',
           'email': data['email'] ?? '',
           'company': data['company'] ?? data['org'] ?? '',
         };
       }
 
-      _recruiterCache[recruiterId] = user_data;
-      debugPrint('✅ cached recruiter $recruiterId (name=${user_data['name']})');
-      return user_data;
+      _recruiterCache[recruiterId] = userData;
+      debugPrint('✅ cached recruiter $recruiterId (name=${userData['name']})');
+      return userData;
     } catch (e) {
       debugPrint('❌ _fetchRecruiterInfo error for $recruiterId: $e');
       return null;

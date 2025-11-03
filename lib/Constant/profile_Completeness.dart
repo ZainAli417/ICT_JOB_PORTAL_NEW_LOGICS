@@ -6,9 +6,9 @@ import '../Screens/Job_Seeker/JS_Profile/JS_Profile_Provider.dart';
 
 class ProfileCompletenessCard extends StatelessWidget {
   const ProfileCompletenessCard({
-    Key? key,
+    super.key,
     required this.totalScore,
-  }) : super(key: key);
+  });
 
   factory ProfileCompletenessCard.fromProvider(ProfileProvider_NEW provider) {
     final int score =

@@ -1,6 +1,5 @@
 // lib/Screens/Job_Seeker/sign_up_elegant.dart
 import 'dart:async';
-import 'dart:convert';
 import 'dart:html' as html;
 
 import 'package:flutter/foundation.dart' show kIsWeb;
@@ -15,7 +14,7 @@ import 'widgets/signup_widgets.dart';
 import 'Signup_Provider_OLD.dart';
 
 class SignUp_Screen_OLD extends StatefulWidget {
-  const SignUp_Screen_OLD({Key? key}) : super(key: key);
+  const SignUp_Screen_OLD({super.key});
 
   @override
   State<SignUp_Screen_OLD> createState() => _SignUp_Screen_OLDState();
@@ -53,7 +52,7 @@ class _SignUp_Screen_OLDState extends State<SignUp_Screen_OLD> with TickerProvid
   final _skillController = TextEditingController();
 
   String? _psid;
-  bool _paid = false;
+  final bool _paid = false;
   bool _obscurePassword = true;
   bool _obscureConfirm = true;
 
@@ -103,7 +102,7 @@ class _SignUp_Screen_OLDState extends State<SignUp_Screen_OLD> with TickerProvid
     };
     _updateStepsForRole();
   }
-  int _currentPage = 0; // The current index of the card being viewed
+  final int _currentPage = 0; // The current index of the card being viewed
   final PageController _pageController = PageController(); // Controls the PageView
 
   @override

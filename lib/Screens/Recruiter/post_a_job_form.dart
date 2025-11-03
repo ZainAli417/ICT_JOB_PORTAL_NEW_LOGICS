@@ -943,7 +943,7 @@ class _PostJobDialogState extends State<PostJobDialog> {
     final validValue = items.contains(value) ? value : null;
 
     return DropdownButtonFormField<String>(
-      value: validValue,
+      initialValue: validValue,
       items: items
           .map((item) => DropdownMenuItem(value: item, child: Text(item)))
           .toList(),

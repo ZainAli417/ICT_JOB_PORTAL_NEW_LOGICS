@@ -604,7 +604,7 @@ class SignUpWidgets {
                 ],
               ),
             );
-          }).toList(),
+          }),
         ],
       ),
     );

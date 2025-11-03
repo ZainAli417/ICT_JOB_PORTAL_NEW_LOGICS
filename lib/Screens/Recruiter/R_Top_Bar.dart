@@ -205,8 +205,9 @@ class _Recruiter_MainLayoutState extends State<Recruiter_MainLayout>
                         label: 'Dashboard',
                         isActive: widget.activeIndex == 0,
                         onTap: () {
-                          if (widget.activeIndex != 0)
+                          if (widget.activeIndex != 0) {
                             context.go('/recruiter-dashboard');
+                          }
                         },
                       ),
                       const SizedBox(width: 15),
@@ -225,8 +226,9 @@ class _Recruiter_MainLayoutState extends State<Recruiter_MainLayout>
                         label: 'Applications',
                         isActive: widget.activeIndex == 2,
                         onTap: () {
-                          if (widget.activeIndex != 2)
+                          if (widget.activeIndex != 2) {
                             context.go('/view-applications');
+                          }
                         },
                       ),
                       const SizedBox(width: 15),

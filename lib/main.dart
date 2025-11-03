@@ -8,7 +8,6 @@ import 'package:provider/provider.dart';
 import 'Constant/Forget Password Provider.dart';
 import 'Constant/cv_analysis_provider.dart';
 import 'Screens/Admin/admin_dashboard_provider.dart';
-import 'Screens/Admin/admin_login.dart';
 import 'Screens/Admin/admin_login_provider.dart';
 import 'Screens/Job_Seeker/JS_Profile/JS_Profile_Provider.dart';
 import 'Screens/Job_Seeker/List_applied_jobs_provider.dart';

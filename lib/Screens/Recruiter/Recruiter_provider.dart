@@ -395,9 +395,7 @@ class RecruiterProvider2 extends ChangeNotifier {
       try {
         // Ensure we have latest profile for CV extraction (fetch if missing)
         Map<String, dynamic>? profile = c.profile;
-        if (profile == null) {
-          profile = await fetchProfile(c.uid);
-        }
+        profile ??= await fetchProfile(c.uid);
 
         final cvUrl = _extractCvUrlFromProfile(profile) ?? '';
 

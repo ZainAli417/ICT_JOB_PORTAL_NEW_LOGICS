@@ -419,7 +419,7 @@ class SignupProvider extends ChangeNotifier {
       isLoading = false;
       notifyListeners();
       return true;
-    } catch (e, st) {
+    } catch (e) {
       generalError = e.toString();
       isLoading = false;
       notifyListeners();

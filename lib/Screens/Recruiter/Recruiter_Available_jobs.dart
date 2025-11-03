@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:ui';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
@@ -11,7 +10,7 @@ import 'package:timeago/timeago.dart' as timeago;
 
 class JobListView extends StatefulWidget {
   final List<Map<String, dynamic>> jobs;
-  const JobListView({Key? key, required this.jobs}) : super(key: key);
+  const JobListView({super.key, required this.jobs});
 
   @override
   State<JobListView> createState() => _JobListViewState();
@@ -91,27 +90,40 @@ class _JobListViewState extends State<JobListView>
         }
 
         // Dropdown filters
-        if (_selectedCompany != null && job['company'] != _selectedCompany)
+        if (_selectedCompany != null && job['company'] != _selectedCompany) {
           return false;
+        }
         if (_selectedDepartment != null &&
-            job['department'] != _selectedDepartment) return false;
-        if (_selectedLocation != null && job['location'] != _selectedLocation)
+            job['department'] != _selectedDepartment) {
           return false;
-        if (_selectedJobType != null && job['nature'] != _selectedJobType)
+        }
+        if (_selectedLocation != null && job['location'] != _selectedLocation) {
           return false;
+        }
+        if (_selectedJobType != null && job['nature'] != _selectedJobType) {
+          return false;
+        }
         if (_selectedExperience != null &&
-            job['experience'] != _selectedExperience) return false;
-        if (_selectedSalaryType != null &&
-            job['salaryType'] != _selectedSalaryType) return false;
-        if (_selectedRank != null && job['rankRequirement'] != _selectedRank)
+            job['experience'] != _selectedExperience) {
           return false;
+        }
+        if (_selectedSalaryType != null &&
+            job['salaryType'] != _selectedSalaryType) {
+          return false;
+        }
+        if (_selectedRank != null && job['rankRequirement'] != _selectedRank) {
+          return false;
+        }
         if (_selectedClearance != null &&
-            job['securityClearance'] != _selectedClearance) return false;
+            job['securityClearance'] != _selectedClearance) {
+          return false;
+        }
 
         // Salary range
         final sal = _parseSalary(job);
-        if (sal != null && (sal < _salaryRange.start || sal > _salaryRange.end))
+        if (sal != null && (sal < _salaryRange.start || sal > _salaryRange.end)) {
           return false;
+        }
 
         // Benefits
         if (_selectedBenefits.isNotEmpty) {

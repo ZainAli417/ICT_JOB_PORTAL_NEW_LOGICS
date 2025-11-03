@@ -1,11 +1,9 @@
 // job_hub.dart - Enhanced Version with Smooth, Web-Friendly Scrolling
-import 'dart:async';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-import '../../Constant/cv_analysis.dart';
 import 'JS_Top_Bar.dart';
 import 'job_seeker_provider.dart';
 import 'Job_seeker_Available_jobs.dart';

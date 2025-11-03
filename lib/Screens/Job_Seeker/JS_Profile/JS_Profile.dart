@@ -1,7 +1,6 @@
 // js_profile_screen.dart
 import 'dart:typed_data';
 import 'package:file_picker/file_picker.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:mime/mime.dart';
 import 'package:provider/provider.dart';

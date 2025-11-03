@@ -2,9 +2,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:http/http.dart' as http;
-import 'package:google_fonts/google_fonts.dart';
 
 import '../File_converter/parser_doc.dart';
 import '../File_converter/type_detect.dart'; // (optional, keeps linter happy if used elsewhere)
@@ -374,7 +372,9 @@ IMPORTANT:
               collectText(v);
             });
           } else if (node is List) {
-            for (final e in node) collectText(e);
+            for (final e in node) {
+              collectText(e);
+            }
           }
         }
 

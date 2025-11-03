@@ -6,7 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class SplashScreen extends StatelessWidget {
-  const SplashScreen({Key? key}) : super(key: key);
+  const SplashScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -27,7 +27,7 @@ class SplashScreen extends StatelessWidget {
 }
 
 class LandingPage extends StatefulWidget {
-  const LandingPage({Key? key}) : super(key: key);
+  const LandingPage({super.key});
 
   @override
   State<LandingPage> createState() => _LandingPageState();
@@ -2251,7 +2251,7 @@ class _LandingPageState extends State<LandingPage> with TickerProviderStateMixin
                 ],
               ),
             );
-          }).toList(),
+          }),
         ],
       ),
     );
@@ -2521,7 +2521,7 @@ class _LandingPageState extends State<LandingPage> with TickerProviderStateMixin
                   ],
                 ),
               ),
-            )).toList(),
+            )),
       ],
     );
   }

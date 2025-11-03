@@ -5,7 +5,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:timeago/timeago.dart' as timeago;
 
 import 'R_Top_Bar.dart';
-import 'Recruiter_provider.dart';
 import 'Recruiter_provider_Job_listing.dart';
 
 class recruiter_job_listing extends StatefulWidget {

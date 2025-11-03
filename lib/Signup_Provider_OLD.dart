@@ -203,7 +203,7 @@ class SignUpProvider_old extends ChangeNotifier {
       }
       final now = FieldValue.serverTimestamp();
       final createdAtString = DateTime.now().toUtc().toIso8601String();
-      final baseuser_data = <String, dynamic>{
+      final baseuserData = <String, dynamic>{
         'email': sanitizedEmail,
         'name': name,
         'phone': phone,
@@ -224,7 +224,7 @@ class SignUpProvider_old extends ChangeNotifier {
       if (isRecruiter) {
         try {
           await docRef.set({
-            'user_data': baseuser_data,
+            'user_data': baseuserData,
             'user_profile': <String, dynamic>{
               'picture_url': photoUrl ?? '',
               'last_updated': now,
@@ -233,7 +233,7 @@ class SignUpProvider_old extends ChangeNotifier {
         } catch (e) {
           debugPrint('Failed to write recruiter doc: $e');
           try {
-            await cred?.user?.delete();
+            await cred.user?.delete();
             debugPrint('Rolled back auth user due to Firestore failure');
           } catch (delErr) {
             debugPrint('Failed to delete auth user after Firestore failure: $delErr');
@@ -267,13 +267,13 @@ class SignUpProvider_old extends ChangeNotifier {
         };
         try {
           await docRef.set({
-            'user_data': baseuser_data,
+            'user_data': baseuserData,
             'user_profile': profilePayload,
           }, SetOptions(merge: false));
         } catch (e) {
           debugPrint('Failed to write job_seeker doc: $e');
           try {
-            await cred?.user?.delete();
+            await cred.user?.delete();
             debugPrint('Rolled back auth user due to Firestore failure');
           } catch (delErr) {
             debugPrint('Failed to delete auth user after Firestore failure: $delErr');
@@ -306,7 +306,7 @@ class SignUpProvider_old extends ChangeNotifier {
         }
       }
       try {
-        await cred?.user?.sendEmailVerification();
+        await cred.user?.sendEmailVerification();
       } catch (e) {
         debugPrint('Email verification failed: $e');
       }

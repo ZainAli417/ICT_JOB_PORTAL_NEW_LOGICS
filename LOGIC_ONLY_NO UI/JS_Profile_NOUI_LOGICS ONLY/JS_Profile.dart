@@ -536,8 +536,9 @@ class _ProfileScreen_NEWState extends State<ProfileScreen_NEW> with TickerProvid
           title: Text(item['institutionName']?.toString() ?? item['text']?.toString() ?? 'Record'),
           subtitle: Text((item['duration'] ?? item['majorSubjects'] ?? '').toString()),
           trailing: IconButton(icon: const Icon(Icons.delete), onPressed: () {
-            if (section == 'education') prov.removeEducationAt(i);
-            else if (section == 'experience') prov.removeExperienceAt(i);
+            if (section == 'education') {
+              prov.removeEducationAt(i);
+            } else if (section == 'experience') prov.removeExperienceAt(i);
             // You can call the corresponding save method if you want immediate persistence
           }),
           onTap: () {

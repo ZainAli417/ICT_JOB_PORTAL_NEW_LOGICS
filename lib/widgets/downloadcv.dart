@@ -1,5 +1,4 @@
 // lib/utils/downloadcv.dart
-import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:pdf/widgets.dart' as pw;
@@ -248,7 +247,7 @@ Future<void> downloadCvForUser(BuildContext context, String userId, {ApplicantRe
 
     // Give user the PDF via share / download dialog
     final filenameSafe = name.replaceAll(RegExp(r'[^A-Za-z0-9_\-]'), '_');
-    final filename = 'CV_${filenameSafe}.pdf';
+    final filename = 'CV_$filenameSafe.pdf';
 
     // Use Printing.sharePdf, works across mobile/web/desktop: triggers share/save/print UI.
     await Printing.sharePdf(bytes: pdfBytes, filename: filename);

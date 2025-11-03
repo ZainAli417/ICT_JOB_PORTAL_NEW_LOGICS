@@ -3,13 +3,7 @@ import 'dart:math' as math;
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:markdown_widget/config/configs.dart';
-import 'package:markdown_widget/widget/blocks/container/blockquote.dart';
-import 'package:markdown_widget/widget/blocks/container/list.dart';
-import 'package:markdown_widget/widget/blocks/leaf/code_block.dart';
-import 'package:markdown_widget/widget/blocks/leaf/heading.dart';
-import 'package:markdown_widget/widget/blocks/leaf/link.dart';
 import 'package:markdown_widget/widget/blocks/leaf/paragraph.dart';
-import 'package:markdown_widget/widget/inlines/code.dart';
 import 'package:markdown_widget/widget/markdown.dart';
 import 'package:provider/provider.dart';
 import 'package:file_picker/file_picker.dart';
@@ -20,11 +14,10 @@ import '../Screens/Job_Seeker/JS_Top_Bar.dart';
 import '../main.dart';
 import 'cv_analysis_provider.dart';
 
-/// Enhanced CV Analysis Screen with vibrant UI/UX
+// Main Screen
 class CVAnalysisScreen extends StatefulWidget {
   final String geminiApiKey;
 
-  // NOT const, use initializer to default to runtime Env value
   CVAnalysisScreen({super.key, String? geminiApiKey})
       : geminiApiKey = geminiApiKey ?? Env.geminiApiKey;
 
@@ -35,36 +28,25 @@ class CVAnalysisScreen extends StatefulWidget {
 class _CVAnalysisScreenState extends State<CVAnalysisScreen>
     with TickerProviderStateMixin {
   PlatformFile? _pickedFile;
-  final TextEditingController _roleController = TextEditingController();
-  final TextEditingController _jdController = TextEditingController();
-
-  late AnimationController _aiAnimController;
-  late Animation<double> _aiPulseAnimation;
+  final _roleController = TextEditingController();
+  final _jdController = TextEditingController();
   late AnimationController _animController;
-  late Animation<double> _fadeAnimation;
+  bool _isAiDialogVisible = false;
 
   @override
   void initState() {
     super.initState();
-    _animController = AnimationController(duration: const Duration(milliseconds: 300), vsync: this);
-    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(_animController);
-    _animController.forward();
-
-    _aiAnimController = AnimationController(
+    _animController = AnimationController(
+      duration: const Duration(milliseconds: 300),
       vsync: this,
-      duration: const Duration(milliseconds: 2000),
-    )..repeat(reverse: true);
-
-    _aiPulseAnimation = Tween<double>(begin: 0.95, end: 1.05).animate(
-      CurvedAnimation(parent: _aiAnimController, curve: Curves.easeInOut),
-    );
+    )..forward();
   }
 
   @override
   void dispose() {
     _roleController.dispose();
     _jdController.dispose();
-    _aiAnimController.dispose();
+    _animController.dispose();
     super.dispose();
   }
 
@@ -81,11 +63,11 @@ class _CVAnalysisScreenState extends State<CVAnalysisScreen>
 
   void _startAnalysis(BuildContext ctx) {
     if (_pickedFile == null) {
-      _showSnackBar(ctx, '📄 Please select a CV file first', isError: true);
+      _showSnackBar(ctx, 'Please select a CV file first', isError: true);
       return;
     }
     if (_roleController.text.trim().isEmpty) {
-      _showSnackBar(ctx, '💼 Please enter the target role', isError: true);
+      _showSnackBar(ctx, 'Please enter the target role', isError: true);
       return;
     }
 
@@ -101,13 +83,14 @@ class _CVAnalysisScreenState extends State<CVAnalysisScreen>
   void _showSnackBar(BuildContext ctx, String msg, {bool isError = false}) {
     ScaffoldMessenger.of(ctx).showSnackBar(
       SnackBar(
-        content: Text(msg, style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
-        backgroundColor: isError ? Colors.red.shade600 : Colors.green.shade600,
+        content: Text(msg, style: GoogleFonts.inter(fontWeight: FontWeight.w500)),
+        backgroundColor: isError ? const Color(0xFFDC2626) : const Color(0xFF10B981),
         behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       ),
     );
   }
+
   @override
   Widget build(BuildContext context) {
     const double topBarHeight = 120.0;
@@ -115,32 +98,23 @@ class _CVAnalysisScreenState extends State<CVAnalysisScreen>
     return ScrollConfiguration(
       behavior: SmoothScrollBehavior(),
       child: ChangeNotifierProvider(
-        create: (_) => CVAnalyzerBackendProvider(),
+        create: (_) => CVAnalyzerBackendProvider(
+          useDirectGemini: true,
+          geminiApiKey: widget.geminiApiKey,
+        ),
         child: SizedBox.expand(
           child: Stack(
             children: [
-              // Main content area sits under the top bar (starts below topBarHeight)
               Positioned.fill(
                 top: topBarHeight,
-                // IMPORTANT: Scaffold provides the Material ancestor TabBar needs
                 child: Scaffold(
-                  // Keep transparent so the top bar overlay remains visible
                   backgroundColor: Colors.transparent,
-                  // We don't use AppBar here because MainLayout is the topbar overlay
                   body: FadeTransition(
-                    opacity: _fadeAnimation,
-                    child: SlideTransition(
-                      position: Tween<Offset>(
-                        begin: const Offset(0, 0.03),
-                        end: Offset.zero,
-                      ).animate(CurvedAnimation(parent: _animController, curve: Curves.easeOut)),
-                      child: _buildcvaiContent(context),
-                    ),
+                    opacity: _animController,
+                    child: _buildMainContent(context),
                   ),
                 ),
               ),
-
-              // Top navigation bar (MainLayout used as the bar)
               Positioned(
                 top: 0,
                 left: 0,
@@ -158,165 +132,429 @@ class _CVAnalysisScreenState extends State<CVAnalysisScreen>
     );
   }
 
-  Widget _buildcvaiContent(BuildContext context) {
-    return ChangeNotifierProvider<CVAnalyzerBackendProvider>(
-      create: (_) => CVAnalyzerBackendProvider(
-        useDirectGemini: true,
-        geminiApiKey: widget.geminiApiKey,
-      ),
-      child: Consumer<CVAnalyzerBackendProvider>(
-        builder: (context, prov, _) {
-// Replace the Scaffold -> body: Container(...) content with this:
-          return ChangeNotifierProvider<CVAnalyzerBackendProvider>(
-            create: (_) => CVAnalyzerBackendProvider(
-              useDirectGemini: true,
-              geminiApiKey: widget.geminiApiKey,
+  Widget _buildMainContent(BuildContext context) {
+    return Consumer<CVAnalyzerBackendProvider>(
+      builder: (context, prov, _) {
+        if (prov.isLoading && !_isAiDialogVisible) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            _showAIProcessingDialog(context, prov);
+          });
+        }
+
+        return Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [Color(0xFFFAFAFC), Color(0xFFF5F3FF)],
             ),
-            child: Consumer<CVAnalyzerBackendProvider>(
-              builder: (context, prov, _) {
-                return Scaffold(
-                  body: Container(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [
-                          Colors.white,
-                          Colors.white,
-                          Colors.pink.shade50,
+          ),
+          child: SafeArea(
+            child: SingleChildScrollView(
+              physics: const BouncingScrollPhysics(),
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  _CVHeader(provider: prov),
+                  const SizedBox(height: 24),
+                  LayoutBuilder(
+                    builder: (context, constraints) {
+                      final isWide = constraints.maxWidth > 1100;
+                      return isWide
+                          ? Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            flex: 2,
+                            child: _InputSection(
+                              pickedFile: _pickedFile,
+                              roleController: _roleController,
+                              jdController: _jdController,
+                              onPickFile: _pickFile,
+                              onAnalyze: () => _startAnalysis(context),
+                              onReset: () {
+                                setState(() {
+                                  _pickedFile = null;
+                                  _roleController.clear();
+                                  _jdController.clear();
+                                });
+                                prov.reset();
+                              },
+                              isLoading: prov.isLoading,
+                            ),
+                          ),
+                          const SizedBox(width: 24),
+                          Expanded(
+                            flex: 3,
+                            child: _ResultsSection(provider: prov),
+                          ),
                         ],
-                      ),
-                    ),
-                    // <-- make the whole content scrollable
-                    child: SafeArea(
-                      child: SingleChildScrollView(
-                        physics: const BouncingScrollPhysics(),
-                        padding: const EdgeInsets.all(24),
-                        // Use a Column inside the scroll view; children may grow vertically and page will scroll
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            // Header row with score and progress cards
-                            Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Expanded(
-                                  flex: 1,
-                                  child: _buildHeader(prov),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 24),
-
-                            // Main content area with input and results side by side
-                            // --- replaced Expanded(...) with a bounded SizedBox to avoid unbounded-height issues ---
-                            SizedBox(
-                              // tuned to be responsive: adjust multiplier if you want more/less visible area
-                              height: MediaQuery.of(context).size.height * 0.72,
-                              child: Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  // Left side - Input Section
-                                  Expanded(
-                                    flex: 1,
-                                    child: _buildInputSection(context, prov),
-                                  ),
-                                  const SizedBox(width: 24),
-
-                                  // Right side - Results Section
-                                  Expanded(
-                                    flex: 2,
-                                    child: _buildResultsSection(context, prov),
-                                  ),
-                                ],
-                              ),
-                            ),
-
-                            // optional bottom padding so last content doesn't stick to screen edge
-                            const SizedBox(height: 24),
-                          ],
-                        ),
-                      ),
-                    ),
+                      )
+                          : Column(
+                        children: [
+                          _InputSection(
+                            pickedFile: _pickedFile,
+                            roleController: _roleController,
+                            jdController: _jdController,
+                            onPickFile: _pickFile,
+                            onAnalyze: () => _startAnalysis(context),
+                            onReset: () {
+                              setState(() {
+                                _pickedFile = null;
+                                _roleController.clear();
+                                _jdController.clear();
+                              });
+                              prov.reset();
+                            },
+                            isLoading: prov.isLoading,
+                          ),
+                          const SizedBox(height: 24),
+                          _ResultsSection(provider: prov),
+                        ],
+                      );
+                    },
                   ),
-                );
-              },
+                ],
+              ),
             ),
-          );
-        },
-      ),
+          ),
+        );
+      },
     );
   }
 
-  Widget _buildHeader(CVAnalyzerBackendProvider prov) {
+  void _showAIProcessingDialog(BuildContext context, CVAnalyzerBackendProvider prov) {
+    if (!prov.isLoading || _isAiDialogVisible) return;
+    _isAiDialogVisible = true;
+
+    void listener() {
+      if (!prov.isLoading && _isAiDialogVisible && Navigator.of(context).canPop()) {
+        try {
+          Navigator.of(context).pop();
+        } catch (_) {}
+      }
+    }
+
+    prov.addListener(listener);
+
+    showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      barrierColor: Colors.black.withOpacity(0.15),
+      builder: (ctx) => _AIProcessingDialog(provider: prov),
+    ).then((_) {
+      try {
+        prov.removeListener(listener);
+      } catch (_) {}
+      _isAiDialogVisible = false;
+    });
+  }
+}
+
+// ============= COMPONENTS =============
+
+class _CVHeader extends StatelessWidget {
+  final CVAnalyzerBackendProvider provider;
+
+  const _CVHeader({required this.provider});
+
+  @override
+  Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [Colors.blue.shade600, Colors.purple.shade600],
+        gradient: const LinearGradient(
+          colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.blue.shade200.withOpacity(0.5),
+            color: const Color(0xFF6366F1).withOpacity(0.3),
             blurRadius: 20,
-            offset: const Offset(0, 10),
+            offset: const Offset(0, 8),
           ),
         ],
       ),
       child: Row(
         children: [
           Container(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
               color: Colors.white.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(12),
             ),
-            child: Icon(
-              Icons.analytics_outlined,
-              size: 40,
-              color: Colors.white,
-            ),
+            child: const Icon(Icons.analytics_outlined, size: 32, color: Colors.white),
           ),
-          const SizedBox(width: 20),
+          const SizedBox(width: 16),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'AI-Powered CV Analyzer',
-                  style: GoogleFonts.poppins(
-                    fontSize: 28,
+                  'AI CV Analyzer',
+                  style: GoogleFonts.inter(
+                    fontSize: 24,
                     fontWeight: FontWeight.w600,
                     color: Colors.white,
                   ),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 4),
                 Text(
-                  'Get instant insights, match scores, and actionable recommendations',
-                  style: GoogleFonts.poppins(
+                  'Get instant insights and match scores',
+                  style: GoogleFonts.inter(
                     fontSize: 14,
-                    fontWeight: FontWeight.w600,
+                    fontWeight: FontWeight.w400,
                     color: Colors.white.withOpacity(0.9),
                   ),
                 ),
               ],
             ),
           ),
-          if (prov.isLoading)
-            ScaleTransition(
-              scale: _aiPulseAnimation,
-              child: Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
-                  shape: BoxShape.circle,
+          if (provider.isLoading)
+            const SizedBox(
+              width: 32,
+              height: 32,
+              child: CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation(Colors.white),
+                strokeWidth: 3,
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _InputSection extends StatelessWidget {
+  final PlatformFile? pickedFile;
+  final TextEditingController roleController;
+  final TextEditingController jdController;
+  final VoidCallback onPickFile;
+  final VoidCallback onAnalyze;
+  final VoidCallback onReset;
+  final bool isLoading;
+
+  const _InputSection({
+    required this.pickedFile,
+    required this.roleController,
+    required this.jdController,
+    required this.onPickFile,
+    required this.onAnalyze,
+    required this.onReset,
+    required this.isLoading,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 20,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _FileUploadCard(pickedFile: pickedFile, onPickFile: onPickFile),
+          const SizedBox(height: 20),
+          _buildLabel('Target Role', Icons.work_outline),
+          const SizedBox(height: 8),
+          _buildTextField(roleController, 'e.g., Senior Flutter Developer'),
+          const SizedBox(height: 20),
+          _buildLabel('Job Description (Optional)', Icons.description_outlined),
+          const SizedBox(height: 8),
+          _buildTextField(jdController, 'Paste job description...', maxLines: 4),
+          const SizedBox(height: 24),
+          Row(
+            children: [
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: isLoading ? null : onAnalyze,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF6366F1),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    elevation: 0,
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(isLoading ? Icons.hourglass_empty : Icons.auto_awesome, size: 20),
+                      const SizedBox(width: 8),
+                      Text(
+                        isLoading ? 'Analyzing...' : 'Analyze CV',
+                        style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w500),
+                      ),
+                    ],
+                  ),
                 ),
-                child: const CircularProgressIndicator(
-                  valueColor: AlwaysStoppedAnimation(Colors.white),
-                  strokeWidth: 3,
+              ),
+              const SizedBox(width: 12),
+              IconButton(
+                onPressed: isLoading ? null : onReset,
+                icon: const Icon(Icons.refresh),
+                style: IconButton.styleFrom(
+                  backgroundColor: const Color(0xFFF3F4F6),
+                  padding: const EdgeInsets.all(16),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLabel(String text, IconData icon) {
+    return Row(
+      children: [
+        Icon(icon, size: 18, color: const Color(0xFF6366F1)),
+        const SizedBox(width: 8),
+        Text(
+          text,
+          style: GoogleFonts.inter(
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+            color: const Color(0xFF374151),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTextField(TextEditingController controller, String hint, {int maxLines = 1}) {
+    return TextField(
+      controller: controller,
+      maxLines: maxLines,
+      decoration: InputDecoration(
+        hintText: hint,
+        hintStyle: GoogleFonts.inter(color: const Color(0xFF9CA3AF), fontWeight: FontWeight.w400),
+        filled: true,
+        fillColor: const Color(0xFFF9FAFB),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: Color(0xFF6366F1), width: 2),
+        ),
+        contentPadding: const EdgeInsets.all(14),
+      ),
+      style: GoogleFonts.inter(fontWeight: FontWeight.w400),
+    );
+  }
+}
+
+class _FileUploadCard extends StatelessWidget {
+  final PlatformFile? pickedFile;
+  final VoidCallback onPickFile;
+
+  const _FileUploadCard({required this.pickedFile, required this.onPickFile});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF5F3FF),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFE0E7FF)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF6366F1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(Icons.cloud_upload, color: Colors.white, size: 20),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                'Upload CV',
+                style: GoogleFonts.inter(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: const Color(0xFF4338CA),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          if (pickedFile != null)
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: const Color(0xFFE5E7EB)),
+              ),
+              child: Row(
+                children: [
+                  Icon(_getFileIcon(pickedFile!), color: const Color(0xFF6366F1), size: 24),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      pickedFile!.name,
+                      style: GoogleFonts.inter(fontWeight: FontWeight.w500, fontSize: 14),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close, size: 18),
+                    onPressed: onPickFile,
+                    color: const Color(0xFF6B7280),
+                  ),
+                ],
+              ),
+            )
+          else
+            InkWell(
+              onTap: onPickFile,
+              borderRadius: BorderRadius.circular(8),
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: const Color(0xFFD1D5DB), style: BorderStyle.solid, width: 2),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.file_upload_outlined, size: 24, color: Color(0xFF6366F1)),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Click to browse files (PDF, DOC, DOCX)',
+                      style: GoogleFonts.inter(
+                        fontWeight: FontWeight.w500,
+                        fontSize: 14,
+                        color: const Color(0xFF6366F1),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -325,46 +563,154 @@ class _CVAnalysisScreenState extends State<CVAnalysisScreen>
     );
   }
 
+  IconData _getFileIcon(PlatformFile file) {
+    final ext = file.extension?.toLowerCase() ?? '';
+    switch (ext) {
+      case 'pdf':
+        return Icons.picture_as_pdf;
+      case 'doc':
+      case 'docx':
+        return Icons.description;
+      default:
+        return Icons.insert_drive_file;
+    }
+  }
+}
 
-//LEFT COLOUMN
-  Widget _buildInputSection(BuildContext context, CVAnalyzerBackendProvider prov) {
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.08),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
+class _ResultsSection extends StatelessWidget {
+  final CVAnalyzerBackendProvider provider;
+
+  const _ResultsSection({required this.provider});
+
+  @override
+  Widget build(BuildContext context) {
+    if (provider.isLoading) return const SizedBox.shrink();
+
+    if (provider.error != null) {
+      return _ErrorCard(error: provider.error!);
+    }
+
+    if (provider.score == null && provider.advisory == null && provider.highlights.isEmpty) {
+      return Container(
+        padding: const EdgeInsets.all(48),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.analytics_outlined, size: 64, color: Colors.grey.shade300),
+              const SizedBox(height: 16),
+              Text(
+                'Upload a CV to get started',
+                style: GoogleFonts.inter(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                  color: const Color(0xFF9CA3AF),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(
+          flex: 3,
+          child: Column(
+            children: [
+              if (provider.advisory != null) _AdvisoryCard(advisory: provider.advisory!),
+              if (provider.advisory != null && provider.highlights.isNotEmpty)
+                const SizedBox(height: 16),
+              if (provider.highlights.isNotEmpty)
+                _HighlightsCard(highlights: provider.highlights),
+            ],
+          ),
+        ),
+        if (provider.score != null) ...[
+          const SizedBox(width: 16),
+          SizedBox(
+            width: 220,
+            child: _ScoreCard(score: provider.score!),
           ),
         ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // File Upload Section
-          _buildFileUploadCard(),
-          const SizedBox(height: 24),
+      ],
+    );
+  }
+}
 
-          // Input Fields Section
-          _buildInputFields(context, prov),
+class _ErrorCard extends StatelessWidget {
+  final String error;
+
+  const _ErrorCard({required this.error});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFEF2F2),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFFECACA)),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.error_outline, color: Color(0xFFDC2626), size: 24),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Analysis Failed',
+                  style: GoogleFonts.inter(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: const Color(0xFFDC2626),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  error,
+                  style: GoogleFonts.inter(
+                    fontSize: 14,
+                    color: const Color(0xFF991B1B),
+                  ),
+                ),
+              ],
+            ),
+          ),
         ],
       ),
     );
   }
-  Widget _buildFileUploadCard() {
+}
+
+class _AdvisoryCard extends StatelessWidget {
+  final String advisory;
+
+  const _AdvisoryCard({required this.advisory});
+
+  @override
+  Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(12),
+      constraints: const BoxConstraints(maxHeight: 400),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [Colors.indigo.shade50, Colors.blue.shade50],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.blue.shade200, width: 1.8),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 20,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -373,1027 +719,176 @@ class _CVAnalysisScreenState extends State<CVAnalysisScreen>
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(8),
+                padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: Colors.blue.shade600,
+                  color: const Color(0xFFF5F3FF),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: const Icon(Icons.cloud_upload_outlined, color: Colors.white, size: 20),
+                child: const Icon(Icons.lightbulb_outline, color: Color(0xFF6366F1), size: 20),
               ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  'Upload CV',
-                  style: GoogleFonts.poppins(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.blue.shade900,
-                  ),
+              const SizedBox(width: 12),
+              Text(
+                'AI Insights',
+                style: GoogleFonts.inter(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  color: const Color(0xFF111827),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 10),
-
-          // If file selected — show compact info row
-          if (_pickedFile != null) ...[
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: Colors.blue.shade200),
-              ),
-              child: Row(
-                children: [
-                  Icon(_getFileIcon(), color: _getFileColor(), size: 22),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Text(
-                      _pickedFile!.name,
-                      style: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 12),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.close, size: 18),
-                    onPressed: () => setState(() => _pickedFile = null),
-                    color: Colors.red.shade400,
-                    padding: const EdgeInsets.all(6),
-                    constraints: const BoxConstraints(),
-                  ),
-                ],
-              ),
-            ),
-          ] else ...[
-            // --- Modified Row Layout ---
-            Row(
-              children: [
-                Expanded(
-                  flex: 3,
-                  child: InkWell(
-                    onTap: _pickFile,
-                    borderRadius: BorderRadius.circular(10),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: Colors.blue.shade300, width: 1.6),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.file_upload_outlined, size: 30, color: Colors.blue.shade600),
-                          const SizedBox(height: 4),
-                          Text(
-                            'Click to browse Pdf,Doc,Docx',
-                            style: GoogleFonts.poppins(
-                              fontWeight: FontWeight.w600,
-                              fontSize: 13,
-                              color: Colors.blue.shade700,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  flex: 2,
-                  child: SizedBox(
-                    height: 44,
-                    child: ElevatedButton.icon(
-                      onPressed: _pickFile,
-                      icon: const Icon(Icons.folder_open, size: 16),
-                      label: Text(
-                        'Choose File',
-                        style: GoogleFonts.poppins(
-                          fontWeight: FontWeight.w600,
-                          fontSize: 14,
-                        ),
-                      ),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blue.shade600,
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-  Widget _buildInputFields(BuildContext context, CVAnalyzerBackendProvider prov) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _buildInputLabel('Target Role', Icons.work_outline),
-        const SizedBox(height: 8),
-        TextField(
-          controller: _roleController,
-          decoration: _inputDecoration('e.g., Senior Flutter Developer'),
-          style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
-        ),
-        const SizedBox(height: 20),
-        _buildInputLabel('Job Description (Optional)', Icons.description_outlined),
-        const SizedBox(height: 8),
-        TextField(
-          controller: _jdController,
-          maxLines: 4,
-          decoration: _inputDecoration('Paste the job description here...'),
-          style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
-        ),
-        const SizedBox(height: 20),
-        Row(
-          children: [
-            Expanded(
-              child: Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      Colors.purple.shade600,
-                      Colors.blue.shade600,
-                    ],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: ElevatedButton.icon(
-                  onPressed: prov.isLoading ? null : () => _startAnalysis(context),
-                  icon: Icon(
-                    prov.isLoading ? Icons.hourglass_empty : Icons.auto_awesome,
-                    size: 20,
-                  ),
-                  label: Text(
-                    prov.isLoading ? 'Analyzing...' : 'Analyze CV',
-                    style: GoogleFonts.poppins(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.transparent,
-                    shadowColor: Colors.transparent,
-                    minimumSize: const Size.fromHeight(55),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    foregroundColor: Colors.white,
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Container(
-              height: 55,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [Colors.red.shade400, Colors.orange.shade400],
-                ),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: ElevatedButton(
-                onPressed: prov.isLoading ? null : () {
-                  setState(() {
-                    _pickedFile = null;
-                    _roleController.clear();
-                    _jdController.clear();
-                  });
-                  prov.reset();
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.transparent,
-                  foregroundColor: Colors.white,
-                  shadowColor: Colors.transparent,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  padding: const EdgeInsets.symmetric(horizontal: 24),
-                ),
-                child: Icon(Icons.refresh, size: 24),
-              ),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-  Widget _buildInputLabel(String text, IconData icon) {
-    return Row(
-      children: [
-        Icon(icon, size: 18, color: Colors.blue.shade700),
-        const SizedBox(width: 8),
-        Text(
-          text,
-          style: GoogleFonts.poppins(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-            color: Colors.grey.shade800,
-          ),
-        ),
-      ],
-    );
-  }
-  InputDecoration _inputDecoration(String hint) {
-    return InputDecoration(
-      hintText: hint,
-      hintStyle: GoogleFonts.poppins(
-        color: Colors.grey.shade400,
-        fontWeight: FontWeight.w600,
-      ),
-      filled: true,
-      fillColor: Colors.grey.shade50,
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide(color: Colors.grey.shade300),
-      ),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide(color: Colors.grey.shade300),
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide(color: Colors.blue.shade400, width: 2),
-      ),
-      contentPadding: const EdgeInsets.all(16),
-    );
-  }
-
-
-//MIDDLE COLUMN
-
-// Modified results section - cards side by side in a row
-  Widget _buildResultsSection(BuildContext context, CVAnalyzerBackendProvider prov) {
-    // Show loading popup when processing
-    if (prov.isLoading) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        _showAIProcessingDialog(context, prov);
-      });
-    }
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        // Error Card (if any) - full width
-        if (!prov.isLoading && prov.error != null) ...[
-          _buildErrorCard(prov),
           const SizedBox(height: 16),
+          Flexible(
+            child: SingleChildScrollView(
+              child: MarkdownWidget(
+                data: _formatAdvisory(advisory),
+                shrinkWrap: true,
+                config: MarkdownConfig(
+                  configs: [
+                    PConfig(
+                      textStyle: GoogleFonts.inter(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w400,
+                        color: const Color(0xFF4B5563),
+                        height: 1.6,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
         ],
-
-        // Main content row - side by side layout
-        // --- Replace this Expanded(...) block with the SizedBox version ---
-        if (!prov.isLoading && (prov.advisory != null || prov.highlights.isNotEmpty || prov.score != null))
-          SizedBox(
-            // bounded height for the whole results area; tweak multiplier as needed
-            height: MediaQuery.of(context).size.height * 0.7,
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Left column: Advisory (top) + Highlights (bottom)
-                if (prov.advisory != null || prov.highlights.isNotEmpty)
-                  Expanded(
-                    flex: 3,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      mainAxisSize: MainAxisSize.max,
-                      children: [
-                        // Advisory on top — auto height (no Expanded here)
-                        if (prov.advisory != null) _buildAdvisoryCard(prov),
-
-                        if (prov.advisory != null && prov.highlights.isNotEmpty)
-                          const SizedBox(height: 16),
-
-                        // Highlights below — take remaining space and be scrollable if needed
-                        if (prov.highlights.isNotEmpty)
-                          Expanded(
-                            child: _buildHighlightsCard(prov),
-                          ),
-                      ],
-                    ),
-                  ),
-
-                if ((prov.advisory != null || prov.highlights.isNotEmpty) && prov.score != null)
-                  const SizedBox(width: 16),
-
-                // Right column: Score & Progress (fixed width)
-                if (prov.score != null)
-                  SizedBox(
-                    width: 200,
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        _buildScoreCard(prov),
-                        const SizedBox(height: 16),
-                        _buildProgressCard(prov),
-                      ],
-                    ),
-                  ),
-              ],
-            ),
-          ),
-      ],
-    );
-  }
-  Widget _buildHighlightsCard(CVAnalyzerBackendProvider prov) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        // If parent provides a finite maxHeight, use most of it; otherwise use a fraction of viewport.
-        final double viewportHeight = MediaQuery.of(context).size.height;
-        final bool parentHasBoundedHeight = constraints.maxHeight.isFinite && constraints.maxHeight > 0;
-
-        // If parent bounded, use up to 90% of parent space; otherwise use 65% of screen height (clamped).
-        final double cardHeight = parentHasBoundedHeight
-            ? (constraints.maxHeight * 0.9).clamp(320.0, viewportHeight)
-            : (viewportHeight * 0.65).clamp(320.0, 900.0);
-
-        // Also allow a reasonable max width for larger screens
-        final double maxWidth = (MediaQuery.of(context).size.width > 1200) ? 900.0 : 700.0;
-
-        return Center(
-          child: ConstrainedBox(
-            constraints: BoxConstraints(
-              maxWidth: maxWidth,
-              // minHeight ensures compact screens still look okay
-              minHeight: 300,
-              maxHeight: cardHeight,
-            ),
-            child: Container(
-              // Use the computed height so the card grows to intended size
-              height: cardHeight,
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(20),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.08),
-                    blurRadius: 20,
-                    offset: const Offset(0, 10),
-                  ),
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Header row (fixed-ish height)
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: [Colors.orange.shade400, Colors.red.shade400],
-                          ),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: const Icon(Icons.stars, color: Colors.white, size: 20),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          'Key Highlights',
-                          style: GoogleFonts.poppins(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.grey.shade800,
-                          ),
-                        ),
-                      ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: Colors.blue.shade50,
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Text(
-                          '${prov.highlights.length} items',
-                          style: GoogleFonts.poppins(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.blue.shade700,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Content area: takes remaining space and scrolls if content overflows
-                  // We use Expanded so the ListView gets a bounded height (cardHeight minus header).
-                  Expanded(
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(12),
-                      child: Container(
-                        // subtle background to visually separate list
-                        color: Colors.white,
-                        child: prov.highlights.isEmpty
-                            ? Center(
-                          child: Text(
-                            'No highlights found',
-                            style: GoogleFonts.poppins(color: Colors.grey.shade500),
-                          ),
-                        )
-                            : Scrollbar(
-                          thumbVisibility: true,
-                          child: ListView.separated(
-                            padding: const EdgeInsets.symmetric(vertical: 8),
-                            itemCount: prov.highlights.length,
-                            separatorBuilder: (_, __) => const SizedBox(height: 12),
-                            // use default physics for better UX inside bounded container
-                            physics: const BouncingScrollPhysics(),
-                            itemBuilder: (_, idx) {
-                              final h = prov.highlights[idx];
-                              return _buildHighlightItem(h, idx);
-                            },
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        );
-      },
+      ),
     );
   }
 
-  Widget _buildAdvisoryCard(CVAnalyzerBackendProvider prov) {
+  String _formatAdvisory(String text) {
+    text = text.trim();
+    text = text.replaceAllMapped(
+      RegExp(r'\b(Strengths?|Weaknesses?|Recommendations?):', caseSensitive: false),
+          (match) => '\n\n**${match.group(0)}**\n',
+    );
+    return text;
+  }
+}
+
+class _HighlightsCard extends StatelessWidget {
+  final List<Map<String, dynamic>> highlights;
+
+  const _HighlightsCard({required this.highlights});
+
+  @override
+  Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(15),
+      constraints: const BoxConstraints(maxHeight: 500),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.08),
+            color: Colors.black.withOpacity(0.05),
             blurRadius: 20,
-            offset: const Offset(0, 10),
+            offset: const Offset(0, 4),
           ),
         ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min, // advisory should size itself
         children: [
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(12),
+                padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [Colors.green.shade400, Colors.teal.shade400],
-                  ),
-                  borderRadius: BorderRadius.circular(12),
+                  color: const Color(0xFFFEF3C7),
+                  borderRadius: BorderRadius.circular(10),
                 ),
-                child: const Icon(Icons.lightbulb_outline, color: Colors.white, size: 20),
+                child: const Icon(Icons.stars, color: Color(0xFFF59E0B), size: 20),
               ),
               const SizedBox(width: 12),
-              Expanded(
+              Text(
+                'Key Highlights',
+                style: GoogleFonts.inter(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  color: const Color(0xFF111827),
+                ),
+              ),
+              const Spacer(),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF5F3FF),
+                  borderRadius: BorderRadius.circular(12),
+                ),
                 child: Text(
-                  'AI Advisory & Insights',
-                  style: GoogleFonts.poppins(
-                    fontSize: 16,
+                  '${highlights.length}',
+                  style: GoogleFonts.inter(
+                    fontSize: 12,
                     fontWeight: FontWeight.w600,
-                    color: Colors.grey.shade800,
+                    color: const Color(0xFF6366F1),
                   ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 6),
-          Divider(color: Colors.grey.shade200, thickness: 1),
-          const SizedBox(height: 6),
-
-          // --- NEW: limit advisory height based on available parent space ---
-          LayoutBuilder(
-            builder: (context, constraints) {
-              // Parent (left column) is inside a SizedBox(height: ...). Use that as baseline.
-              final parentMax = constraints.hasBoundedHeight
-                  ? constraints.maxHeight
-              // fallback if not bounded (shouldn't happen in your layout)
-                  : MediaQuery.of(context).size.height * 0.25;
-
-              // advisory should take at most a portion of the parent's available height
-              final double advisoryMaxHeight = math.min(parentMax * 0.65, MediaQuery.of(context).size.height * 0.45);
-
-              return ConstrainedBox(
-                constraints: BoxConstraints(maxHeight: advisoryMaxHeight),
-                child: MarkdownWidget(
-                  data: _formatAdvisoryText(prov.advisory ?? ''),
-                  // allow the internal ListView in markdown_widget to size itself
-                  shrinkWrap: true,
-                  // let advisory scroll when its content exceeds advisoryMaxHeight
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  config: MarkdownConfig(
-                    configs: [
-                      PConfig(
-                        textStyle: GoogleFonts.poppins(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.grey.shade700,
-                        ),
-                      ),
-                      H1Config(
-                        style: GoogleFonts.poppins(
-                          fontSize: 24,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.grey.shade900,
-                        ),
-                      ),
-                      H2Config(
-                        style: GoogleFonts.poppins(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.grey.shade900,
-                        ),
-                      ),
-                      H3Config(
-                        style: GoogleFonts.poppins(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.grey.shade800,
-                        ),
-                      ),
-                      PreConfig(
-                        textStyle: GoogleFonts.sourceCodePro(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      CodeConfig(
-                        style: GoogleFonts.sourceCodePro(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          backgroundColor: Colors.grey.shade100,
-                          color: Colors.blue.shade700,
-                        ),
-                      ),
-                      LinkConfig(
-                        style: GoogleFonts.poppins(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.blue.shade600,
-                          decoration: TextDecoration.underline,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            },
-          ),
-        ],
-      ),
-    );
-  }
-
-
-// Loading Popup Dialog
-// Add as a State field
-// State field
-  bool _isAiDialogVisible = false;
-
-// Replacement show dialog:
-  void _showAIProcessingDialog(BuildContext context, CVAnalyzerBackendProvider prov) {
-    // don't show if not loading or already showing
-    if (!prov.isLoading || _isAiDialogVisible) return;
-    _isAiDialogVisible = true;
-
-    // Local listener used only to auto-close the dialog when loading finishes.
-    void _provListener() {
-      if (!prov.isLoading && _isAiDialogVisible && Navigator.of(context).canPop()) {
-        try {
-          Navigator.of(context).pop(); // close the dialog
-        } catch (_) {}
-      }
-    }
-
-    // Add the closing listener
-    prov.addListener(_provListener);
-
-    // Show the dialog once. The content inside uses AnimatedBuilder(prov) so it rebuilds
-    // whenever prov notifies (progress/text updates) without re-opening the dialog.
-    showDialog<void>(
-      context: context,
-      barrierDismissible: false,
-      barrierColor: Colors.black.withOpacity(0.15),
-      useRootNavigator: true,
-      builder: (BuildContext dialogContext) {
-        // AnimatedBuilder listens to prov (a ChangeNotifier) and rebuilds the dialog body
-        // whenever prov.notifyListeners() is called (progress updates, text updates, etc).
-        return Center(
-          child: ClipRect(
-            child: BackdropFilter(
-              // keep blur low for performance
-              filter: ImageFilter.blur(sigmaX: 3, sigmaY: 3),
-              child: Dialog(
-                backgroundColor: Colors.transparent,
-                elevation: 0,
-                insetPadding: const EdgeInsets.all(20),
-                child: AnimatedBuilder(
-                  animation: prov,
-                  builder: (context, _) {
-                    // prov.isLoading and prov.progress are live values here
-                    final double progress = prov.progress.clamp(0.0, 1.0);
-                    final String stageText = _getAIProcessingText(progress);
-                    final bool stillLoading = prov.isLoading;
-
-                    return Container(
-                      constraints: const BoxConstraints(maxWidth: 550),
-                      padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(colors: [Colors.purple.shade50, Colors.blue.shade50]),
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: Colors.purple.shade200.withOpacity(0.7), width: 1.2),
-                      ),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          // Animated pulse icon: prefer existing _aiPulseAnimation if present,
-                          // otherwise use a cheap implicit animation.
-                          if (_aiPulseAnimation != null)
-                            ScaleTransition(scale: _aiPulseAnimation, child: _buildAiIconCircle())
-                          else
-                            TweenAnimationBuilder<double>(
-                              tween: Tween(begin: 1.0, end: 1.02),
-                              duration: const Duration(milliseconds: 900),
-                              builder: (context, v, child) => Transform.scale(scale: v, child: child),
-                              child: _buildAiIconCircle(),
-                            ),
-
-                          const SizedBox(height: 14),
-
-                          // Animated text switcher for stage text (smooth fade/slide)
-                          AnimatedSwitcher(
-                            duration: const Duration(milliseconds: 280),
-                            transitionBuilder: (child, anim) {
-                              return FadeTransition(opacity: anim, child: SlideTransition(position: Tween<Offset>(
-                                begin: const Offset(0, 0.08),
-                                end: Offset.zero,
-                              ).animate(anim), child: child));
-                            },
-                            child: SizedBox(
-                              key: ValueKey<String>(stageText), // important so switcher recognizes changes
-                              width: double.infinity,
-                              child: Text(
-                                stageText,
-                                textAlign: TextAlign.center,
-                                style: GoogleFonts.poppins(
-                                  fontSize: 17,
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.purple.shade900,
-                                ),
-                              ),
-                            ),
-                          ),
-
-                          const SizedBox(height: 12),
-
-                          // Progress indicator updates live from prov.progress
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(10),
-                            child: LinearProgressIndicator(
-                              value: progress,
-                              minHeight: 8,
-                              backgroundColor: Colors.white,
-                              valueColor: AlwaysStoppedAnimation(Colors.purple.shade600),
-                            ),
-                          ),
-
-                          const SizedBox(height: 8),
-
-                          // Animated numeric percent that updates smoothly
-                          Text(
-                            '${(progress * 100).toStringAsFixed(0)}% Complete',
-                            style: GoogleFonts.poppins(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.purple.shade700,
-                            ),
-                          ),
-
-                          const SizedBox(height: 8),
-
-                          // Optional tiny hint when finished
-                          if (!stillLoading && prov.score != null) ...[
-                            const SizedBox(height: 8),
-                            Text(
-                              'Results ready — generating report...',
-                              style: GoogleFonts.poppins(fontSize: 13, color: Colors.grey.shade700),
-                            ),
-                          ],
-                        ],
-                      ),
-                    );
-                  },
-                ),
-              ),
-            ),
-          ),
-        );
-      },
-    ).then((_) {
-      // Dialog closed: cleanup listener and flag
-      try {
-        prov.removeListener(_provListener);
-      } catch (_) {}
-      _isAiDialogVisible = false;
-    }).catchError((_) {
-      try {
-        prov.removeListener(_provListener);
-      } catch (_) {}
-      _isAiDialogVisible = false;
-    });
-  }
-
-// Helper to keep builder clean
-  Widget _buildAiIconCircle() {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(colors: [Colors.purple.shade400, Colors.blue.shade400]),
-        shape: BoxShape.circle,
-        boxShadow: [
-          BoxShadow(color: Colors.purple.withOpacity(0.18), blurRadius: 12, spreadRadius: 1),
-        ],
-      ),
-      child: const Icon(Icons.auto_awesome_outlined, size: 44, color: Colors.white),
-    );
-  }
-  Widget _buildProgressCard(CVAnalyzerBackendProvider prov) {
-    final hasResults = prov.score != null;
-    final highlightCount = prov.highlights.length;
-
-    // constrained height & slightly reduced width to avoid vertical overflow
-    return ConstrainedBox(
-      constraints: const BoxConstraints(maxWidth: 300, maxHeight: 320),
-      child: Container(
-        width: 300, // reduced from 300
-        padding: const EdgeInsets.all(16), // slightly reduced
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              Colors.white,
-              Colors.blue.shade50.withOpacity(0.28),
-            ],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: Colors.blue.shade200,
-            width: 1.8,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.blue.withOpacity(0.13),
-              blurRadius: 20,
-              offset: const Offset(0, 8),
-              spreadRadius: 1,
-            ),
-            BoxShadow(
-              color: Colors.white.withOpacity(0.45),
-              blurRadius: 8,
-              offset: const Offset(-4, -4),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [Colors.blue.shade600, Colors.blue.shade400],
-                    ),
-                    borderRadius: BorderRadius.circular(10),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.blue.withOpacity(0.25),
-                        blurRadius: 6,
-                        offset: const Offset(0, 3),
-                      ),
-                    ],
-                  ),
-                  child: const Icon(
-                    Icons.timeline_rounded,
-                    color: Colors.white,
-                    size: 18,
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    'Analysis Status',
-                    style: GoogleFonts.poppins(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.grey.shade900,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(10),
-              child: LinearProgressIndicator(
-                value: prov.progress,
-                minHeight: 10,
-                backgroundColor: Colors.grey.shade200,
-                valueColor: AlwaysStoppedAnimation(
-                  prov.isLoading
-                      ? Colors.blue.shade600
-                      : (hasResults ? Colors.green.shade600 : Colors.grey.shade400),
-                ),
-              ),
-            ),
-            const SizedBox(height: 10),
-            Row(
-              children: [
-                Container(
-                  width: 8,
-                  height: 8,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: prov.isLoading
-                        ? Colors.blue.shade600
-                        : (hasResults ? Colors.green.shade600 : Colors.grey.shade400),
-                    boxShadow: [
-                      BoxShadow(
-                        color: (prov.isLoading
-                            ? Colors.blue.shade600
-                            : (hasResults ? Colors.green.shade600 : Colors.grey.shade400))
-                            .withOpacity(0.45),
-                        blurRadius: 6,
-                        spreadRadius: 1,
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    prov.isLoading
-                        ? _getAIProcessingText(prov.progress)
-                        : (hasResults ? '✓ Analysis Complete' : 'Ready to analyze'),
-                    style: GoogleFonts.poppins(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.grey.shade700,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Container(
-              height: 1.2,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    Colors.transparent,
-                    Colors.grey.shade300,
-                    Colors.transparent,
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 12),
-            _buildStatRow(
-              'Highlights',
-              hasResults ? '$highlightCount' : '0',
-              Icons.stars_rounded,
-              Colors.amber.shade600,
-            ),
-
-          ],
-        ),
-      ),
-    );
-  }
-
-  String _getAIProcessingText(double progress) {
-    if (progress < 0.15) return '🚀 Initializing AI analysis...';
-    if (progress < 0.35) return '📄 Reading and parsing document...';
-    if (progress < 0.60) return '🔍 Extracting key information...';
-    if (progress < 0.85) return '🧠 Comparing with job requirements...';
-    if (progress < 0.95) return '✨ Generating insights and score...';
-    return '✅ Finalizing report...';
-  }
-
-
-  Widget _buildErrorCard(CVAnalyzerBackendProvider prov) {
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: Colors.red.shade50,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.red.shade200, width: 2),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.red.shade100,
-              shape: BoxShape.circle,
-            ),
-            child: Icon(Icons.error_outline, color: Colors.red.shade700, size: 32),
-          ),
-          const SizedBox(width: 16),
+          const SizedBox(height: 16),
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Analysis Failed',
-                  style: GoogleFonts.poppins(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.red.shade900,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  prov.error ?? 'Unknown error',
-                  style: GoogleFonts.poppins(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.red.shade700,
-                  ),
-                ),
-              ],
+            child: ListView.separated(
+              itemCount: highlights.length,
+              separatorBuilder: (_, __) => const SizedBox(height: 12),
+              itemBuilder: (_, idx) => _HighlightItem(highlight: highlights[idx]),
             ),
           ),
         ],
       ),
     );
   }
+}
 
+class _HighlightItem extends StatelessWidget {
+  final Map<String, dynamic> highlight;
 
-  Widget _buildHighlightItem(Map<String, dynamic> highlight, int index) {
+  const _HighlightItem({required this.highlight});
+
+  @override
+  Widget build(BuildContext context) {
     final type = highlight['type']?.toString().toLowerCase() ?? 'info';
-    final config = _getHighlightConfig(type);
+    final config = _getConfig(type);
 
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [config['bgColor'].withOpacity(0.1), Colors.white],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: config['borderColor'], width: 2),
+        color: config['bgColor'],
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: config['borderColor']),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: config['bgColor'],
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Icon(config['icon'], color: Colors.white, size: 20),
-          ),
+          Icon(config['icon'], color: config['iconColor'], size: 20),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  highlight['text'] ?? 'No title',
-                  style: GoogleFonts.poppins(
+                  highlight['text'] ?? '',
+                  style: GoogleFonts.inter(
                     fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.grey.shade900,
+                    fontWeight: FontWeight.w500,
+                    color: const Color(0xFF111827),
                   ),
                 ),
                 if (highlight['detail'] != null) ...[
                   const SizedBox(height: 4),
                   Text(
                     highlight['detail'],
-                    style: GoogleFonts.poppins(
+                    style: GoogleFonts.inter(
                       fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.grey.shade600,
-                      height: 1.4,
+                      color: const Color(0xFF6B7280),
                     ),
                   ),
                 ],
@@ -1404,348 +899,162 @@ class _CVAnalysisScreenState extends State<CVAnalysisScreen>
       ),
     );
   }
-// REPLACE: _buildScoreCard
 
-
-
-  Widget _buildScoreCard(CVAnalyzerBackendProvider prov) {
-    final score = prov.score ?? 0;
-    final color = _getScoreColor(score);
-    final hasResults = prov.score != null;
-
-    return ConstrainedBox(
-      constraints: const BoxConstraints(maxWidth: 180, maxHeight: 300),
-      child: Container(
-        width: 180,
-        padding: const EdgeInsets.all(8),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              color.withOpacity(0.1),
-              Colors.white,
-              color.withOpacity(0.03),
-            ],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: color.withOpacity(0.3),
-            width: 1.5,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: color.withOpacity(0.18),
-              blurRadius: 12,
-              offset: const Offset(0, 6),
-              spreadRadius: 0.5,
-            ),
-            BoxShadow(
-              color: Colors.white.withOpacity(0.35),
-              blurRadius: 6,
-              offset: const Offset(-3, -3),
-            ),
-          ],
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Header
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(5),
-                  decoration: BoxDecoration(
-                    color: color.withOpacity(0.15),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Icon(Icons.analytics_rounded, color: color, size: 18),
-                ),
-                const SizedBox(width: 6),
-                Text(
-                  'Match Score',
-                  style: GoogleFonts.poppins(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.grey.shade900,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-
-            // Circle
-            SizedBox(
-              width: 100,
-              height: 100,
-              child: Stack(
-                alignment: Alignment.center,
-                children: [
-                  CustomPaint(
-                    size: const Size(100, 100),
-                    painter: _CircularScorePainter(
-                      progress: (score / 100).clamp(0.0, 1.0),
-                      color: color,
-                      // thinner ring
-                    ),
-                  ),
-                  Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      ShaderMask(
-                        shaderCallback: (bounds) => LinearGradient(
-                          colors: [color, color.withOpacity(0.75)],
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                        ).createShader(bounds),
-                        child: Text(
-                          score.toStringAsFixed(0),
-                          style: GoogleFonts.poppins(
-                            fontSize: 20,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        'of 100',
-                        style: GoogleFonts.poppins(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w500,
-                          color: Colors.grey.shade600,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 10),
-
-            // Bottom label
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [color, color.withOpacity(0.8)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: color.withOpacity(0.3),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    hasResults ? Icons.emoji_events_rounded : Icons.pending_rounded,
-                    color: Colors.white,
-                    size: 14,
-                  ),
-                  const SizedBox(width: 6),
-                  Text(
-                    hasResults ? _getScoreLabel(score) : 'Awaiting',
-                    style: GoogleFonts.poppins(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.white,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-// REPLACE: _buildProgressCard
-  Widget _buildStatRow(String label, String value, IconData icon, Color color) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8), // tighter padding
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.07),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(
-          color: color.withOpacity(0.18),
-          width: 1.2,
-        ),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(5), // smaller icon padding
-            decoration: BoxDecoration(
-              color: color.withOpacity(0.12),
-              borderRadius: BorderRadius.circular(6),
-            ),
-            child: Icon(icon, color: color, size: 16), // slightly smaller icon
-          ),
-          const SizedBox(width: 8), // reduced spacing
-          Expanded(
-            child: Text(
-              label,
-              style: GoogleFonts.poppins(
-                fontSize: 13, // smaller font
-                fontWeight: FontWeight.w600,
-                color: Colors.grey.shade700,
-              ),
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3), // tighter chip
-            decoration: BoxDecoration(
-              color: color,
-              borderRadius: BorderRadius.circular(6),
-              boxShadow: [
-                BoxShadow(
-                  color: color.withOpacity(0.25),
-                  blurRadius: 5,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: Text(
-              value,
-              style: GoogleFonts.poppins(
-                fontSize: 12, // slightly smaller
-                fontWeight: FontWeight.w600,
-                color: Colors.white,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-
-
-
-  // Helper methods
-  IconData _getFileIcon() {
-    final ext = _pickedFile?.extension?.toLowerCase() ?? '';
-    switch (ext) {
-      case 'pdf':
-        return Icons.picture_as_pdf;
-      case 'doc':
-      case 'docx':
-        return Icons.description;
-      case 'txt':
-        return Icons.text_snippet;
-      default:
-        return Icons.insert_drive_file;
-    }
-  }
-
-  Color _getFileColor() {
-    final ext = _pickedFile?.extension?.toLowerCase() ?? '';
-    switch (ext) {
-      case 'pdf':
-        return Colors.red.shade600;
-      case 'doc':
-      case 'docx':
-        return Colors.blue.shade600;
-      case 'txt':
-        return Colors.grey.shade600;
-      default:
-        return Colors.grey.shade600;
-    }
-  }
-
-  String _formatFileSize(int bytes) {
-    if (bytes < 1024) return '$bytes B';
-    if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} KB';
-    return '${(bytes / (1024 * 1024)).toStringAsFixed(2)} MB';
-  }
-
-  Color _getScoreColor(double score) {
-    if (score >= 80) return Colors.green.shade600;
-    if (score >= 60) return Colors.orange.shade600;
-    if (score >= 40) return Colors.deepOrange.shade600;
-    return Colors.red.shade600;
-  }
-
-  String _getScoreLabel(double score) {
-    if (score >= 80) return '🎉 Excellent Match';
-    if (score >= 60) return '👍 Good Match';
-    if (score >= 40) return '⚠️ Fair Match';
-    return '❌ Needs Improvement';
-  }
-
-
-  Map<String, dynamic> _getHighlightConfig(String type) {
+  Map<String, dynamic> _getConfig(String type) {
     switch (type) {
       case 'strength':
         return {
           'icon': Icons.check_circle,
-          'bgColor': Colors.green.shade600,
-          'borderColor': Colors.green.shade300,
+          'iconColor': const Color(0xFF10B981),
+          'bgColor': const Color(0xFFF0FDF4),
+          'borderColor': const Color(0xFFD1FAE5),
         };
       case 'weakness':
-      case 'gap':
         return {
           'icon': Icons.warning_amber_rounded,
-          'bgColor': Colors.orange.shade600,
-          'borderColor': Colors.orange.shade300,
-        };
-      case 'skill':
-        return {
-          'icon': Icons.stars,
-          'bgColor': Colors.blue.shade600,
-          'borderColor': Colors.blue.shade300,
-        };
-      case 'experience':
-        return {
-          'icon': Icons.work,
-          'bgColor': Colors.purple.shade600,
-          'borderColor': Colors.purple.shade300,
+          'iconColor': const Color(0xFFF59E0B),
+          'bgColor': const Color(0xFFFFFBEB),
+          'borderColor': const Color(0xFFFEF3C7),
         };
       default:
         return {
           'icon': Icons.info,
-          'bgColor': Colors.grey.shade600,
-          'borderColor': Colors.grey.shade300,
+          'iconColor': const Color(0xFF6366F1),
+          'bgColor': const Color(0xFFF5F3FF),
+          'borderColor': const Color(0xFFE0E7FF),
         };
     }
   }
+}
 
-  String _formatAdvisoryText(String text) {
-    // Convert plain text to markdown-friendly format
-    text = text.trim();
+class _ScoreCard extends StatelessWidget {
+  final double score;
 
-    // Add bold formatting to key phrases
-    text = text.replaceAllMapped(
-      RegExp(r'\b(Strengths?|Weaknesses?|Recommendations?|Skills?|Experience|Education|Summary|Analysis|Conclusion|Key Points?):', caseSensitive: false),
-          (match) => '\n\n**${match.group(0)}**\n',
+  const _ScoreCard({required this.score});
+
+  @override
+  Widget build(BuildContext context) {
+    final color = _getScoreColor(score);
+    final label = _getScoreLabel(score);
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 20,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: color.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(Icons.analytics_rounded, color: color, size: 20),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                'Match Score',
+                style: GoogleFonts.inter(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: const Color(0xFF111827),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 24),
+          SizedBox(
+            width: 140,
+            height: 140,
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                CustomPaint(
+                  size: const Size(140, 140),
+                  painter: _CircularScorePainter(
+                    progress: (score / 100).clamp(0.0, 1.0),
+                    color: color,
+                  ),
+                ),
+                Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      score.toStringAsFixed(0),
+                      style: GoogleFonts.inter(
+                        fontSize: 36,
+                        fontWeight: FontWeight.w700,
+                        color: color,
+                      ),
+                    ),
+                    Text(
+                      'of 100',
+                      style: GoogleFonts.inter(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w400,
+                        color: const Color(0xFF9CA3AF),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 20),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.emoji_events_rounded, color: color, size: 16),
+                const SizedBox(width: 6),
+                Text(
+                  label,
+                  style: GoogleFonts.inter(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: color,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
+  }
 
-    // Format numbered lists
-    text = text.replaceAllMapped(
-      RegExp(r'^(\d+)\.\s+(.+)', multiLine: true),
-          (match) => '• ${match.group(2)}',
-    );
+  Color _getScoreColor(double score) {
+    if (score >= 80) return const Color(0xFF10B981);
+    if (score >= 60) return const Color(0xFFF59E0B);
+    if (score >= 40) return const Color(0xFFEF4444);
+    return const Color(0xFFDC2626);
+  }
 
-
-    // Add spacing around paragraphs
-    text = text.replaceAll(RegExp(r'\n\s*\n'), '\n\n');
-
-    return text;
+  String _getScoreLabel(double score) {
+    if (score >= 80) return 'Excellent';
+    if (score >= 60) return 'Good Match';
+    if (score >= 40) return 'Fair Match';
+    return 'Needs Work';
   }
 }
 
-// Custom painter for circular score display
 class _CircularScorePainter extends CustomPainter {
   final double progress;
   final Color color;
@@ -1757,30 +1066,19 @@ class _CircularScorePainter extends CustomPainter {
     final center = Offset(size.width / 2, size.height / 2);
     final radius = size.width / 2;
 
-    // Background circle
     final bgPaint = Paint()
-      ..color = Colors.grey.shade200
+      ..color = const Color(0xFFF3F4F6)
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 5
+      ..strokeWidth = 12
       ..strokeCap = StrokeCap.round;
 
-    canvas.drawCircle(center, radius - 8, bgPaint);
+    canvas.drawCircle(center, radius - 10, bgPaint);
 
-    // Progress arc with gradient
-    final rect = Rect.fromCircle(center: center, radius: radius - 8);
-    final gradient = SweepGradient(
-      startAngle: -math.pi / 2,
-      endAngle: -math.pi / 2 + (2 * math.pi * progress),
-      colors: [
-        color,
-        color.withOpacity(0.6),
-      ],
-    );
-
+    final rect = Rect.fromCircle(center: center, radius: radius - 10);
     final progressPaint = Paint()
-      ..shader = gradient.createShader(rect)
+      ..color = color
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 16
+      ..strokeWidth = 12
       ..strokeCap = StrokeCap.round;
 
     canvas.drawArc(
@@ -1790,25 +1088,106 @@ class _CircularScorePainter extends CustomPainter {
       false,
       progressPaint,
     );
-
-    // Outer glow effect
-    final glowPaint = Paint()
-      ..color = color.withOpacity(0.2)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 20
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 10);
-
-    canvas.drawArc(
-      rect,
-      -math.pi / 2,
-      2 * math.pi * progress,
-      false,
-      glowPaint,
-    );
   }
 
   @override
   bool shouldRepaint(_CircularScorePainter oldDelegate) {
     return oldDelegate.progress != progress || oldDelegate.color != color;
+  }
+}
+
+class _AIProcessingDialog extends StatelessWidget {
+  final CVAnalyzerBackendProvider provider;
+
+  const _AIProcessingDialog({required this.provider});
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: provider,
+      builder: (context, _) {
+        final progress = provider.progress.clamp(0.0, 1.0);
+        final stageText = _getStageText(progress);
+
+        return Center(
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(16),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 3, sigmaY: 3),
+              child: Dialog(
+                backgroundColor: Colors.transparent,
+                elevation: 0,
+                child: Container(
+                  constraints: const BoxConstraints(maxWidth: 400),
+                  padding: const EdgeInsets.all(28),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: const Color(0xFFE0E7FF)),
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(20),
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
+                          ),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.auto_awesome_outlined,
+                          size: 40,
+                          color: Colors.white,
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      Text(
+                        stageText,
+                        textAlign: TextAlign.center,
+                        style: GoogleFonts.inter(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: const Color(0xFF111827),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: LinearProgressIndicator(
+                          value: progress,
+                          minHeight: 8,
+                          backgroundColor: const Color(0xFFF3F4F6),
+                          valueColor: const AlwaysStoppedAnimation(Color(0xFF6366F1)),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        '${(progress * 100).toStringAsFixed(0)}% Complete',
+                        style: GoogleFonts.inter(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                          color: const Color(0xFF6B7280),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  String _getStageText(double progress) {
+    if (progress < 0.15) return 'Initializing AI analysis...';
+    if (progress < 0.35) return 'Reading document...';
+    if (progress < 0.60) return 'Extracting information...';
+    if (progress < 0.85) return 'Comparing requirements...';
+    if (progress < 0.95) return 'Generating insights...';
+    return 'Finalizing report...';
   }
 }

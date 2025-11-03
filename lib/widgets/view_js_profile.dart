@@ -7,7 +7,7 @@ import '../Screens/Recruiter/LIst_of_Applicants_provider.dart';
 
 class ViewApplicantDetails extends StatelessWidget {
   final ApplicantRecord applicant;
-  const ViewApplicantDetails({Key? key, required this.applicant}) : super(key: key);
+  const ViewApplicantDetails({super.key, required this.applicant});
 
   Widget _hTitle(String t, Color color) => Row(children: [
     Container(padding: const EdgeInsets.all(6), decoration: BoxDecoration(color: color.withOpacity(0.12), borderRadius: BorderRadius.circular(8)), child: Icon(Icons.info_outline, size: 16, color: color)),

@@ -1,18 +1,11 @@
-import 'dart:convert';
-import 'dart:math';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:job_portal/SignUp%20/signup_provider.dart';
 import 'package:job_portal/extractor_CV/cv_extractor.dart';
-import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:intl/intl.dart';
 
 import 'dart:async';
-import 'dart:convert';
-import 'package:flutter/foundation.dart';
 
 class CvUploadSection extends StatefulWidget {
   final CvExtractor extractor;
@@ -21,12 +14,12 @@ class CvUploadSection extends StatefulWidget {
   final VoidCallback onManualContinue;
 
   const CvUploadSection({
-    Key? key,
+    super.key,
     required this.extractor,
     required this.provider,
     required this.onSuccess,
     required this.onManualContinue,
-  }) : super(key: key);
+  });
 
   @override
   State<CvUploadSection> createState() => _CvUploadSectionState();
@@ -526,7 +519,7 @@ class _CvUploadSectionState extends State<CvUploadSection> {
                   const SizedBox(height: 16),
                 ],
               );
-            }).toList(),
+            }),
           ],
 
           const SizedBox(height: 12),

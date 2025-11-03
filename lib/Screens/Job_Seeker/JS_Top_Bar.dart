@@ -7,7 +7,6 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:job_portal/Screens/Job_Seeker/JS_Initials_provider.dart';
-import 'package:job_portal/Screens/Recruiter/R_Initials_provider.dart';
 import 'package:provider/provider.dart';
 
 class MainLayout extends StatefulWidget {

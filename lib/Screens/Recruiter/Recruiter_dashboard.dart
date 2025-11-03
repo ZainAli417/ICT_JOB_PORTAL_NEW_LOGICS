@@ -1,11 +1,9 @@
 import 'dart:async';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
-import 'package:timeago/timeago.dart' as timeago;
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:job_portal/Screens/Recruiter/R_Top_Bar.dart';
@@ -429,7 +427,7 @@ class _RecruiterDashboardState extends State<RecruiterDashboard>
         ],
       ),
       child: DropdownButtonFormField<String>(
-        value: prov.selectedNationality == null ||
+        initialValue: prov.selectedNationality == null ||
             (prov.selectedNationality?.isEmpty ?? true)
             ? 'All'
             : prov.selectedNationality,
@@ -488,7 +486,7 @@ class _RecruiterDashboardState extends State<RecruiterDashboard>
         ],
       ),
       child: DropdownButtonFormField<String>(
-        value: prov.sortOption,
+        initialValue: prov.sortOption,
         items: sortOptions
             .map((s) => DropdownMenuItem(
           value: s,
@@ -1693,26 +1691,26 @@ class CandidateDetailsDialog extends StatelessWidget {
       if (dobRaw == null) return '-';
       if (dobRaw is Timestamp) {
         final dt = dobRaw.toDate().toLocal();
-        return DateFormat.yMMMMd().format(dt) + ' • ${_calculateAge(dt)}';
+        return '${DateFormat.yMMMMd().format(dt)} • ${_calculateAge(dt)}';
       }
       if (dobRaw is Map &&
           (dobRaw.containsKey('seconds') || dobRaw.containsKey('_seconds'))) {
         final seconds = (dobRaw['seconds'] ?? dobRaw['_seconds']) as int;
         final dt = DateTime.fromMillisecondsSinceEpoch(
             seconds * 1000, isUtc: true).toLocal();
-        return DateFormat.yMMMMd().format(dt) + ' • ${_calculateAge(dt)}';
+        return '${DateFormat.yMMMMd().format(dt)} • ${_calculateAge(dt)}';
       }
       if (dobRaw is String) {
         final parsed = DateTime.tryParse(dobRaw);
         if (parsed != null) {
           final dt = parsed.toLocal();
-          return DateFormat.yMMMMd().format(dt) + ' • ${_calculateAge(dt)}';
+          return '${DateFormat.yMMMMd().format(dt)} • ${_calculateAge(dt)}';
         }
         return dobRaw;
       }
       if (dobRaw is DateTime) {
         final dt = dobRaw.toLocal();
-        return DateFormat.yMMMMd().format(dt) + ' • ${_calculateAge(dt)}';
+        return '${DateFormat.yMMMMd().format(dt)} • ${_calculateAge(dt)}';
       }
       return dobRaw.toString();
     } catch (_) {
@@ -1724,7 +1722,9 @@ class CandidateDetailsDialog extends StatelessWidget {
     final now = DateTime.now();
     int years = now.year - dob.year;
     if (now.month < dob.month ||
-        (now.month == dob.month && now.day < dob.day)) years--;
+        (now.month == dob.month && now.day < dob.day)) {
+      years--;
+    }
     return '$years yrs';
   }
 

@@ -1,6 +1,5 @@
 // lib/providers/applicants_provider.dart
 
-import 'package:flutter/foundation.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -1033,8 +1032,4 @@ class ApplicantsProvider with ChangeNotifier {
     await _load();
   }
 
-  @override
-  void dispose() {
-    super.dispose();
-  }
 }

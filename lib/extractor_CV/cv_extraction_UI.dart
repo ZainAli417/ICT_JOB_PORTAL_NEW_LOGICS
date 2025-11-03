@@ -1,8 +1,6 @@
-import 'dart:convert';
 import 'dart:typed_data';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../SignUp /signup_provider.dart';
 import '../extractor_CV/cv_extractor.dart';
@@ -14,12 +12,12 @@ class CvUploadSection extends StatefulWidget {
   final VoidCallback onManualContinue;
 
   const CvUploadSection({
-    Key? key,
+    super.key,
     required this.extractor,
     required this.provider,
     required this.onSuccess,
     required this.onManualContinue,
-  }) : super(key: key);
+  });
 
   @override
   State<CvUploadSection> createState() => _CvUploadSectionState();
@@ -47,7 +45,9 @@ class _CvUploadSectionState extends State<CvUploadSection> with SingleTickerProv
   @override
   void dispose() {
     _animController.dispose();
-    _controllers.values.forEach((c) => c.dispose());
+    for (var c in _controllers.values) {
+      c.dispose();
+    }
     super.dispose();
   }
 
@@ -114,32 +114,32 @@ class _CvUploadSectionState extends State<CvUploadSection> with SingleTickerProv
   void _populateControllers(CvExtractionResult r) {
     _controllers.clear();
 
-    void _set(String key, dynamic value) {
+    void set(String key, dynamic value) {
       _controllers[key] = TextEditingController(text: value?.toString() ?? '');
     }
 
     final p = r.personalProfile;
-    _set('name', p['name']);
-    _set('email', p['email']);
-    _set('contact', p['contactNumber']);
-    _set('nationality', p['nationality']);
-    _set('summary', p['summary'] ?? r.professionalSummary);
-    _set('skills', (p['skills'] is List) ? (p['skills'] as List).join(', ') : p['skills']);
-    _set('social', (p['socialLinks'] is List) ? (p['socialLinks'] as List).join('\n') : p['socialLinks']);
+    set('name', p['name']);
+    set('email', p['email']);
+    set('contact', p['contactNumber']);
+    set('nationality', p['nationality']);
+    set('summary', p['summary'] ?? r.professionalSummary);
+    set('skills', (p['skills'] is List) ? (p['skills'] as List).join(', ') : p['skills']);
+    set('social', (p['socialLinks'] is List) ? (p['socialLinks'] as List).join('\n') : p['socialLinks']);
 
     for (var i = 0; i < r.educationalProfile.length; i++) {
       final e = r.educationalProfile[i];
-      _set('edu_inst_$i', e['institutionName']);
-      _set('edu_dur_$i', e['duration']);
-      _set('edu_major_$i', e['majorSubjects']);
-      _set('edu_marks_$i', e['marksOrCgpa']);
+      set('edu_inst_$i', e['institutionName']);
+      set('edu_dur_$i', e['duration']);
+      set('edu_major_$i', e['majorSubjects']);
+      set('edu_marks_$i', e['marksOrCgpa']);
     }
 
-    _set('exp', r.experiences.map((e) => e['text'] ?? '').join('\n\n'));
-    _set('cert', r.certifications.join('\n'));
-    _set('pub', r.publications.join('\n'));
-    _set('award', r.awards.join('\n'));
-    _set('ref', r.references.join('\n'));
+    set('exp', r.experiences.map((e) => e['text'] ?? '').join('\n\n'));
+    set('cert', r.certifications.join('\n'));
+    set('pub', r.publications.join('\n'));
+    set('award', r.awards.join('\n'));
+    set('ref', r.references.join('\n'));
   }
 
   Future<void> _submitAccount() async {

@@ -1,7 +1,6 @@
 // file: cv_analyzer_provider.dart
 import 'dart:async';
 import 'dart:convert';
-import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:file_picker/file_picker.dart';
@@ -486,8 +485,8 @@ Return a JSON object with this exact structure:
     if (highlights is! List) return [];
 
     return highlights
-        .where((item) => item is Map)
-        .map((item) => Map<String, dynamic>.from(item as Map))
+        .whereType<Map>()
+        .map((item) => Map<String, dynamic>.from(item))
         .where((item) =>
     item['type'] != null &&
         item['text'] != null

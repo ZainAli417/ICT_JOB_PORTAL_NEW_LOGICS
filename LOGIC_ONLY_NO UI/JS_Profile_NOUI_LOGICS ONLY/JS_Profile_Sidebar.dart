@@ -1,5 +1,4 @@
 // sidebar_profile.dart
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -353,7 +352,7 @@ class SidebarProfile extends StatelessWidget {
             child: LinearProgressIndicator(value: pct, minHeight: 6, backgroundColor: Colors.grey.shade200),
           ),
           const SizedBox(width: 8),
-          Text('${got}/${max}', style: GoogleFonts.inter(fontSize: 12, color: Colors.grey.shade700)),
+          Text('$got/$max', style: GoogleFonts.inter(fontSize: 12, color: Colors.grey.shade700)),
         ],
       ),
     );

@@ -8,7 +8,7 @@ import 'package:provider/provider.dart';
 import 'admin_dashboard_provider.dart';
 
 class AdminDashboardScreen extends StatelessWidget {
-  const AdminDashboardScreen({Key? key}) : super(key: key);
+  const AdminDashboardScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -23,7 +23,7 @@ class AdminDashboardScreen extends StatelessWidget {
 }
 
 class _AdminDashboardBody extends StatefulWidget {
-  const _AdminDashboardBody({Key? key}) : super(key: key);
+  const _AdminDashboardBody();
 
   @override
   State<_AdminDashboardBody> createState() => _AdminDashboardBodyState();
@@ -530,7 +530,7 @@ class _AdminDashboardBodyState extends State<_AdminDashboardBody> {
     final recruiterCompany = recruiterData['company']?.toString() ?? '';
 
     // local canon function to match provider canonicalization
-    String _canon(String s) => s.trim().toLowerCase();
+    String canon(String s) => s.trim().toLowerCase();
 
     // ----- Deduplicate & filter empty candidate rows -----
     final Map<String, Map<String, dynamic>> uniqueByUid = {};
@@ -556,7 +556,7 @@ class _AdminDashboardBodyState extends State<_AdminDashboardBody> {
         continue;
       }
 
-      final canonUid = _canon(uid);
+      final canonUid = canon(uid);
 
       if (!uniqueByUid.containsKey(canonUid)) {
         // store a normalized candidate entry
@@ -603,8 +603,8 @@ class _AdminDashboardBodyState extends State<_AdminDashboardBody> {
     final candidateStatusRaw = _normalizeMap(reqData['candidate_statuses']);
     final Map<String, String> candidateStatusNormalized = {};
     candidateStatusRaw.forEach((k, v) {
-      final key = k?.toString() ?? '';
-      if (key.isNotEmpty) candidateStatusNormalized[_canon(key)] = v?.toString() ?? '';
+      final key = k.toString() ?? '';
+      if (key.isNotEmpty) candidateStatusNormalized[canon(key)] = v?.toString() ?? '';
     });
 
     return SingleChildScrollView(
@@ -894,7 +894,7 @@ class _AdminDashboardBodyState extends State<_AdminDashboardBody> {
               const SizedBox(height: 16),
               ...candidates.map((c) {
                 final candidateUidRaw = c['uid']?.toString() ?? '';
-                final canonUid = _canon(candidateUidRaw);
+                final canonUid = canon(candidateUidRaw);
                 final display = _normalizeMap(c['display']);
                 final profile = _normalizeMap(c['profile']);
 
@@ -973,7 +973,7 @@ class _AdminDashboardBodyState extends State<_AdminDashboardBody> {
                     },
                   ),
                 );
-              }).toList(),
+              }),
             ],
           ),
         ],
@@ -1149,7 +1149,7 @@ class _AdminDashboardBodyState extends State<_AdminDashboardBody> {
                             ),
                           ),
                         );
-                      }).toList(),
+                      }),
                     ],
                   ),
                 );

@@ -1,6 +1,5 @@
 // lib/screens/signup_screen.dart
 import 'dart:convert';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:job_portal/SignUp%20/signup_provider.dart';
 import 'package:provider/provider.dart';
@@ -8,7 +7,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 
 class SignUp_Screen2 extends StatefulWidget {
-  const SignUp_Screen2({Key? key}) : super(key: key);
+  const SignUp_Screen2({super.key});
 
   @override
   State<SignUp_Screen2> createState() => _SignUp_Screen2State();
@@ -643,7 +642,7 @@ class _SignUp_Screen2State extends State<SignUp_Screen2> {
                 ListTile(
                   contentPadding: EdgeInsets.zero,
                   title: Text('Contact', style: GoogleFonts.poppins(fontWeight: FontWeight.w700)),
-                  subtitle: Text(p.contactNumberController.text.trim() + '\n' + p.emailController.text.trim(), style: GoogleFonts.poppins()),
+                  subtitle: Text('${p.contactNumberController.text.trim()}\n${p.emailController.text.trim()}', style: GoogleFonts.poppins()),
                   trailing: IconButton(onPressed: () => p.goToStep(1), icon: const Icon(Icons.edit)),
                 ),
                 const Divider(),
@@ -736,7 +735,7 @@ class _SignUp_Screen2State extends State<SignUp_Screen2> {
 }
 
 class _SignUp_Screen2Inner extends StatelessWidget {
-  const _SignUp_Screen2Inner({Key? key}) : super(key: key);
+  const _SignUp_Screen2Inner();
 
   @override
   Widget build(BuildContext context) {

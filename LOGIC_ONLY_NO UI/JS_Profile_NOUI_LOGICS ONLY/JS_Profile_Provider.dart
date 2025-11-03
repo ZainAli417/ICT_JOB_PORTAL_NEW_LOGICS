@@ -511,7 +511,7 @@ class ProfileProvider_NEW extends ChangeNotifier {
     final snap = await docRef.get();
     if (snap.exists) {
       final raw = snap.data() ?? {};
-      if (raw is Map && (raw.containsKey('user_data') || raw.containsKey('userData'))) {
+      if ((raw.containsKey('user_data') || raw.containsKey('userData'))) {
         await docRef.set({'user_data': payload}, SetOptions(merge: true));
         return;
       }
@@ -526,7 +526,7 @@ class ProfileProvider_NEW extends ChangeNotifier {
     final snap = await docRef.get();
     if (snap.exists) {
       final raw = snap.data() ?? {};
-      if (raw is Map && (raw.containsKey('user_data') || raw.containsKey('userData'))) {
+      if ((raw.containsKey('user_data') || raw.containsKey('userData'))) {
         await docRef.set({'user_data': payload}, SetOptions(merge: true));
         return;
       }

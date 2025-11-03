@@ -3,8 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 
 import 'admin_login_provider.dart';
 
@@ -52,7 +50,7 @@ class AdminLoginScreen extends StatelessWidget {
 }
 
 class _LeftMarketingColumn extends StatelessWidget {
-  const _LeftMarketingColumn({Key? key, required this.accent}) : super(key: key);
+  const _LeftMarketingColumn({required this.accent});
   final Color accent;
 
   @override
@@ -102,8 +100,7 @@ class _LeftMarketingColumn extends StatelessWidget {
 }
 
 class _MiniStat extends StatelessWidget {
-  const _MiniStat({Key? key, required this.title, required this.value, required this.accent})
-      : super(key: key);
+  const _MiniStat({required this.title, required this.value, required this.accent});
   final String title;
   final String value;
   final Color accent;
@@ -127,7 +124,7 @@ class _MiniStat extends StatelessWidget {
 }
 
 class _LoginCard extends StatelessWidget {
-  const _LoginCard({Key? key, required this.accent}) : super(key: key);
+  const _LoginCard({required this.accent});
   final Color accent;
 
   @override
@@ -291,7 +288,6 @@ class _LoginCard extends StatelessWidget {
 /// Minimal, styled text field for the login card
 class _ElegantTextField extends StatelessWidget {
   const _ElegantTextField({
-    Key? key,
     required this.label,
     required this.hint,
     required this.icon,
@@ -299,7 +295,7 @@ class _ElegantTextField extends StatelessWidget {
     this.obscure = false,
     this.suffix,
     this.keyboardType,
-  }) : super(key: key);
+  });
 
   final String label;
   final String hint;
