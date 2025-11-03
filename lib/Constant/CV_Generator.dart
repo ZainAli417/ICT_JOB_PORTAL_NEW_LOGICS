@@ -9,14 +9,13 @@ import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
-// <-- Adjust this import path if your provider file is elsewhere -->
+// Adjust this import path if your provider file is elsewhere
 import '../Screens/Job_Seeker/JS_Profile/JS_Profile_Provider.dart';
 
 class CVGeneratorButton extends StatelessWidget {
   const CVGeneratorButton({super.key});
 
   int computeTotalScore(ProfileProvider_NEW p) {
-    // Segments: personal, education, experience, certifications, skills
     const int segments = 5;
     int filled = 0;
 
@@ -55,9 +54,9 @@ class CVGeneratorButton extends StatelessWidget {
             )
                 : null,
             icon: const FaIcon(FontAwesomeIcons.download, size: 18, color: Colors.white),
-            label: Text(
+            label: const Text(
               'Download CV',
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 14,
                 color: Colors.white,
                 fontWeight: FontWeight.w600,
@@ -80,7 +79,7 @@ class CVPreviewDialog extends StatelessWidget {
       insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 900, maxHeight: 700),
+        constraints: const BoxConstraints(maxWidth: 900, maxHeight: 850),
         child: Column(
           children: [
             // Header with avatar & name
@@ -88,7 +87,6 @@ class CVPreviewDialog extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
               child: Row(
                 children: [
-                  // Circular avatar preview (in-app)
                   CircleAvatar(
                     radius: 28,
                     backgroundColor: Colors.grey.shade200,
@@ -113,7 +111,6 @@ class CVPreviewDialog extends StatelessWidget {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          // show first role or fallback to professionalProfileSummary preview
                           provider.professionalExperience.isNotEmpty
                               ? (provider.professionalExperience.first['role'] ?? '')
                               : (provider.professionalProfileSummary.isNotEmpty
@@ -134,37 +131,46 @@ class CVPreviewDialog extends StatelessWidget {
                 ],
               ),
             ),
-
             const Divider(height: 1),
 
-            // PDF preview area
+            // PDF preview area - Increased height
             Expanded(
               child: Padding(
                 padding: const EdgeInsets.all(12),
                 child: PdfPreview(
                   allowPrinting: true,
-                  allowSharing: true,
+                  allowSharing: false,
+                  canChangeOrientation: false,
+                  canDebug: false,
                   maxPageWidth: 700,
                   canChangePageFormat: false,
+                  useActions: false, // Remove the purple ribbon with icons
+                  actions: const [], // Remove all default actions
                   build: (format) => _generatePdf(provider),
                 ),
               ),
             ),
 
-            // Footer with date and explicit download instruction (PdfPreview already has actions)
+            // Footer - Only Print button
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
               child: Row(
+                mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                  Text(
-                    'Generated on ${DateFormat('yyyy-MM-dd').format(DateTime.now())}',
-                    style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+                  ElevatedButton.icon(
+                    onPressed: () async {
+                      await Printing.layoutPdf(
+                        onLayout: (format) => _generatePdf(provider),
+                      );
+                    },
+                    icon: const Icon(Icons.print, size: 18),
+                    label: const Text('Print'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF1E3A8A),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                    ),
                   ),
-                  const Spacer(),
-                  TextButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    child: const Text('Close'),
-                  )
                 ],
               ),
             ),
@@ -174,7 +180,6 @@ class CVPreviewDialog extends StatelessWidget {
     );
   }
 
-  // small helper
   String _initials(String name) {
     final parts = name.trim().split(RegExp(r'\s+')).where((s) => s.isNotEmpty).toList();
     if (parts.isEmpty) return '';
@@ -182,259 +187,441 @@ class CVPreviewDialog extends StatelessWidget {
     return (parts[0][0] + parts[1][0]).toUpperCase();
   }
 
-  /// Builds professional PDF. IMPORTANT: hides contact details in the contact area,
-  /// replacing them with "Contact admin for this information".
+  // Helper function to mask contact information
+  String _maskContact(String contact) {
+    if (contact.isEmpty) return '';
+    if (contact.length <= 4) return contact;
+
+    final start = contact.substring(0, 2);
+    final end = contact.substring(contact.length - 2);
+    final middle = '*' * (contact.length - 4);
+    return '$start$middle$end';
+  }
+
+  String _maskEmail(String email) {
+    if (email.isEmpty) return '';
+    if (!email.contains('@')) return _maskContact(email);
+
+    final parts = email.split('@');
+    final username = parts[0];
+    final domain = parts[1];
+
+    if (username.length <= 3) {
+      return '${username[0]}${'*' * (username.length - 1)}@$domain';
+    }
+
+    final start = username.substring(0, 2);
+    final end = username.substring(username.length - 1);
+    final middle = '*' * (username.length - 3);
+    return '$start$middle$end@$domain';
+  }
+
+  /// Builds professional PDF with modern design
   Future<Uint8List> _generatePdf(ProfileProvider_NEW p) async {
     final doc = pw.Document();
 
-    // Load fonts (ensure pdf_google_fonts is in pubspec)
-    final pw.Font regular = await PdfGoogleFonts.openSansRegular();
-    final pw.Font bold = await PdfGoogleFonts.openSansBold();
+    // Load fonts - Using Poppins
+    final pw.Font regular = await PdfGoogleFonts.poppinsRegular();
+    final pw.Font bold = await PdfGoogleFonts.poppinsBold();
+    final pw.Font semiBold = await PdfGoogleFonts.poppinsSemiBold();
+    final pw.Font medium = await PdfGoogleFonts.poppinsMedium();
 
-    // Fetch avatar as pw.ImageProvider for PDF usage
+    // Fetch avatar
     pw.ImageProvider? avatarImage;
     if (p.profilePicUrl.isNotEmpty) {
       try {
-        // networkImage (from printing) returns a pw.ImageProvider suitable for pw.Image
         avatarImage = await networkImage(p.profilePicUrl);
       } catch (_) {
         avatarImage = null;
       }
     }
 
-    // Helper to render education entries with flexible fields
-    List<pw.Widget> _buildEducation() {
-      final List<pw.Widget> widgets = [];
-      for (final e in p.educationalProfile) {
-        final school = (e['institutionName'] ?? e['school'] ?? '').toString();
-        final degree = (e['marksOrCgpa'] ?? e['degree'] ?? '').toString();
-        final field = (e['majorSubjects'] ?? e['fieldOfStudy'] ?? '').toString();
-        final start = (e['eduStart'] ?? '').toString();
-        final end = (e['eduEnd'] ?? e['duration'] ?? '').toString();
-
-        widgets.add(pw.Column(
-            crossAxisAlignment: pw.CrossAxisAlignment.start,
-            children: [
-              pw.Row(mainAxisAlignment: pw.MainAxisAlignment.spaceBetween, children: [
-                pw.Text('$degree${field.isNotEmpty ? ' — $field' : ''}',
-                    style: pw.TextStyle(font: bold, fontSize: 12)),
-                pw.Text(
-                    start.isNotEmpty || end.isNotEmpty
-                        ? '$start${start.isNotEmpty && end.isNotEmpty ? ' - ' : ''}$end'
-                        : '',
-                    style: pw.TextStyle(font: regular, fontSize: 10)),
-              ]),
-              if (school.isNotEmpty)
-                pw.Text(school, style: pw.TextStyle(font: regular, fontSize: 11)),
-              pw.SizedBox(height: 6),
-            ]));
-      }
-      if (widgets.isEmpty) {
-      widgets.add(pw.Text('No education entries provided', style: pw.TextStyle(font: regular, fontSize: 11)));
-      }
-      return widgets;
+    // Load logo watermark
+    pw.ImageProvider? logoImage;
+    try {
+      final logoData = await rootBundle.load('images/logo.png');
+      logoImage = pw.MemoryImage(logoData.buffer.asUint8List());
+    } catch (_) {
+      logoImage = null;
     }
 
-    List<pw.Widget> _buildExperience() {
-      final List<pw.Widget> widgets = [];
-      for (final exp in p.professionalExperience) {
-        final role = (exp['role'] ?? exp['title'] ?? '').toString();
-        final company = (exp['company'] ?? '').toString();
-        final start = (exp['expStart'] ?? '').toString();
-        final end = (exp['expEnd'] ?? '').toString();
-        final text = (exp['text'] ?? exp['expDescription'] ?? '').toString();
+    // Define colors
+    final primaryColor = PdfColor.fromHex('#1E3A8A');
+    final accentColor = PdfColor.fromHex('#3B82F6');
+    final textColor = PdfColor.fromHex('#111827');
+    final lightGray = PdfColor.fromHex('#F3F4F6');
 
-        widgets.add(pw.Column(crossAxisAlignment: pw.CrossAxisAlignment.start, children: [
-          pw.Text('$role at $company', style: pw.TextStyle(font: bold, fontSize: 12)),
-          pw.Text(
-              (start.isNotEmpty || end.isNotEmpty)
-                  ? '($start${start.isNotEmpty && end.isNotEmpty ? ' – ' : ''}$end)'
-                  : '',
-              style: pw.TextStyle(font: regular, fontSize: 10)),
-          if (text.isNotEmpty)
-            pw.Padding(
-              padding: const pw.EdgeInsets.only(top: 4, bottom: 6),
-              child: pw.Text(text, style: pw.TextStyle(font: regular, fontSize: 11), textAlign: pw.TextAlign.justify),
-            )
-        ]));
-      }
-      if (widgets.isEmpty) {
-        widgets.add(pw.Text('No professional experience listed', style: pw.TextStyle(font: regular, fontSize: 11)));
-      }
-      return widgets;
-    }
-
-    // Build the PDF page(s)
     doc.addPage(
       pw.MultiPage(
         pageFormat: PdfPageFormat.a4,
-        margin: const pw.EdgeInsets.symmetric(horizontal: 34, vertical: 26),
+        margin: const pw.EdgeInsets.all(32),
         build: (context) {
-          return <pw.Widget>[
-            // Header
-            pw.Row(crossAxisAlignment: pw.CrossAxisAlignment.start, children: [
-              // Left: name & title
-              pw.Expanded(
-                flex: 7,
-                child: pw.Column(crossAxisAlignment: pw.CrossAxisAlignment.start, children: [
-                  pw.Text(p.fullName.isNotEmpty ? p.fullName : 'Unnamed',
-                      style: pw.TextStyle(font: bold, fontSize: 22)),
-                  pw.SizedBox(height: 6),
-                  pw.Text(
-                    // prefer current role or professionalProfileSummary snippet
-                    p.professionalExperience.isNotEmpty
-                        ? (p.professionalExperience.first['role'] ?? '')
-                        : (p.professionalProfileSummary.isNotEmpty ? p.professionalProfileSummary : ''),
-                    style: pw.TextStyle(font: regular, fontSize: 11, color: PdfColors.grey700),
-                  ),
-                ]),
-              ),
-              // Right: avatar (PDF)
-              if (avatarImage != null)
-                pw.Container(
-                  width: 72,
-                  height: 72,
-                  decoration: pw.BoxDecoration(shape: pw.BoxShape.circle),
-                  child: pw.ClipOval(
-                    child: pw.Image(avatarImage, fit: pw.BoxFit.cover),
-                  ),
-                )
-              else
-                pw.Container(
-                  width: 72,
-                  height: 72,
-                  alignment: pw.Alignment.center,
-                  decoration: pw.BoxDecoration(
-                    shape: pw.BoxShape.circle,
-                    color: PdfColors.grey300,
-                  ),
-                  child: pw.Text(_initialsForPdf(p.fullName), style: pw.TextStyle(font: bold, fontSize: 18)),
-                ),
-            ]),
-            pw.SizedBox(height: 12),
-
-            // Contact row: HIDDEN contact details, show admin message
+          return [
+            // Modern header with gradient effect
             pw.Container(
-              padding: const pw.EdgeInsets.symmetric(vertical: 8),
-              child: pw.Row(children: [
-                pw.Text('Contact admin for this information', style: pw.TextStyle(font: regular, fontSize: 11)),
-              ]),
-            ),
-
-            pw.SizedBox(height: 8),
-
-            // Two-column layout: Left main content, Right sidebar
-            pw.Row(crossAxisAlignment: pw.CrossAxisAlignment.start, children: [
-              // Left column (main): Summary, Experience, Education
-              pw.Expanded(
-                flex: 7,
-                child: pw.Column(crossAxisAlignment: pw.CrossAxisAlignment.start, children: [
-                  // Summary
-                  pw.Text('Professional Summary', style: pw.TextStyle(font: bold, fontSize: 14)),
-                  pw.Divider(),
-                  pw.SizedBox(height: 6),
-                  pw.Text(
-                      p.personalSummary.isNotEmpty
-                          ? p.personalSummary
-                          : (p.professionalProfileSummary.isNotEmpty ? p.professionalProfileSummary : 'No summary provided.'),
-                      style: pw.TextStyle(font: regular, fontSize: 11),
-                      textAlign: pw.TextAlign.justify),
-                  pw.SizedBox(height: 14),
-
-                  // Experience
-                  pw.Text('Professional Experience', style: pw.TextStyle(font: bold, fontSize: 14)),
-                  pw.Divider(),
-                  pw.SizedBox(height: 6),
-                  ..._buildExperience(),
-                  pw.SizedBox(height: 10),
-
-                  // Education
-                  pw.Text('Education', style: pw.TextStyle(font: bold, fontSize: 14)),
-                  pw.Divider(),
-                  pw.SizedBox(height: 6),
-                  ..._buildEducation(),
-                ]),
+              decoration: pw.BoxDecoration(
+                gradient: pw.LinearGradient(
+                  colors: [
+                    PdfColor.fromHex('#1E3A8A'),
+                    PdfColor.fromHex('#2563EB'),
+                  ],
+                ),
+                borderRadius: pw.BorderRadius.circular(12),
               ),
+              padding: const pw.EdgeInsets.all(15),
+              child: pw.Row(
+                crossAxisAlignment: pw.CrossAxisAlignment.center,
+                children: [
+                  // Avatar
+                  if (avatarImage != null)
+                    pw.Container(
+                      width: 80,
+                      height: 80,
+                      decoration: pw.BoxDecoration(
+                        shape: pw.BoxShape.circle,
+                        border: pw.Border.all(color: PdfColors.white, width: 3),
+                      ),
+                      child: pw.ClipOval(
+                        child: pw.Image(avatarImage, fit: pw.BoxFit.cover),
+                      ),
+                    )
+                  else
+                    pw.Container(
+                      width: 80,
+                      height: 80,
+                      alignment: pw.Alignment.center,
+                      decoration: pw.BoxDecoration(
+                        shape: pw.BoxShape.circle,
+                        color: PdfColors.white,
+                      ),
+                      child: pw.Text(
+                        _initialsForPdf(p.fullName),
+                        style: pw.TextStyle(font: bold, fontSize: 28, color: primaryColor),
+                      ),
+                    ),
+                  pw.SizedBox(width: 20),
 
-              pw.SizedBox(width: 18),
-
-              // Right column (sidebar): Skills, Certifications, Publications, Awards, References
-              pw.Expanded(
-                flex: 4,
-                child: pw.Column(crossAxisAlignment: pw.CrossAxisAlignment.start, children: [
-                  // Skills
-                  pw.Container(
-                    decoration: pw.BoxDecoration(border: pw.Border.all(color: PdfColors.grey300)),
-                    padding: const pw.EdgeInsets.all(8),
-                    child: pw.Column(crossAxisAlignment: pw.CrossAxisAlignment.start, children: [
-                      pw.Text('Skills', style: pw.TextStyle(font: bold, fontSize: 12)),
-                      pw.SizedBox(height: 6),
-                      if (p.skillsList.isNotEmpty)
-                        pw.Wrap(
-                          spacing: 6,
-                          runSpacing: 6,
-                          children: p.skillsList
-                              .map((s) => pw.Container(
-                            padding: const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                            decoration: pw.BoxDecoration(borderRadius: pw.BorderRadius.circular(6), color: PdfColors.grey100),
-                            child: pw.Text(s, style: pw.TextStyle(font: regular, fontSize: 10)),
-                          ))
-                              .toList(),
-                        )
-                      else
-                        pw.Text('No skills listed', style: pw.TextStyle(font: regular, fontSize: 10))
-                    ]),
+                  // Name and title
+                  pw.Expanded(
+                    child: pw.Column(
+                      crossAxisAlignment: pw.CrossAxisAlignment.start,
+                      mainAxisSize: pw.MainAxisSize.min,
+                      children: [
+                        pw.Text(
+                          p.fullName.isNotEmpty ? p.fullName.toUpperCase() : 'UNNAMED',
+                          style: pw.TextStyle(
+                            font: bold,
+                            fontSize: 24,
+                            color: PdfColors.white,
+                            letterSpacing: 1.5,
+                          ),
+                        ),
+                        pw.SizedBox(height: 6),
+                        pw.Text(
+                          p.professionalExperience.isNotEmpty
+                              ? (p.professionalExperience.first['role'] ?? 'Professional')
+                              : (p.professionalProfileSummary.isNotEmpty
+                              ? p.professionalProfileSummary
+                              : 'Professional'),
+                          style: pw.TextStyle(
+                            font: regular,
+                            fontSize: 12,
+                            color: PdfColors.white,
+                          ),
+                        ),
+                        pw.SizedBox(height: 10),
+                        // Contact information
+                        pw.Column(
+                          crossAxisAlignment: pw.CrossAxisAlignment.start,
+                          children: [
+                            if (p.email.isNotEmpty)
+                              pw.Padding(
+                                padding: const pw.EdgeInsets.only(bottom: 3),
+                                child: pw.Text(
+                                  'Email: ${_maskEmail(p.email)}',
+                                  style: pw.TextStyle(font: regular, fontSize: 9, color: PdfColors.white),
+                                ),
+                              ),
+                            if (p.contactNumber.isNotEmpty)
+                              pw.Padding(
+                                padding: const pw.EdgeInsets.only(bottom: 3),
+                                child: pw.Text(
+                                  'Phone: ${_maskContact(p.contactNumber)}',
+                                  style: pw.TextStyle(font: regular, fontSize: 9, color: PdfColors.white),
+                                ),
+                              ),
+                            if (p.secondaryEmail.isNotEmpty)
+                              pw.Padding(
+                                padding: const pw.EdgeInsets.only(bottom: 3),
+                                child: pw.Text(
+                                  'Alt Email: ${_maskEmail(p.secondaryEmail)}',
+                                  style: pw.TextStyle(font: regular, fontSize: 9, color: PdfColors.white),
+                                ),
+                              ),
+                            if (p.socialLinks.isNotEmpty)
+                              pw.Padding(
+                                padding: const pw.EdgeInsets.only(bottom: 3),
+                                child: pw.Text(
+                                  'Social: ${_maskContact(p.socialLinks as String)}',
+                                  style: pw.TextStyle(font: regular, fontSize: 9, color: PdfColors.white),
+                                ),
+                              ),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
-
-                  pw.SizedBox(height: 10),
-
-                  // Certifications
-                  pw.Text('Certifications', style: pw.TextStyle(font: bold, fontSize: 12)),
-                  pw.Divider(),
-                  if (p.certifications.isNotEmpty)
-                    pw.Column(children: p.certifications.map((c) => pw.Bullet(text: c.toString(), style: pw.TextStyle(font: regular, fontSize: 10))).toList())
-                  else
-                    pw.Text('No certifications listed', style: pw.TextStyle(font: regular, fontSize: 10)),
-
-                  pw.SizedBox(height: 10),
-
-                  // Publications
-                  pw.Text('Publications', style: pw.TextStyle(font: bold, fontSize: 12)),
-                  pw.Divider(),
-                  if (p.publications.isNotEmpty)
-                    pw.Column(children: p.publications.map((c) => pw.Bullet(text: c.toString(), style: pw.TextStyle(font: regular, fontSize: 10))).toList())
-                  else
-                    pw.Text('No publications listed', style: pw.TextStyle(font: regular, fontSize: 10)),
-
-                  pw.SizedBox(height: 10),
-
-                  // Awards & References
-                  pw.Text('Awards', style: pw.TextStyle(font: bold, fontSize: 12)),
-                  pw.Divider(),
-                  if (p.awards.isNotEmpty)
-                    pw.Column(children: p.awards.map((c) => pw.Bullet(text: c.toString(), style: pw.TextStyle(font: regular, fontSize: 10))).toList())
-                  else
-                    pw.Text('No awards listed', style: pw.TextStyle(font: regular, fontSize: 10)),
-
-                  pw.SizedBox(height: 10),
-                  pw.Text('References', style: pw.TextStyle(font: bold, fontSize: 12)),
-                  pw.Divider(),
-                  if (p.references.isNotEmpty)
-                    pw.Column(children: p.references.map((c) => pw.Bullet(text: c.toString(), style: pw.TextStyle(font: regular, fontSize: 10))).toList())
-                  else
-                    pw.Text('No references listed', style: pw.TextStyle(font: regular, fontSize: 10)),
-                ]),
+                ],
               ),
-            ]),
-
-            // Footer - small generation timestamp
-            pw.SizedBox(height: 18),
-            pw.Align(
-              alignment: pw.Alignment.centerRight,
-              child: pw.Text('Generated on ${DateFormat('yyyy-MM-dd').format(DateTime.now())}',
-                  style: pw.TextStyle(font: regular, fontSize: 9, color: PdfColors.grey600)),
             ),
+
+            pw.SizedBox(height: 20),
+
+            // Professional Summary
+            _buildSection(
+              title: 'Professional Summary',
+              bold: bold,
+              semiBold: semiBold,
+              regular: regular,
+              primaryColor: primaryColor,
+              child: pw.Text(
+                p.personalSummary.isNotEmpty
+                    ? p.personalSummary
+                    : (p.professionalProfileSummary.isNotEmpty
+                    ? p.professionalProfileSummary
+                    : 'No summary provided.'),
+                style: pw.TextStyle(font: regular, fontSize: 10, height: 1.5, color: textColor),
+                textAlign: pw.TextAlign.justify,
+              ),
+            ),
+
+            // Professional Experience
+            _buildSection(
+              title: 'Professional Experience',
+              bold: bold,
+              semiBold: semiBold,
+              regular: regular,
+              primaryColor: primaryColor,
+              child: pw.Column(
+                crossAxisAlignment: pw.CrossAxisAlignment.start,
+                children: _buildExperience(p, regular, semiBold, accentColor, textColor),
+              ),
+            ),
+
+            // Education
+            _buildSection(
+              title: 'Education',
+              bold: bold,
+              semiBold: semiBold,
+              regular: regular,
+              primaryColor: primaryColor,
+              child: pw.Column(
+                crossAxisAlignment: pw.CrossAxisAlignment.start,
+                children: _buildEducation(p, regular, semiBold, accentColor, textColor),
+              ),
+            ),
+
+            // Skills
+            if (p.skillsList.isNotEmpty)
+              _buildSection(
+                title: 'Skills',
+                bold: bold,
+                semiBold: semiBold,
+                regular: regular,
+                primaryColor: primaryColor,
+                child: pw.Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: p.skillsList.map((skill) {
+                    return pw.Container(
+                      padding: const pw.EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      decoration: pw.BoxDecoration(
+                        color: lightGray,
+                        borderRadius: pw.BorderRadius.circular(6),
+                        border: pw.Border.all(color: accentColor.shade(0.3)),
+                      ),
+                      child: pw.Text(
+                        skill,
+                        style: pw.TextStyle(font: medium, fontSize: 9, color: textColor),
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ),
+
+            // Certifications
+            if (p.certifications.isNotEmpty)
+              _buildSection(
+                title: 'Certifications',
+                bold: bold,
+                semiBold: semiBold,
+                regular: regular,
+                primaryColor: primaryColor,
+                child: pw.Column(
+                  crossAxisAlignment: pw.CrossAxisAlignment.start,
+                  children: p.certifications.map((cert) {
+                    return pw.Padding(
+                      padding: const pw.EdgeInsets.only(bottom: 6),
+                      child: pw.Row(
+                        crossAxisAlignment: pw.CrossAxisAlignment.start,
+                        children: [
+                          pw.Container(
+                            width: 4,
+                            height: 4,
+                            margin: const pw.EdgeInsets.only(top: 4, right: 8),
+                            decoration: pw.BoxDecoration(
+                              color: accentColor,
+                              shape: pw.BoxShape.circle,
+                            ),
+                          ),
+                          pw.Expanded(
+                            child: pw.Text(
+                              cert.toString(),
+                              style: pw.TextStyle(font: regular, fontSize: 10, color: textColor),
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ),
+
+            // Publications
+            if (p.publications.isNotEmpty)
+              _buildSection(
+                title: 'Publications',
+                bold: bold,
+                semiBold: semiBold,
+                regular: regular,
+                primaryColor: primaryColor,
+                child: pw.Column(
+                  crossAxisAlignment: pw.CrossAxisAlignment.start,
+                  children: p.publications.map((pub) {
+                    return pw.Padding(
+                      padding: const pw.EdgeInsets.only(bottom: 6),
+                      child: pw.Row(
+                        crossAxisAlignment: pw.CrossAxisAlignment.start,
+                        children: [
+                          pw.Container(
+                            width: 4,
+                            height: 4,
+                            margin: const pw.EdgeInsets.only(top: 4, right: 8),
+                            decoration: pw.BoxDecoration(
+                              color: accentColor,
+                              shape: pw.BoxShape.circle,
+                            ),
+                          ),
+                          pw.Expanded(
+                            child: pw.Text(
+                              pub.toString(),
+                              style: pw.TextStyle(font: regular, fontSize: 10, color: textColor),
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ),
+
+            // Awards
+            if (p.awards.isNotEmpty)
+              _buildSection(
+                title: 'Awards & Achievements',
+                bold: bold,
+                semiBold: semiBold,
+                regular: regular,
+                primaryColor: primaryColor,
+                child: pw.Column(
+                  crossAxisAlignment: pw.CrossAxisAlignment.start,
+                  children: p.awards.map((award) {
+                    return pw.Padding(
+                      padding: const pw.EdgeInsets.only(bottom: 6),
+                      child: pw.Row(
+                        crossAxisAlignment: pw.CrossAxisAlignment.start,
+                        children: [
+                          pw.Container(
+                            width: 4,
+                            height: 4,
+                            margin: const pw.EdgeInsets.only(top: 4, right: 8),
+                            decoration: pw.BoxDecoration(
+                              color: accentColor,
+                              shape: pw.BoxShape.circle,
+                            ),
+                          ),
+                          pw.Expanded(
+                            child: pw.Text(
+                              award.toString(),
+                              style: pw.TextStyle(font: regular, fontSize: 10, color: textColor),
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ),
+
+            // References
+            if (p.references.isNotEmpty)
+              _buildSection(
+                title: 'References',
+                bold: bold,
+                semiBold: semiBold,
+                regular: regular,
+                primaryColor: primaryColor,
+                child: pw.Column(
+                  crossAxisAlignment: pw.CrossAxisAlignment.start,
+                  children: p.references.map((ref) {
+                    return pw.Padding(
+                      padding: const pw.EdgeInsets.only(bottom: 6),
+                      child: pw.Row(
+                        crossAxisAlignment: pw.CrossAxisAlignment.start,
+                        children: [
+                          pw.Container(
+                            width: 4,
+                            height: 4,
+                            margin: const pw.EdgeInsets.only(top: 4, right: 8),
+                            decoration: pw.BoxDecoration(
+                              color: accentColor,
+                              shape: pw.BoxShape.circle,
+                            ),
+                          ),
+                          pw.Expanded(
+                            child: pw.Text(
+                              ref.toString(),
+                              style: pw.TextStyle(font: regular, fontSize: 10, color: textColor),
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ),
           ];
+        },
+        header: (context) {
+          // Logo in top right corner on every page (original without opacity)
+          if (logoImage != null) {
+            return pw.Container(
+              alignment: pw.Alignment.topRight,
+              margin: const pw.EdgeInsets.only(right: 0, top: 0,bottom: 10),
+              child: pw.Image(logoImage, width: 90, height: 80),
+            );
+          }
+          return pw.SizedBox();
+        },
+        footer: (context) {
+          return pw.Container(
+            alignment: pw.Alignment.center,
+            margin: const pw.EdgeInsets.only(top: 12),
+            child: pw.Text(
+              'Generated on ${DateFormat('MMMM dd, yyyy').format(DateTime.now())} | Page ${context.pageNumber} of ${context.pagesCount}',
+              style: pw.TextStyle(font: regular, fontSize: 8, color: PdfColors.grey600),
+            ),
+          );
         },
       ),
     );
@@ -442,7 +629,186 @@ class CVPreviewDialog extends StatelessWidget {
     return doc.save();
   }
 
-  // Small initials helper for PDF fallback avatar
+  pw.Widget _buildSection({
+    required String title,
+    required pw.Font bold,
+    required pw.Font semiBold,
+    required pw.Font regular,
+    required PdfColor primaryColor,
+    required pw.Widget child,
+  }) {
+    return pw.Padding(
+      padding: const pw.EdgeInsets.only(bottom: 18),
+      child: pw.Column(
+        crossAxisAlignment: pw.CrossAxisAlignment.start,
+        children: [
+          pw.Text(
+            title,
+            style: pw.TextStyle(
+              font: bold,
+              fontSize: 14,
+              color: primaryColor,
+              letterSpacing: 0.5,
+            ),
+          ),
+          pw.SizedBox(height: 4),
+          pw.Container(
+            width: 60,
+            height: 3,
+            decoration: pw.BoxDecoration(
+              color: primaryColor,
+              borderRadius: pw.BorderRadius.circular(2),
+            ),
+          ),
+          pw.SizedBox(height: 10),
+          child,
+        ],
+      ),
+    );
+  }
+
+  List<pw.Widget> _buildEducation(
+      ProfileProvider_NEW p,
+      pw.Font regular,
+      pw.Font semiBold,
+      PdfColor accentColor,
+      PdfColor textColor,
+      ) {
+    if (p.educationalProfile.isEmpty) {
+      return [
+        pw.Text(
+          'No education entries provided',
+          style: pw.TextStyle(font: regular, fontSize: 10, fontStyle: pw.FontStyle.italic, color: textColor),
+        ),
+      ];
+    }
+
+    return p.educationalProfile.map((e) {
+      final school = (e['institutionName'] ?? e['school'] ?? '').toString();
+      final degree = (e['marksOrCgpa'] ?? e['degree'] ?? '').toString();
+      final field = (e['majorSubjects'] ?? e['fieldOfStudy'] ?? '').toString();
+      final start = (e['eduStart'] ?? '').toString();
+      final end = (e['eduEnd'] ?? e['duration'] ?? '').toString();
+
+      return pw.Padding(
+        padding: const pw.EdgeInsets.only(bottom: 12),
+        child: pw.Row(
+          crossAxisAlignment: pw.CrossAxisAlignment.start,
+          children: [
+            pw.Container(
+              width: 6,
+              height: 6,
+              margin: const pw.EdgeInsets.only(top: 4, right: 10),
+              decoration: pw.BoxDecoration(
+                color: accentColor,
+                shape: pw.BoxShape.circle,
+              ),
+            ),
+            pw.Expanded(
+              child: pw.Column(
+                crossAxisAlignment: pw.CrossAxisAlignment.start,
+                children: [
+                  pw.Text(
+                    degree,
+                    style: pw.TextStyle(font: semiBold, fontSize: 11, color: textColor),
+                  ),
+                  if (field.isNotEmpty)
+                    pw.Text(
+                      field,
+                      style: pw.TextStyle(font: regular, fontSize: 10, color: textColor),
+                    ),
+                  if (school.isNotEmpty)
+                    pw.Text(
+                      school,
+                      style: pw.TextStyle(font: regular, fontSize: 10, color: PdfColors.grey800),
+                    ),
+                  if (start.isNotEmpty || end.isNotEmpty)
+                    pw.Text(
+                      '$start${start.isNotEmpty && end.isNotEmpty ? ' - ' : ''}$end',
+                      style: pw.TextStyle(font: regular, fontSize: 9, color: accentColor),
+                    ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      );
+    }).toList();
+  }
+
+  List<pw.Widget> _buildExperience(
+      ProfileProvider_NEW p,
+      pw.Font regular,
+      pw.Font semiBold,
+      PdfColor accentColor,
+      PdfColor textColor,
+      ) {
+    if (p.professionalExperience.isEmpty) {
+      return [
+        pw.Text(
+          'No professional experience listed',
+          style: pw.TextStyle(font: regular, fontSize: 10, fontStyle: pw.FontStyle.italic, color: textColor),
+        ),
+      ];
+    }
+
+    return p.professionalExperience.map((exp) {
+      final role = (exp['role'] ?? exp['title'] ?? '').toString();
+      final company = (exp['company'] ?? '').toString();
+      final start = (exp['expStart'] ?? '').toString();
+      final end = (exp['expEnd'] ?? '').toString();
+      final text = (exp['expDescription'] ?? exp['text'] ?? '').toString();
+
+      return pw.Padding(
+        padding: const pw.EdgeInsets.only(bottom: 14),
+        child: pw.Row(
+          crossAxisAlignment: pw.CrossAxisAlignment.start,
+          children: [
+            pw.Container(
+              width: 6,
+              height: 6,
+              margin: const pw.EdgeInsets.only(top: 4, right: 10),
+              decoration: pw.BoxDecoration(
+                color: accentColor,
+                shape: pw.BoxShape.circle,
+              ),
+            ),
+            pw.Expanded(
+              child: pw.Column(
+                crossAxisAlignment: pw.CrossAxisAlignment.start,
+                children: [
+                  pw.Text(
+                    role,
+                    style: pw.TextStyle(font: semiBold, fontSize: 11, color: textColor),
+                  ),
+                  if (company.isNotEmpty)
+                    pw.Text(
+                      company,
+                      style: pw.TextStyle(font: regular, fontSize: 10, color: textColor),
+                    ),
+                  if (start.isNotEmpty || end.isNotEmpty)
+                    pw.Text(
+                      '$start${start.isNotEmpty && end.isNotEmpty ? ' - ' : ''}$end',
+                      style: pw.TextStyle(font: regular, fontSize: 9, color: accentColor),
+                    ),
+                  if (text.isNotEmpty)
+                    pw.Padding(
+                      padding: const pw.EdgeInsets.only(top: 6),
+                      child: pw.Text(
+                        text,
+                        style: pw.TextStyle(font: regular, fontSize: 10, height: 1.4, color: textColor),
+                        textAlign: pw.TextAlign.justify,
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      );
+    }).toList();
+  }
+
   String _initialsForPdf(String name) {
     final parts = name.trim().split(RegExp(r'\s+')).where((s) => s.isNotEmpty).toList();
     if (parts.isEmpty) return '';
