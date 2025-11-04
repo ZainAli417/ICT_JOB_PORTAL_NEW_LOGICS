@@ -310,81 +310,20 @@ class _Recruiter_MainLayoutState extends State<Recruiter_MainLayout>
       ),
     );
   }
-
-
   Widget _buildEnhancedLogo() {
     return Row(
       children: [
-        AnimatedBuilder(
-          animation: _shimmerController,
-          builder: (context, child) {
-            return Container(
-              width: 52,
-              height: 52,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    const Color(0xFF6366F1),
-                    const Color(0xFF8B5CF6),
-                    const Color(0xFF6366F1),
-                  ],
-                  stops: [
-                    0.0,
-                    _shimmerController.value,
-                    1.0,
-                  ],
-                ),
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: const Color(0xFF6366F1).withOpacity(0.4),
-                    blurRadius: 16,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: const Icon(
-                Icons.auto_awesome_rounded,
-                color: Colors.white,
-                size: 28,
-              ),
-            );
-          },
+        // --- Replace shimmer container with your logo image
+        Image.asset(
+          'images/logo.png',
+          width: 180,
+          height: 60,
+          fit: BoxFit.fill,
         ),
+
         const SizedBox(width: 14),
-        Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            ShaderMask(
-              shaderCallback: (bounds) => const LinearGradient(
-                colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
-              ).createShader(bounds),
-              child: Text(
-                'Maha Services',
-                style: GoogleFonts.poppins(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w700,
-                  color: Colors.white,
-                  letterSpacing: -0.5,
-                ),
-              ),
-            ),
-            Text(
-              'Professional Excellence',
-              style: GoogleFonts.poppins(
-                fontSize: 10,
-                fontWeight: FontWeight.w500,
-                color: _isDarkMode
-                    ? Colors.white.withOpacity(0.5)
-                    : Colors.black54,
-                letterSpacing: 1.5,
-              ),
-            ),
-          ],
-        ),
+
+        // --- Brand title and subtitle
       ],
     );
   }
