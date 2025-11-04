@@ -322,8 +322,6 @@ class _Recruiter_MainLayoutState extends State<Recruiter_MainLayout>
         ),
 
         const SizedBox(width: 14),
-
-        // --- Brand title and subtitle
       ],
     );
   }
