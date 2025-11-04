@@ -6,8 +6,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:job_portal/Screens/Recruiter/R_Top_Bar.dart';
 
+import 'R_Top_Bar.dart';
 import 'Recruiter_provider.dart';
 
 class RecruiterDashboard extends StatefulWidget {
@@ -23,6 +23,8 @@ class _RecruiterDashboardState extends State<RecruiterDashboard>
   late final Animation<double> _fade;
   late final Animation<Offset> _slide;
   final TextEditingController _searchCtrl = TextEditingController();
+  final ScrollController _scrollController = ScrollController();
+  bool _showShadow = false;
 
   @override
   void initState() {
@@ -31,201 +33,357 @@ class _RecruiterDashboardState extends State<RecruiterDashboard>
       vsync: this,
       duration: const Duration(milliseconds: 800),
     )..forward();
-    _fade = CurvedAnimation(
-      parent: _ctrl,
-      curve: Curves.easeOutCubic,
-    );
+    _fade = CurvedAnimation(parent: _ctrl, curve: Curves.easeOutCubic);
     _slide = Tween<Offset>(
-      begin: const Offset(0, 0.05),
+      begin: const Offset(0, 0.03),
       end: Offset.zero,
-    ).animate(
-      CurvedAnimation(parent: _ctrl, curve: Curves.easeOutCubic),
-    );
+    ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOutCubic));
+
+    _scrollController.addListener(() {
+      if (_scrollController.offset > 10 && !_showShadow) {
+        setState(() => _showShadow = true);
+      } else if (_scrollController.offset <= 10 && _showShadow) {
+        setState(() => _showShadow = false);
+      }
+    });
   }
 
   @override
   void dispose() {
     _ctrl.dispose();
     _searchCtrl.dispose();
+    _scrollController.dispose();
     super.dispose();
+  }
+
+  String _maskEmail(String email) {
+    if (!email.contains('@')) return '•••@•••.com';
+    final parts = email.split('@');
+    final username = parts[0];
+    final domain = parts[1];
+
+    if (username.length <= 2) {
+      return '••@${domain[0]}•••.${domain.split('.').last}';
+    }
+
+    return '${username.substring(0, 2)}•••@${domain[0]}•••.${domain.split('.').last}';
+  }
+
+  String _maskPhone(String phone) {
+    final cleaned = phone.replaceAll(RegExp(r'[^\d]'), '');
+    if (cleaned.length < 4) return '•••-•••';
+
+    return '•••-•••-${cleaned.substring(cleaned.length - 2)}';
   }
 
   @override
   Widget build(BuildContext context) {
-     return Recruiter_MainLayout(
+    return Recruiter_MainLayout(
       activeIndex: 0,
-      child: Stack(
-          children: [
-            FadeTransition(
-              opacity: _fade,
-              child: SlideTransition(
-                position: _slide,
-                child: _buildDashboardContent(context),
+      child: FadeTransition(
+        opacity: _fade,
+        child: SlideTransition(
+          position: _slide,
+          child: _buildDashboardContent(context),
         ),
       ),
-      ]
-          ),
     );
   }
+
   Widget _buildDashboardContent(BuildContext context) {
     final isMobile = MediaQuery.of(context).size.width < 768;
+    final isTablet = MediaQuery.of(context).size.width >= 768 &&
+        MediaQuery.of(context).size.width < 1024;
     final screenWidth = MediaQuery.of(context).size.width;
 
-    return        Scaffold(
-      backgroundColor: Color(0xFFF8F9FA),
+    return Scaffold(
+      backgroundColor: const Color(0xFFF8FAFC),
       appBar: _buildAppBar(context),
       body: ChangeNotifierProvider(
         create: (_) => RecruiterProvider2(),
         builder: (context, _) {
           final prov = Provider.of<RecruiterProvider2>(context);
+
           if (isMobile) {
-            return SingleChildScrollView(
-              child: Column(
-                children: [
-                  _buildSearchAndFilters(prov, isMobile, screenWidth),
-                  Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: prov.loading
-                        ? _buildLoadingState()
-                        : _buildCandidatesSection(prov, isMobile),
-                  ),
-                  if (prov.candidates.isNotEmpty)
-                    _buildBottomActionBar(prov, isMobile),
-                ],
-              ),
-            );
+            return _buildMobileLayout(prov, screenWidth);
           }
 
-          // Desktop Layout - Side by Side
-          return Container(
-            color: Colors.white,
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Left Sidebar - Filters
-                Container(
-                  width: 320,
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    border: Border(
-                      right: BorderSide(
-                        color: Colors.grey.shade200,
-                        width: 1,
-                      ),
-                    ),
-                  ),
-                  child: _buildSearchAndFilters(prov, isMobile, screenWidth),
-                ),
-                // Right Content Area
-                Expanded(
-                  child: Container(
-                    color: Colors.white,
-                    child: Column(
-                      children: [
-                        Expanded(
-                          child: SingleChildScrollView(
-                            child: Padding(
-                              padding: const EdgeInsets.all(32),
-                              child: prov.loading
-                                  ? _buildLoadingState()
-                                  : _buildCandidatesSection(prov, isMobile),
-                            ),
-                          ),
-                        ),
-                        if (prov.candidates.isNotEmpty)
-                          _buildBottomActionBar(prov, isMobile),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          );
+          if (isTablet) {
+            return _buildTabletLayout(prov, screenWidth);
+          }
+
+          return _buildDesktopLayout(prov, screenWidth);
         },
       ),
     );
   }
 
-  PreferredSizeWidget _buildAppBar(BuildContext c) => AppBar(
-    elevation: 0,
-    backgroundColor: Colors.white,
-    title: Row(
-      children: [
-        Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
+  PreferredSizeWidget _buildAppBar(BuildContext c) {
+    return AppBar(
+      elevation: 0,
+      backgroundColor: Colors.white,
+      toolbarHeight: 72,
+      title: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFF6366F1).withOpacity(0.25),
+                  blurRadius: 16,
+                  offset: const Offset(0, 4),
+                  spreadRadius: 0,
+                ),
+              ],
             ),
-            borderRadius: BorderRadius.circular(12),
-            boxShadow: [
-              BoxShadow(
-                color: const Color(0xFF6366F1).withOpacity(0.3),
-                blurRadius: 12,
-                offset: const Offset(0, 4),
+            child: const Icon(Icons.people_alt_outlined, color: Colors.white, size: 24),
+          ),
+          const SizedBox(width: 16),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Candidate Management',
+                style: GoogleFonts.poppins(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w700,
+                  color: const Color(0xFF0F172A),
+                  letterSpacing: -0.5,
+                  height: 1.2,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                'Manage and review candidates',
+                style: GoogleFonts.poppins(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w400,
+                  color: const Color(0xFF64748B),
+                  letterSpacing: -0.1,
+                ),
               ),
             ],
           ),
-          child: const Icon(Icons.people_alt_rounded,
-              color: Colors.white, size: 24),
-        ),
-        const SizedBox(width: 16),
-        Text(
-          'Candidates',
-          style: GoogleFonts.poppins(
-            fontSize: 26,
-            fontWeight: FontWeight.w700,
-            color: const Color(0xFF0F172A),
-            letterSpacing: -0.5,
+        ],
+      ),
+      actions: [
+        // Privacy Badge
+        Container(
+          margin: const EdgeInsets.only(right: 16),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                const Color(0xFF10B981).withOpacity(0.1),
+                const Color(0xFF10B981).withOpacity(0.05),
+              ],
+            ),
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: const Color(0xFF10B981).withOpacity(0.3)),
           ),
-        ),
-      ],
-    ),
-    bottom: PreferredSize(
-      preferredSize: const Size.fromHeight(1),
-      child: Container(
-        height: 1,
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              Colors.grey.shade100,
-              Colors.grey.shade200,
-              Colors.grey.shade100,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(
+                Icons.security_rounded,
+                size: 16,
+                color: Color(0xFF10B981),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                'Privacy Protected',
+                style: GoogleFonts.poppins(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: const Color(0xFF10B981),
+                ),
+              ),
             ],
           ),
         ),
+      ],
+      bottom: PreferredSize(
+        preferredSize: const Size.fromHeight(1),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          height: 1,
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: _showShadow
+                  ? [
+                const Color(0xFFE2E8F0),
+                const Color(0xFFE2E8F0).withOpacity(0.5),
+              ]
+                  : [Colors.transparent, Colors.transparent],
+            ),
+          ),
+        ),
       ),
-    ),
-  );
+    );
+  }
 
-  Widget _buildSearchAndFilters(RecruiterProvider2 prov, bool isMobile, double screenWidth) {
+  Widget _buildMobileLayout(RecruiterProvider2 prov, double screenWidth) {
+    return CustomScrollView(
+      controller: _scrollController,
+      slivers: [
+        SliverToBoxAdapter(child: _buildSearchAndFilters(prov, true, screenWidth)),
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: prov.loading
+                ? _buildLoadingState()
+                : _buildCandidatesSection(prov, true),
+          ),
+        ),
+        if (prov.selectedUids.isNotEmpty)
+          SliverToBoxAdapter(child: const SizedBox(height: 80)),
+      ],
+    );
+  }
+
+  Widget _buildTabletLayout(RecruiterProvider2 prov, double screenWidth) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          width: 280,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            border: Border(
+              right: BorderSide(color: const Color(0xFFE2E8F0), width: 1),
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.03),
+                blurRadius: 12,
+                offset: const Offset(2, 0),
+              )
+            ],
+          ),
+          child: _buildSearchAndFilters(prov, false, screenWidth),
+        ),
+        Expanded(
+          child: Column(
+            children: [
+              Expanded(
+                child: CustomScrollView(
+                  controller: _scrollController,
+                  slivers: [
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsets.all(24),
+                        child: prov.loading
+                            ? _buildLoadingState()
+                            : _buildCandidatesSection(prov, false),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              if (prov.selectedUids.isNotEmpty)
+                _buildBottomActionBar(prov, false),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDesktopLayout(RecruiterProvider2 prov, double screenWidth) {
+    return Container(
+      color: const Color(0xFFF8FAFC),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 340,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              border: Border(
+                right: BorderSide(color: const Color(0xFFE2E8F0), width: 1),
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.04),
+                  blurRadius: 20,
+                  offset: const Offset(4, 0),
+                  spreadRadius: 0,
+                )
+              ],
+            ),
+            child: _buildSearchAndFilters(prov, false, screenWidth),
+          ),
+          Expanded(
+            child: Column(
+              children: [
+                Expanded(
+                  child: CustomScrollView(
+                    controller: _scrollController,
+                    slivers: [
+                      SliverToBoxAdapter(
+                        child: Padding(
+                          padding: const EdgeInsets.all(32),
+                          child: prov.loading
+                              ? _buildLoadingState()
+                              : _buildCandidatesSection(prov, false),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                if (prov.selectedUids.isNotEmpty)
+                  _buildBottomActionBar(prov, false),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSearchAndFilters(
+      RecruiterProvider2 prov,
+      bool isMobile,
+      double screenWidth,
+      ) {
     final natList = [
       'All',
-      ...prov.nationalityOptions.where((s) => s.trim().isNotEmpty).toList()
+      ...prov.nationalityOptions
+          .where((s) => s.trim().isNotEmpty)
+          .toList()
         ..sort((a, b) => a.compareTo(b))
     ];
-    final sortOptions = ['None', 'Name A→Z', 'Name Z→A'];
+    final sortOptions = ['None', 'Name A→Z', 'Name Z→A', 'Recently Added'];
 
     if (isMobile) {
       return Container(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
           color: Colors.white,
+          border: Border(
+            bottom: BorderSide(color: const Color(0xFFE2E8F0)),
+          ),
           boxShadow: [
             BoxShadow(
-              color: Colors.grey.shade200,
+              color: Colors.black.withOpacity(0.02),
               blurRadius: 8,
               offset: const Offset(0, 2),
-            ),
+            )
           ],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             _buildSearchField(prov),
-            const SizedBox(height: 12),
+            const SizedBox(height: 16),
             Row(
               children: [
                 Expanded(child: _buildNationalityDropdown(natList, prov)),
@@ -233,123 +391,197 @@ class _RecruiterDashboardState extends State<RecruiterDashboard>
                 Expanded(child: _buildSortDropdown(sortOptions, prov)),
               ],
             ),
-            const SizedBox(height: 12),
-            Align(
-              alignment: Alignment.centerRight,
-              child: _buildClearButton(prov),
-            ),
+            const SizedBox(height: 16),
+            _buildActiveFiltersChips(prov),
+            if (_hasActiveFilters(prov)) const SizedBox(height: 12),
+            if (_hasActiveFilters(prov))
+              Align(alignment: Alignment.centerRight, child: _buildClearButton(prov)),
           ],
         ),
       );
     }
 
-    // Desktop Sidebar Layout
     return SingleChildScrollView(
       child: Padding(
-
         padding: const EdgeInsets.all(24),
         child: Column(
-
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Header
             Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.all(10),
+                  padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
-                    ),
-                    borderRadius: BorderRadius.circular(10),
-                    boxShadow: [
-                      BoxShadow(
-                        color: const Color(0xFF6366F1).withOpacity(0.3),
-                        blurRadius: 8,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
+                    color: const Color(0xFFF1F5F9),
+                    borderRadius: BorderRadius.circular(8),
                   ),
                   child: const Icon(
                     Icons.filter_list_rounded,
-                    color: Colors.white,
                     size: 20,
+                    color: Color(0xFF6366F1),
                   ),
                 ),
                 const SizedBox(width: 12),
                 Text(
                   'Filters',
                   style: GoogleFonts.poppins(
-                    fontSize: 20,
+                    fontSize: 16,
                     fontWeight: FontWeight.w700,
                     color: const Color(0xFF0F172A),
+                    letterSpacing: -0.3,
                   ),
                 ),
               ],
             ),
             const SizedBox(height: 24),
 
-            // Search Section
-            Text(
-              'Search',
-              style: GoogleFonts.poppins(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                color: Colors.grey.shade600,
-                letterSpacing: 0.5,
-              ),
-            ),
-            const SizedBox(height: 12),
+            _buildSectionLabel('Search'),
+            const SizedBox(height: 10),
             _buildSearchField(prov),
             const SizedBox(height: 24),
 
-            // Nationality Filter
-            Text(
-              'Nationality',
-              style: GoogleFonts.poppins(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                color: Colors.grey.shade600,
-                letterSpacing: 0.5,
-              ),
-            ),
-            const SizedBox(height: 12),
+            _buildSectionLabel('Nationality'),
+            const SizedBox(height: 10),
             _buildNationalityDropdown(natList, prov),
             const SizedBox(height: 24),
 
-            // Sort Section
-            Text(
-              'Sort By',
-              style: GoogleFonts.poppins(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                color: Colors.grey.shade600,
-                letterSpacing: 0.5,
-              ),
-            ),
-            const SizedBox(height: 12),
+            _buildSectionLabel('Sort By'),
+            const SizedBox(height: 10),
             _buildSortDropdown(sortOptions, prov),
-            const SizedBox(height: 24),
+            const SizedBox(height: 28),
 
-            // Divider
+            if (_hasActiveFilters(prov)) ...[
+              _buildSectionLabel('Active Filters'),
+              const SizedBox(height: 12),
+              _buildActiveFiltersChips(prov),
+              const SizedBox(height: 24),
+            ],
+
             Container(
               height: 1,
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
-                    Colors.grey.shade200,
-                    Colors.grey.shade100,
-                    Colors.grey.shade200,
+                    const Color(0xFFE2E8F0).withOpacity(0.5),
+                    const Color(0xFFE2E8F0),
+                    const Color(0xFFE2E8F0).withOpacity(0.5),
                   ],
                 ),
               ),
             ),
             const SizedBox(height: 24),
 
-            // Clear Button
             _buildClearButtonFull(prov),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildSectionLabel(String text) {
+    return Text(
+      text,
+      style: GoogleFonts.poppins(
+        fontSize: 13,
+        fontWeight: FontWeight.w600,
+        color: const Color(0xFF475569),
+        letterSpacing: 0.3,
+      ),
+    );
+  }
+
+  bool _hasActiveFilters(RecruiterProvider2 prov) {
+    return prov.searchQuery.isNotEmpty ||
+        (prov.selectedNationality != null && prov.selectedNationality!.isNotEmpty) ||
+        prov.sortOption != 'None';
+  }
+
+  Widget _buildActiveFiltersChips(RecruiterProvider2 prov) {
+    final chips = <Widget>[];
+
+    if (prov.searchQuery.isNotEmpty) {
+      chips.add(_buildFilterChip(
+        'Search: "${prov.searchQuery}"',
+        Icons.search,
+            () {
+          _searchCtrl.clear();
+          prov.setSearch('');
+        },
+      ));
+    }
+
+    if (prov.selectedNationality != null && prov.selectedNationality!.isNotEmpty) {
+      chips.add(_buildFilterChip(
+        prov.selectedNationality!,
+        Icons.public,
+            () => prov.setNationalityFilter(null),
+      ));
+    }
+
+    if (prov.sortOption != 'None') {
+      chips.add(_buildFilterChip(
+        prov.sortOption,
+        Icons.sort,
+            () => prov.setSortOption('None'),
+      ));
+    }
+
+    if (chips.isEmpty) return const SizedBox.shrink();
+
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: chips,
+    );
+  }
+
+  Widget _buildFilterChip(String label, IconData icon, VoidCallback onRemove) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            const Color(0xFF6366F1).withOpacity(0.1),
+            const Color(0xFF8B5CF6).withOpacity(0.05),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: const Color(0xFF6366F1).withOpacity(0.2)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14, color: const Color(0xFF6366F1)),
+          const SizedBox(width: 6),
+          Flexible(
+            child: Text(
+              label,
+              style: GoogleFonts.poppins(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: const Color(0xFF6366F1),
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          const SizedBox(width: 6),
+          InkWell(
+            onTap: onRemove,
+            child: Container(
+              padding: const EdgeInsets.all(2),
+              decoration: BoxDecoration(
+                color: const Color(0xFF6366F1).withOpacity(0.15),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.close,
+                size: 12,
+                color: Color(0xFF6366F1),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -358,16 +590,23 @@ class _RecruiterDashboardState extends State<RecruiterDashboard>
     return Container(
       height: 52,
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: const Color(0xFFF8FAFC),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade300, width: 1.5),
-        boxShadow: [
+        border: Border.all(
+          color: prov.searchQuery.isNotEmpty
+              ? const Color(0xFF6366F1).withOpacity(0.3)
+              : const Color(0xFFE2E8F0),
+          width: 1.5,
+        ),
+        boxShadow: prov.searchQuery.isNotEmpty
+            ? [
           BoxShadow(
             color: const Color(0xFF6366F1).withOpacity(0.08),
             blurRadius: 12,
-            offset: const Offset(0, 2),
-          ),
-        ],
+            offset: const Offset(0, 4),
+          )
+        ]
+            : [],
       ),
       child: TextField(
         controller: _searchCtrl,
@@ -378,56 +617,57 @@ class _RecruiterDashboardState extends State<RecruiterDashboard>
           color: const Color(0xFF0F172A),
         ),
         decoration: InputDecoration(
-          hintText: 'Search by name, email, phone, nationality...',
+          hintText: 'Search candidates...',
           hintStyle: GoogleFonts.poppins(
-            color: Colors.grey.shade500,
+            color: const Color(0xFF94A3B8),
             fontWeight: FontWeight.w400,
           ),
           filled: false,
           border: InputBorder.none,
           prefixIcon: Container(
             padding: const EdgeInsets.all(12),
-            child: Icon(
+            child: const Icon(
               Icons.search_rounded,
-              color: const Color(0xFF6366F1),
-              size: 22,
+              color: Color(0xFF6366F1),
+              size: 20,
             ),
           ),
           suffixIcon: prov.searchQuery.isNotEmpty
               ? IconButton(
-            icon: Icon(Icons.clear_rounded,
-                color: Colors.grey.shade400, size: 20),
+            icon: Container(
+              padding: const EdgeInsets.all(4),
+              decoration: BoxDecoration(
+                color: const Color(0xFF6366F1).withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.close,
+                color: Color(0xFF6366F1),
+                size: 16,
+              ),
+            ),
             onPressed: () {
               _searchCtrl.clear();
               prov.setSearch('');
             },
           )
               : null,
-          contentPadding:
-          const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         ),
       ),
     );
   }
 
-  Widget _buildNationalityDropdown(
-      List<String> natList, RecruiterProvider2 prov) {
+  Widget _buildNationalityDropdown(List<String> natList, RecruiterProvider2 prov) {
     return Container(
       height: 52,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade300, width: 1.5),
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.shade200,
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        border: Border.all(color: const Color(0xFFE2E8F0), width: 1.5),
+        color: const Color(0xFFF8FAFC),
       ),
       child: DropdownButtonFormField<String>(
-        initialValue: prov.selectedNationality == null ||
+        value: prov.selectedNationality == null ||
             (prov.selectedNationality?.isEmpty ?? true)
             ? 'All'
             : prov.selectedNationality,
@@ -439,9 +679,9 @@ class _RecruiterDashboardState extends State<RecruiterDashboard>
             style: GoogleFonts.poppins(
               fontSize: 14,
               fontWeight: FontWeight.w500,
+              color: const Color(0xFF0F172A),
             ),
           ),
-
         ))
             .toList(),
         onChanged: (v) {
@@ -451,21 +691,24 @@ class _RecruiterDashboardState extends State<RecruiterDashboard>
             prov.setNationalityFilter(v);
           }
         },
-        decoration: InputDecoration(
+        decoration: const InputDecoration(
           filled: false,
-          contentPadding:
-          const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           border: InputBorder.none,
           prefixIcon: Icon(
             Icons.public_rounded,
             size: 20,
-            color: const Color(0xFF6366F1),
+            color: Color(0xFF6366F1),
           ),
         ),
-        icon: Icon(Icons.keyboard_arrow_down_rounded,
-            color: Colors.grey.shade600),
+        icon: const Icon(
+          Icons.keyboard_arrow_down_rounded,
+          color: Color(0xFF64748B),
+          size: 24,
+        ),
         dropdownColor: Colors.white,
         borderRadius: BorderRadius.circular(12),
+        elevation: 8,
       ),
     );
   }
@@ -475,18 +718,11 @@ class _RecruiterDashboardState extends State<RecruiterDashboard>
       height: 52,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade300, width: 1.5),
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.shade200,
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        border: Border.all(color: const Color(0xFFE2E8F0), width: 1.5),
+        color: const Color(0xFFF8FAFC),
       ),
       child: DropdownButtonFormField<String>(
-        initialValue: prov.sortOption,
+        value: prov.sortOption,
         items: sortOptions
             .map((s) => DropdownMenuItem(
           value: s,
@@ -495,6 +731,7 @@ class _RecruiterDashboardState extends State<RecruiterDashboard>
             style: GoogleFonts.poppins(
               fontSize: 14,
               fontWeight: FontWeight.w500,
+              color: const Color(0xFF0F172A),
             ),
           ),
         ))
@@ -502,106 +739,79 @@ class _RecruiterDashboardState extends State<RecruiterDashboard>
         onChanged: (v) {
           if (v != null) prov.setSortOption(v);
         },
-        decoration: InputDecoration(
+        decoration: const InputDecoration(
           filled: false,
-          contentPadding:
-          const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           border: InputBorder.none,
           prefixIcon: Icon(
-            Icons.sort_rounded,
+            Icons.swap_vert_rounded,
             size: 20,
-            color: const Color(0xFF6366F1),
+            color: Color(0xFF6366F1),
           ),
         ),
-        icon: Icon(Icons.keyboard_arrow_down_rounded,
-            color: Colors.grey.shade600),
+        icon: const Icon(
+          Icons.keyboard_arrow_down_rounded,
+          color: Color(0xFF64748B),
+          size: 24,
+        ),
         dropdownColor: Colors.white,
         borderRadius: BorderRadius.circular(12),
+        elevation: 8,
       ),
     );
   }
 
   Widget _buildClearButton(RecruiterProvider2 prov) {
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(12),
-        gradient: LinearGradient(
-          colors: [Colors.red.shade400, Colors.red.shade500],
+    return TextButton.icon(
+      onPressed: () {
+        _searchCtrl.clear();
+        prov.clearSelection();
+      },
+      icon: const Icon(Icons.refresh_rounded, size: 18, color: Color(0xFF64748B)),
+      label: Text(
+        'Clear',
+        style: GoogleFonts.poppins(
+          fontSize: 13,
+          fontWeight: FontWeight.w600,
+          color: const Color(0xFF64748B),
         ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.red.shade200,
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
       ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: () => prov.clearSelection(),
-          borderRadius: BorderRadius.circular(12),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(Icons.refresh_rounded, size: 18, color: Colors.white),
-                const SizedBox(width: 8),
-                Text(
-                  'Clear',
-                  style: GoogleFonts.poppins(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.white,
-                  ),
-                ),
-              ],
-            ),
-          ),
+      style: TextButton.styleFrom(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        backgroundColor: const Color(0xFFF8FAFC),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10),
+          side: const BorderSide(color: Color(0xFFE2E8F0), width: 1.5),
         ),
       ),
     );
   }
 
   Widget _buildClearButtonFull(RecruiterProvider2 prov) {
-    return Container(
+    return SizedBox(
       width: double.infinity,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(12),
-        gradient: LinearGradient(
-          colors: [Colors.red.shade400, Colors.red.shade500],
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.red.shade200,
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+      child: ElevatedButton.icon(
+        onPressed: () {
+          _searchCtrl.clear();
+          prov.clearSelection();
+        },
+        icon: const Icon(Icons.refresh_rounded, size: 20, color: Color(0xFF64748B)),
+        label: Text(
+          'Clear All Filters',
+          style: GoogleFonts.poppins(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: const Color(0xFF64748B),
           ),
-        ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: () => prov.clearSelection(),
-          borderRadius: BorderRadius.circular(12),
-          child: Container(
-            padding: const EdgeInsets.symmetric(vertical: 16),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(Icons.refresh_rounded, size: 20, color: Colors.white),
-                const SizedBox(width: 10),
-                Text(
-                  'Clear All Filters',
-                  style: GoogleFonts.poppins(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w700,
-                    color: Colors.white,
-                  ),
-                ),
-              ],
-            ),
+        ),
+        style: ElevatedButton.styleFrom(
+          padding: const EdgeInsets.symmetric(vertical: 14),
+          backgroundColor: const Color(0xFFF8FAFC),
+          foregroundColor: const Color(0xFF64748B),
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+            side: const BorderSide(color: Color(0xFFE2E8F0), width: 1.5),
           ),
         ),
       ),
@@ -613,33 +823,42 @@ class _RecruiterDashboardState extends State<RecruiterDashboard>
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const SizedBox(height: 60),
+          const SizedBox(height: 80),
           Container(
             padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
-              shape: BoxShape.circle,
               gradient: LinearGradient(
                 colors: [
                   const Color(0xFF6366F1).withOpacity(0.1),
-                  const Color(0xFF8B5CF6).withOpacity(0.1),
+                  const Color(0xFF8B5CF6).withOpacity(0.05),
                 ],
               ),
+              shape: BoxShape.circle,
             ),
             child: const CircularProgressIndicator(
               valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF6366F1)),
-              strokeWidth: 5,
+              strokeWidth: 3,
             ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 24),
           Text(
             'Loading candidates...',
             style: GoogleFonts.poppins(
               fontSize: 15,
               fontWeight: FontWeight.w500,
-              color: Colors.grey.shade600,
+              color: const Color(0xFF64748B),
             ),
           ),
-          const SizedBox(height: 60),
+          const SizedBox(height: 8),
+          Text(
+            'Please wait a moment',
+            style: GoogleFonts.poppins(
+              fontSize: 13,
+              fontWeight: FontWeight.w400,
+              color: const Color(0xFF94A3B8),
+            ),
+          ),
+          const SizedBox(height: 80),
         ],
       ),
     );
@@ -653,29 +872,22 @@ class _RecruiterDashboardState extends State<RecruiterDashboard>
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const SizedBox(height: 40),
+            const SizedBox(height: 60),
             Container(
-              padding: const EdgeInsets.all(28),
+              padding: const EdgeInsets.all(32),
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
-                    Colors.blue.shade50,
-                    Colors.purple.shade50,
+                    const Color(0xFF6366F1).withOpacity(0.05),
+                    const Color(0xFF8B5CF6).withOpacity(0.02),
                   ],
                 ),
                 shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.blue.shade100,
-                    blurRadius: 20,
-                    spreadRadius: 4,
-                  ),
-                ],
               ),
-              child: Icon(
+              child: const Icon(
                 Icons.person_search_rounded,
-                size: 56,
-                color: const Color(0xFF6366F1),
+                size: 64,
+                color: Color(0xFF6366F1),
               ),
             ),
             const SizedBox(height: 24),
@@ -685,6 +897,7 @@ class _RecruiterDashboardState extends State<RecruiterDashboard>
                 fontSize: 20,
                 fontWeight: FontWeight.w700,
                 color: const Color(0xFF0F172A),
+                letterSpacing: -0.3,
               ),
             ),
             const SizedBox(height: 8),
@@ -693,10 +906,10 @@ class _RecruiterDashboardState extends State<RecruiterDashboard>
               style: GoogleFonts.poppins(
                 fontSize: 14,
                 fontWeight: FontWeight.w400,
-                color: Colors.grey.shade500,
+                color: const Color(0xFF64748B),
               ),
             ),
-            const SizedBox(height: 40),
+            const SizedBox(height: 60),
           ],
         ),
       );
@@ -705,69 +918,99 @@ class _RecruiterDashboardState extends State<RecruiterDashboard>
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        // Enhanced Results Header
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
             gradient: LinearGradient(
               colors: [
-                const Color(0xFF6366F1).withOpacity(0.1),
-                const Color(0xFF8B5CF6).withOpacity(0.05),
+                Colors.white,
+                const Color(0xFFF8FAFC),
               ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
             ),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: const Color(0xFF6366F1).withOpacity(0.2),
-            ),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: const Color(0xFFE2E8F0)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.03),
+                blurRadius: 16,
+                offset: const Offset(0, 4),
+              )
+            ],
           ),
           child: Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(8),
+                padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(
                     colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
                   ),
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(10),
                 ),
                 child: const Icon(
-                  Icons.people_alt_rounded,
-                  size: 18,
+                  Icons.grid_view_rounded,
                   color: Colors.white,
+                  size: 20,
                 ),
               ),
-              const SizedBox(width: 12),
-              Text(
-                '${list.length} ${list.length == 1 ? 'Candidate' : 'Candidates'}',
-                style: GoogleFonts.poppins(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                  color: const Color(0xFF0F172A),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFF10B981), Color(0xFF059669)],
+              const SizedBox(width: 16),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '${list.length} ${list.length == 1 ? 'Candidate' : 'Candidates'}',
+                    style: GoogleFonts.poppins(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      color: const Color(0xFF0F172A),
+                      letterSpacing: -0.3,
+                    ),
                   ),
-                  borderRadius: BorderRadius.circular(20),
-                  boxShadow: [
-                    BoxShadow(
-                      color: const Color(0xFF10B981).withOpacity(0.3),
-                      blurRadius: 4,
-                      offset: const Offset(0, 2),
+                  const SizedBox(height: 2),
+                  Text(
+                    'Total results',
+                    style: GoogleFonts.poppins(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w400,
+                      color: const Color(0xFF64748B),
+                    ),
+                  ),
+                ],
+              ),
+              const Spacer(),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF10B981).withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: const Color(0xFF10B981).withOpacity(0.2),
+                  ),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 6,
+                      height: 6,
+                      decoration: const BoxDecoration(
+                        color: Color(0xFF10B981),
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Active',
+                      style: GoogleFonts.poppins(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: const Color(0xFF10B981),
+                      ),
                     ),
                   ],
-                ),
-                child: Text(
-                  'Active',
-                  style: GoogleFonts.poppins(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w700,
-                    color: Colors.white,
-                    letterSpacing: 0.5,
-                  ),
                 ),
               ),
             ],
@@ -775,42 +1018,23 @@ class _RecruiterDashboardState extends State<RecruiterDashboard>
         ),
         const SizedBox(height: 20),
         if (!isMobile) _buildTableHeader(),
-        const SizedBox(height: 12),
+        if (!isMobile) const SizedBox(height: 12),
         ListView.separated(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
           itemCount: list.length,
           separatorBuilder: (_, __) => const SizedBox(height: 12),
-          itemBuilder: (context, idx) => TweenAnimationBuilder<double>(
-            tween: Tween(begin: 0.0, end: 1.0),
-            duration: Duration(milliseconds: 300 + (idx * 50)),
-            curve: Curves.easeOutCubic,
-            builder: (context, value, child) {
-              return Opacity(
-                opacity: value,
-                child: Transform.translate(
-                  offset: Offset(0, 20 * (1 - value)),
-                  child: child,
-                ),
-              );
-            },
-            child: _buildCandidateCard(
-              context,
-              list[idx],
-              prov,
-              isMobile,
-            ),
-          ),
+          itemBuilder: (context, idx) =>
+              _buildCandidateCard(context, list[idx], prov, isMobile),
         ),
       ],
     );
   }
 
   Widget _buildTableHeader() {
-    // matching min widths for: Avatar, Name, Email, Phone, Nationality, Actions, Select
-    final minWidths = <double>[100, 160, 140, 110, 110, 110, 60];
+    final minWidths = <double>[150, 150, 150, 150, 150, 150, 180];
     final cells = <Widget>[
-      _headerText('Avatar'),
+      _headerText('Profile pic'),
       _headerText('Name'),
       _headerText('Email'),
       _headerText('Phone'),
@@ -820,102 +1044,150 @@ class _RecruiterDashboardState extends State<RecruiterDashboard>
     ];
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            const Color(0xFF6366F1).withOpacity(0.08),
-            const Color(0xFF8B5CF6).withOpacity(0.08),
+            const Color(0xFFF1F5F9),
+            const Color(0xFFF8FAFC),
           ],
         ),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFF6366F1).withOpacity(0.2)),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
       ),
       child: _responsiveRow(
         cells: cells,
         minWidths: minWidths,
-        gap: 16,
-        cellPadding: const EdgeInsets.symmetric(vertical: 8),
+        gap: 10,
+        cellPadding: EdgeInsets.all(3),
       ),
     );
   }
 
   Widget _headerText(String text) {
     return Text(
-      text,
+      text.toUpperCase(),
       style: GoogleFonts.poppins(
-        fontWeight: FontWeight.w700,
-        fontSize: 13,
-        color: const Color(0xFF6366F1),
-        letterSpacing: 0.3,
+        fontWeight: FontWeight.w500,
+        fontSize: 15,
+        color: const Color(0xFF64748B),
+        letterSpacing: 0.8,
       ),
     );
   }
 
-  Widget _buildCandidateCard(BuildContext context, Candidate candidate,
-      RecruiterProvider2 prov, bool isMobile) {
+  Widget _buildCandidateCard(
+      BuildContext context,
+      Candidate candidate,
+      RecruiterProvider2 prov,
+      bool isMobile,
+      ) {
     final isSelected = prov.selectedUids.contains(candidate.uid);
 
     return MouseRegion(
       cursor: SystemMouseCursors.click,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: isSelected
-                ? const Color(0xFF6366F1)
-                : Colors.grey.shade200,
-            width: isSelected ? 2 : 1.5,
-          ),
-          boxShadow: [
-            BoxShadow(
+      child: _HoverScale(
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 250),
+          curve: Curves.easeOutCubic,
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            gradient: isSelected
+                ? LinearGradient(
+              colors: [
+                const Color(0xFF6366F1).withOpacity(0.08),
+                const Color(0xFF8B5CF6).withOpacity(0.04),
+              ],
+            )
+                : const LinearGradient(
+              colors: [Colors.white, Colors.white],
+            ),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
               color: isSelected
-                  ? const Color(0xFF6366F1).withOpacity(0.15)
-                  : Colors.grey.shade100,
-              blurRadius: isSelected ? 12 : 8,
-              offset: Offset(0, isSelected ? 4 : 2),
+                  ? const Color(0xFF6366F1)
+                  : const Color(0xFFE2E8F0),
+              width: isSelected ? 2 : 1.5,
             ),
-          ],
-        ),
-        // inside your existing _buildCandidateCard, replace the non-mobile child with:
-        child: isMobile
-            ? _buildMobileCandidateCard(context, candidate, prov)
-            : _responsiveRow(
-          // columns must match header order and min widths
-          cells: <Widget>[
-            _buildAvatar(candidate),
-            _buildHighlightText(candidate.name, prov.searchQuery),
-            _buildHighlightText(candidate.email, prov.searchQuery),
-            _buildHighlightText(candidate.phone, prov.searchQuery),
-            _buildNationalityChip(candidate.nationality, prov.searchQuery),
-            _buildViewDetailsButton(context, candidate, prov),
-            // last is checkbox (Select)
-            Transform.scale(
-              scale: 1.1,
-              child: Checkbox(
-                value: isSelected,
-                onChanged: (v) => prov.toggleSelection(candidate.uid, value: v),
-                activeColor: const Color(0xFF6366F1),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(6),
-                ),
-              ),
-            ),
-          ],
-          minWidths: <double>[100, 160, 140, 110, 110, 110, 60],
-          gap: 16,
-          cellPadding: const EdgeInsets.symmetric(vertical: 6),
-        ),
+            boxShadow: [
+              BoxShadow(
+                color: isSelected
+                    ? const Color(0xFF6366F1).withOpacity(0.12)
+                    : Colors.black.withOpacity(0.04),
+                blurRadius: isSelected ? 20 : 16,
+                offset: const Offset(0, 8),
+                spreadRadius: 0,
+              )
+            ],
+          ),
+          child: isMobile
+              ? _buildMobileCandidateCard(context, candidate, prov)
+              : _responsiveRow(
+            cells: <Widget>[
+              _buildAvatar(candidate),
+              _buildHighlightText(candidate.name, prov.searchQuery),
+              // show masked email in table
+              _buildHighlightText(_maskEmail(candidate.email), prov.searchQuery),
+              // show masked phone in table
+              _buildHighlightText(_maskPhone(candidate.phone), prov.searchQuery),
+              _buildNationalityChip(candidate.nationality, prov.searchQuery),
+              _buildViewDetailsButton(context, candidate, prov),
+              _buildCheckbox(isSelected, () {
+                prov.toggleSelection(candidate.uid, value: !isSelected);
+              }),
+            ],
+            minWidths : <double>[150, 150, 150, 150, 150, 150, 180],
 
+          gap: 10,
+            cellPadding: const EdgeInsets.symmetric(vertical: 5),
+          ),
+        ),
       ),
     );
   }
-  /// Helper: builds a responsive row of columns that:
-  /// - uses horizontal scrolling if available width < sum of minWidths
-  /// - otherwise converts columns into Expanded widgets and fills the available space
+
+  Widget _buildCheckbox(bool isSelected, VoidCallback onChanged) {
+    return GestureDetector(
+      onTap: onChanged,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        width: 24,
+        height: 24,
+        decoration: BoxDecoration(
+          gradient: isSelected
+              ? const LinearGradient(
+            colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
+          )
+              : null,
+          color: isSelected ? null : Colors.white,
+          borderRadius: BorderRadius.circular(6),
+          border: Border.all(
+            color: isSelected
+                ? Colors.transparent
+                : const Color(0xFFCBD5E1),
+            width: 2,
+          ),
+          boxShadow: isSelected
+              ? [
+            BoxShadow(
+              color: const Color(0xFF6366F1).withOpacity(0.3),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            )
+          ]
+              : [],
+        ),
+        child: isSelected
+            ? const Icon(
+          Icons.check_rounded,
+          size: 16,
+          color: Colors.white,
+        )
+            : null,
+      ),
+    );
+  }
+
   Widget _responsiveRow({
     required List<Widget> cells,
     required List<double> minWidths,
@@ -923,55 +1195,53 @@ class _RecruiterDashboardState extends State<RecruiterDashboard>
     EdgeInsets cellPadding = const EdgeInsets.symmetric(vertical: 6),
   }) {
     assert(cells.length == minWidths.length);
-    return LayoutBuilder(builder: (context, constraints) {
-      final available = constraints.maxWidth.isFinite ? constraints.maxWidth : MediaQuery.of(context).size.width;
-      final totalMin = minWidths.reduce((a, b) => a + b) + gap * (minWidths.length - 1);
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final available = constraints.maxWidth.isFinite
+            ? constraints.maxWidth
+            : MediaQuery.of(context).size.width;
+        final totalMin =
+            minWidths.reduce((a, b) => a + b) + gap * (minWidths.length - 1);
 
-      // If not enough space, keep fixed widths and enable horizontal scroll
-      if (available < totalMin) {
-        return SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: Row(
-            children: List<Widget>.generate(cells.length, (i) {
-              return Padding(
-                padding: EdgeInsets.only(right: i == cells.length - 1 ? 0 : gap),
-                child: SizedBox(
-                  width: minWidths[i],
-                  child: Padding(
-                    padding: cellPadding,
-                    child: cells[i],
+        if (available < totalMin) {
+          return SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: List<Widget>.generate(cells.length, (i) {
+                return Padding(
+                  padding: EdgeInsets.only(right: i == cells.length - 1 ? 0 : gap),
+                  child: SizedBox(
+                    width: minWidths[i],
+                    child: Padding(padding: cellPadding, child: cells[i]),
                   ),
-                ),
-              );
-            }),
-          ),
-        );
-      }
-
-      // Enough space: distribute remaining space by converting to Expanded with proportional flex
-      final totalWeight = minWidths.reduce((a, b) => a + b);
-      // convert weights into integer flex values (at least 1)
-      final flexes = minWidths.map((w) => (w / totalWeight * 1000).round().clamp(1, 10000)).toList();
-
-      return Row(
-        children: List<Widget>.generate(cells.length, (i) {
-          final flex = flexes[i];
-          return Expanded(
-            flex: flex,
-            child: Padding(
-              padding: EdgeInsets.only(right: i == cells.length - 1 ? 0 : gap),
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: Padding(
-                  padding: cellPadding,
-                  child: cells[i],
-                ),
-              ),
+                );
+              }),
             ),
           );
-        }),
-      );
-    });
+        }
+
+        final totalWeight = minWidths.reduce((a, b) => a + b);
+        final flexes = minWidths
+            .map((w) => (w / totalWeight * 1000).round().clamp(1, 10000))
+            .toList();
+
+        return Row(
+          children: List<Widget>.generate(cells.length, (i) {
+            final flex = flexes[i];
+            return Expanded(
+              flex: flex,
+              child: Padding(
+                padding: EdgeInsets.only(right: i == cells.length - 1 ? 0 : gap),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Padding(padding: cellPadding, child: cells[i]),
+                ),
+              ),
+            );
+          }),
+        );
+      },
+    );
   }
 
   Widget _buildAvatar(Candidate candidate) {
@@ -986,9 +1256,9 @@ class _RecruiterDashboardState extends State<RecruiterDashboard>
         boxShadow: [
           BoxShadow(
             color: const Color(0xFF6366F1).withOpacity(0.2),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          )
         ],
       ),
       child: CircleAvatar(
@@ -996,8 +1266,7 @@ class _RecruiterDashboardState extends State<RecruiterDashboard>
         backgroundImage: candidate.pictureUrl.isNotEmpty
             ? NetworkImage(candidate.pictureUrl) as ImageProvider
             : null,
-        backgroundColor:
-        candidate.pictureUrl.isEmpty ? Colors.transparent : Colors.white,
+        backgroundColor: Colors.transparent,
         child: candidate.pictureUrl.isEmpty
             ? const Icon(Icons.person_rounded, color: Colors.white, size: 24)
             : null,
@@ -1006,7 +1275,10 @@ class _RecruiterDashboardState extends State<RecruiterDashboard>
   }
 
   Widget _buildMobileCandidateCard(
-      BuildContext context, Candidate candidate, RecruiterProvider2 prov) {
+      BuildContext context,
+      Candidate candidate,
+      RecruiterProvider2 prov,
+      ) {
     final isSelected = prov.selectedUids.contains(candidate.uid);
 
     return Column(
@@ -1015,45 +1287,56 @@ class _RecruiterDashboardState extends State<RecruiterDashboard>
         Row(
           children: [
             _buildAvatar(candidate),
-            const SizedBox(width: 12),
+            const SizedBox(width: 14),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   _buildHighlightText(candidate.name, prov.searchQuery),
                   const SizedBox(height: 4),
-                  _buildHighlightText(candidate.email, prov.searchQuery),
+                  Text(
+                    // masked email on mobile list
+                    _maskEmail(candidate.email),
+                    style: GoogleFonts.poppins(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w400,
+                      color: const Color(0xFF64748B),
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ],
               ),
             ),
-            Transform.scale(
-              scale: 1.1,
-              child: Checkbox(
-                value: isSelected,
-                onChanged: (v) =>
-                    prov.toggleSelection(candidate.uid, value: v),
-                activeColor: const Color(0xFF6366F1),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(6),
-                ),
+            _buildCheckbox(isSelected, () {
+              prov.toggleSelection(candidate.uid, value: !isSelected);
+            }),
+          ],
+        ),
+        const SizedBox(height: 16),
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: const Color(0xFFF8FAFC),
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: const Color(0xFFE2E8F0)),
+          ),
+          child: Column(
+            children: [
+              Row(
+                children: [
+                  // masked phone here
+                  Expanded(child: _buildMobileInfoChip(Icons.phone, _maskPhone(candidate.phone))),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: _buildMobileInfoChip(Icons.public, candidate.nationality),
+                  ),
+                ],
               ),
-            ),
-          ],
+            ],
+          ),
         ),
-        const SizedBox(height: 12),
-        Row(
-          children: [
-            Expanded(
-              child: _buildMobileInfoChip(Icons.phone_rounded, candidate.phone),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: _buildMobileInfoChip(
-                  Icons.public_rounded, candidate.nationality),
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 14),
         _buildViewDetailsButton(context, candidate, prov),
       ],
     );
@@ -1061,28 +1344,23 @@ class _RecruiterDashboardState extends State<RecruiterDashboard>
 
   Widget _buildMobileInfoChip(IconData icon, String text) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            Colors.grey.shade50,
-            Colors.grey.shade100,
-          ],
-        ),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: Colors.grey.shade200),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
       ),
       child: Row(
-        mainAxisSize: MainAxisSize.min,
         children: [
           Icon(icon, size: 16, color: const Color(0xFF6366F1)),
-          const SizedBox(width: 6),
+          const SizedBox(width: 8),
           Expanded(
             child: Text(
               text,
               style: GoogleFonts.poppins(
                 fontSize: 12,
                 fontWeight: FontWeight.w500,
+                color: const Color(0xFF0F172A),
               ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
@@ -1095,89 +1373,83 @@ class _RecruiterDashboardState extends State<RecruiterDashboard>
 
   Widget _buildNationalityChip(String nationality, String query) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
             const Color(0xFF6366F1).withOpacity(0.1),
-            const Color(0xFF8B5CF6).withOpacity(0.1),
+            const Color(0xFF8B5CF6).withOpacity(0.05),
           ],
         ),
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
-          color: const Color(0xFF6366F1).withOpacity(0.3),
+          color: const Color(0xFF6366F1).withOpacity(0.2),
         ),
       ),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            Icons.public_rounded,
-            size: 14,
-            color: const Color(0xFF6366F1),
-          ),
-          const SizedBox(width: 6),
-          Expanded(
-            child: _buildHighlightText(nationality, query),
-          ),
+          const Icon(Icons.public_rounded, size: 16, color: Color(0xFF6366F1)),
+          const SizedBox(width: 8),
+          Flexible(child: _buildHighlightText(nationality, query)),
         ],
       ),
     );
   }
 
   Widget _buildViewDetailsButton(
-      BuildContext context, Candidate candidate, RecruiterProvider2 prov) {
-    return Container(
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
-        ),
-        borderRadius: BorderRadius.circular(10),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF6366F1).withOpacity(0.3),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: () async {
-            final profile = await prov.fetchProfile(candidate.uid);
-            if (context.mounted) {
-              showDialog(
-                context: context,
-                builder: (_) => CandidateDetailsDialog(
-                  candidate: candidate,
-                  profile: profile,
-                ),
-              );
-            }
-          },
-          borderRadius: BorderRadius.circular(10),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(Icons.visibility_rounded,
-                    size: 16, color: Colors.white),
-                const SizedBox(width: 6),
-                Text(
-                  'View',
-                  style: GoogleFonts.poppins(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.white,
-                  ),
-                ),
-              ],
+      BuildContext context,
+      Candidate candidate,
+      RecruiterProvider2 prov,
+      ) {
+    return InkWell(
+      onTap: () async {
+        final profile = await prov.fetchProfile(candidate.uid);
+        if (context.mounted) {
+          showDialog(
+            context: context,
+            builder: (_) => CandidateDetailsDialog(
+              candidate: candidate,
+              profile: profile,
             ),
+          );
+        }
+      },
+      borderRadius: BorderRadius.circular(10),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
           ),
+          borderRadius: BorderRadius.circular(10),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF6366F1).withOpacity(0.3),
+              blurRadius: 16,
+              offset: const Offset(0, 6),
+            )
+          ],
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.visibility_outlined, size: 18, color: Colors.white),
+            const SizedBox(width: 10),
+            Text(
+              'View Details',
+              style: GoogleFonts.poppins(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: Colors.white,
+                letterSpacing: 0.2,
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -1209,14 +1481,16 @@ class _RecruiterDashboardState extends State<RecruiterDashboard>
         break;
       }
       if (idx > start) spans.add(TextSpan(text: text.substring(start, idx)));
-      spans.add(TextSpan(
-        text: text.substring(idx, idx + lcQuery.length),
-        style: TextStyle(
-          backgroundColor: const Color(0xFFFCD34D),
-          fontWeight: FontWeight.w700,
-          color: const Color(0xFF0F172A),
+      spans.add(
+        TextSpan(
+          text: text.substring(idx, idx + lcQuery.length),
+          style: const TextStyle(
+            backgroundColor: Color(0xFFDDD6FE),
+            fontWeight: FontWeight.w700,
+            color: Color(0xFF6366F1),
+          ),
         ),
-      ));
+      );
       start = idx + lcQuery.length;
     }
 
@@ -1235,103 +1509,100 @@ class _RecruiterDashboardState extends State<RecruiterDashboard>
   }
 
   Widget _buildBottomActionBar(RecruiterProvider2 prov, bool isMobile) {
-    return Container(
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeOutCubic,
       padding: EdgeInsets.symmetric(
-        horizontal: isMobile ? 16 : 24,
-        vertical: isMobile ? 12 : 16,
+        horizontal: isMobile ? 16 : 32,
+        vertical: 20,
       ),
       decoration: BoxDecoration(
         color: Colors.white,
+        border: Border(
+          top: BorderSide(color: const Color(0xFFE2E8F0)),
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.shade300,
-            blurRadius: 12,
-            offset: const Offset(0, -2),
-          ),
+            color: Colors.black.withOpacity(0.06),
+            blurRadius: 24,
+            offset: const Offset(0, -8),
+          )
         ],
       ),
       child: isMobile
           ? Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Container(
-            padding:
-            const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  const Color(0xFF6366F1).withOpacity(0.1),
-                  const Color(0xFF8B5CF6).withOpacity(0.1),
-                ],
-              ),
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(
-                color: const Color(0xFF6366F1).withOpacity(0.3),
-              ),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Icons.check_circle_rounded,
-                  size: 18,
-                  color: const Color(0xFF6366F1),
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  '${prov.selectedUids.length} selected',
-                  style: GoogleFonts.poppins(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700,
-                    color: const Color(0xFF6366F1),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 12),
+          _buildSelectionBadge(prov),
+          const SizedBox(height: 16),
           _buildSendButton(prov),
         ],
       )
           : Row(
         children: [
-          Container(
-            padding:
-            const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  const Color(0xFF6366F1).withOpacity(0.1),
-                  const Color(0xFF8B5CF6).withOpacity(0.1),
-                ],
-              ),
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(
-                color: const Color(0xFF6366F1).withOpacity(0.3),
-              ),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  Icons.check_circle_rounded,
-                  size: 18,
-                  color: const Color(0xFF6366F1),
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  '${prov.selectedUids.length} selected',
-                  style: GoogleFonts.poppins(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700,
-                    color: const Color(0xFF6366F1),
-                  ),
-                ),
-              ],
-            ),
-          ),
+          _buildSelectionBadge(prov),
           const Spacer(),
           _buildSendButton(prov),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSelectionBadge(RecruiterProvider2 prov) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            const Color(0xFF6366F1).withOpacity(0.1),
+            const Color(0xFF8B5CF6).withOpacity(0.05),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: const Color(0xFF6366F1).withOpacity(0.2),
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
+              ),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: const Icon(
+              Icons.check_circle_rounded,
+              size: 18,
+              color: Colors.white,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                '${prov.selectedUids.length} Selected',
+                style: GoogleFonts.poppins(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
+                  color: const Color(0xFF6366F1),
+                  letterSpacing: -0.2,
+                ),
+              ),
+              Text(
+                'Ready to send',
+                style: GoogleFonts.poppins(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w500,
+                  color: const Color(0xFF6366F1).withOpacity(0.7),
+                ),
+              ),
+            ],
+          ),
         ],
       ),
     );
@@ -1340,52 +1611,53 @@ class _RecruiterDashboardState extends State<RecruiterDashboard>
   Widget _buildSendButton(RecruiterProvider2 prov) {
     final isEnabled = prov.selectedUids.isNotEmpty;
 
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 200),
-      decoration: BoxDecoration(
-        gradient: isEnabled
-            ? const LinearGradient(
-          colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
-        )
-            : null,
-        color: isEnabled ? null : Colors.grey.shade300,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: isEnabled
-            ? [
-          BoxShadow(
-            color: const Color(0xFF6366F1).withOpacity(0.4),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
+    return MouseRegion(
+      cursor: isEnabled ? SystemMouseCursors.click : SystemMouseCursors.basic,
+      child: GestureDetector(
+        onTap: isEnabled ? () => _handleSendRequest(prov) : null,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 250),
+          padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 16),
+          decoration: BoxDecoration(
+            gradient: isEnabled
+                ? const LinearGradient(
+              colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            )
+                : null,
+            color: isEnabled ? null : const Color(0xFFF1F5F9),
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: isEnabled
+                ? [
+              BoxShadow(
+                color: const Color(0xFF6366F1).withOpacity(0.4),
+                blurRadius: 24,
+                offset: const Offset(0, 12),
+                spreadRadius: 0,
+              )
+            ]
+                : [],
           ),
-        ]
-            : null,
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: isEnabled ? () => _handleSendRequest(prov) : null,
-          borderRadius: BorderRadius.circular(12),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  Icons.send_rounded,
-                  size: 18,
-                  color: isEnabled ? Colors.white : Colors.grey.shade500,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.send_rounded,
+                size: 20,
+                color: isEnabled ? Colors.white : const Color(0xFF94A3B8),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                'Send to Admin',
+                style: GoogleFonts.poppins(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
+                  color: isEnabled ? Colors.white : const Color(0xFF94A3B8),
+                  letterSpacing: 0.2,
                 ),
-                const SizedBox(width: 10),
-                Text(
-                  'Send Request to Admin',
-                  style: GoogleFonts.poppins(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700,
-                    color: isEnabled ? Colors.white : Colors.grey.shade500,
-                  ),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
@@ -1397,238 +1669,226 @@ class _RecruiterDashboardState extends State<RecruiterDashboard>
       notes: 'Sent from dashboard',
     );
 
-    if (mounted) {
-      if (requestId != null) {
-        showDialog(
-          context: context,
-          barrierDismissible: false,
-          builder: (_) => Dialog(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Container(
-              padding: const EdgeInsets.all(28),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(20),
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    Colors.white,
-                    Colors.green.shade50,
-                  ],
-                ),
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [Colors.green.shade400, Colors.green.shade600],
-                      ),
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.green.shade200,
-                          blurRadius: 16,
-                          spreadRadius: 4,
-                        ),
-                      ],
-                    ),
-                    child: const Icon(
-                      Icons.check_circle_rounded,
-                      color: Colors.white,
-                      size: 40,
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  Text(
-                    'Request Sent Successfully!',
-                    style: GoogleFonts.poppins(
-                      fontWeight: FontWeight.w700,
-                      fontSize: 20,
-                      color: const Color(0xFF0F172A),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    'Request ID: $requestId',
-                    style: GoogleFonts.poppins(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                      color: Colors.grey.shade600,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 24),
-                  Container(
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
-                      ),
-                      borderRadius: BorderRadius.circular(12),
-                      boxShadow: [
-                        BoxShadow(
-                          color: const Color(0xFF6366F1).withOpacity(0.3),
-                          blurRadius: 8,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    child: Material(
-                      color: Colors.transparent,
-                      child: InkWell(
-                        onTap: () => Navigator.pop(context),
-                        borderRadius: BorderRadius.circular(12),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 32,
-                            vertical: 14,
-                          ),
-                          child: Text(
-                            'Close',
-                            style: GoogleFonts.poppins(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w700,
-                              fontSize: 15,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        );
-      } else {
-        showDialog(
-          context: context,
-          barrierDismissible: false,
-          builder: (_) => Dialog(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Container(
-              padding: const EdgeInsets.all(28),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(20),
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    Colors.white,
-                    Colors.red.shade50,
-                  ],
-                ),
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [Colors.red.shade400, Colors.red.shade600],
-                      ),
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.red.shade200,
-                          blurRadius: 16,
-                          spreadRadius: 4,
-                        ),
-                      ],
-                    ),
-                    child: const Icon(
-                      Icons.error_outline_rounded,
-                      color: Colors.white,
-                      size: 40,
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  Text(
-                    'Request Failed',
-                    style: GoogleFonts.poppins(
-                      fontWeight: FontWeight.w700,
-                      fontSize: 20,
-                      color: const Color(0xFF0F172A),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    'Failed to send request or no candidates selected.',
-                    style: GoogleFonts.poppins(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                      color: Colors.grey.shade600,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 24),
-                  Container(
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
-                      ),
-                      borderRadius: BorderRadius.circular(12),
-                      boxShadow: [
-                        BoxShadow(
-                          color: const Color(0xFF6366F1).withOpacity(0.3),
-                          blurRadius: 8,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    child: Material(
-                      color: Colors.transparent,
-                      child: InkWell(
-                        onTap: () => Navigator.pop(context),
-                        borderRadius: BorderRadius.circular(12),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 32,
-                            vertical: 14,
-                          ),
-                          child: Text(
-                            'Close',
-                            style: GoogleFonts.poppins(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w700,
-                              fontSize: 15,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        );
-      }
+    if (!mounted) return;
+
+    if (requestId != null) {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        barrierColor: Colors.black.withOpacity(0.6),
+        builder: (_) => _successDialog(requestId),
+      );
+    } else {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        barrierColor: Colors.black.withOpacity(0.6),
+        builder: (_) => _errorDialog(),
+      );
     }
+  }
+
+  Widget _successDialog(String requestId) {
+    return Dialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      elevation: 16,
+      child: Container(
+        padding: const EdgeInsets.all(32),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(20),
+          color: Colors.white,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    const Color(0xFF10B981).withOpacity(0.1),
+                    const Color(0xFF10B981).withOpacity(0.05),
+                  ],
+                ),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.check_circle_rounded,
+                color: Color(0xFF10B981),
+                size: 56,
+              ),
+            ),
+            const SizedBox(height: 24),
+            Text(
+              'Request Sent!',
+              style: GoogleFonts.poppins(
+                fontWeight: FontWeight.w700,
+                fontSize: 22,
+                color: const Color(0xFF0F172A),
+                letterSpacing: -0.5,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF8FAFC),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: const Color(0xFFE2E8F0)),
+              ),
+              child: Text(
+                'ID: $requestId',
+                style: GoogleFonts.jetBrainsMono(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: const Color(0xFF6366F1),
+                  letterSpacing: 0.5,
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'The admin will review your request shortly',
+              style: GoogleFonts.poppins(
+                fontSize: 14,
+                fontWeight: FontWeight.w400,
+                color: const Color(0xFF64748B),
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 28),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(context),
+              style: ElevatedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 16),
+                backgroundColor: const Color(0xFF6366F1),
+                foregroundColor: Colors.white,
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: Text(
+                'Done',
+                style: GoogleFonts.poppins(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0.2,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _errorDialog() {
+    return Dialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      elevation: 16,
+      child: Container(
+        padding: const EdgeInsets.all(32),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(20),
+          color: Colors.white,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    const Color(0xFFEF4444).withOpacity(0.1),
+                    const Color(0xFFEF4444).withOpacity(0.05),
+                  ],
+                ),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.error_outline_rounded,
+                color: Color(0xFFEF4444),
+                size: 56,
+              ),
+            ),
+            const SizedBox(height: 24),
+            Text(
+              'Request Failed',
+              style: GoogleFonts.poppins(
+                fontWeight: FontWeight.w700,
+                fontSize: 22,
+                color: const Color(0xFF0F172A),
+                letterSpacing: -0.5,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'Failed to send request or no candidates selected.',
+              style: GoogleFonts.poppins(
+                fontSize: 14,
+                fontWeight: FontWeight.w400,
+                color: const Color(0xFF64748B),
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 28),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(context),
+              style: ElevatedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 16),
+                backgroundColor: const Color(0xFFEF4444),
+                foregroundColor: Colors.white,
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: Text(
+                'Close',
+                style: GoogleFonts.poppins(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0.2,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
 
+/// Hover scale widget for desktop micro-interactions
+class _HoverScale extends StatefulWidget {
+  final Widget child;
+  const _HoverScale({required this.child});
 
+  @override
+  State<_HoverScale> createState() => _HoverScaleState();
+}
 
+class _HoverScaleState extends State<_HoverScale> {
+  bool _hover = false;
 
-
-
-
-
-
-
-
-
-
-
-
+  @override
+  Widget build(BuildContext context) {
+    final transform = Matrix4.identity()..scale(_hover ? 1.015 : 1.0);
+    return MouseRegion(
+      onEnter: (_) => setState(() => _hover = true),
+      onExit: (_) => setState(() => _hover = false),
+      cursor: SystemMouseCursors.click,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        curve: Curves.easeOutCubic,
+        transform: transform,
+        child: widget.child,
+      ),
+    );
+  }
+}
 
 
 
@@ -1641,6 +1901,54 @@ class CandidateDetailsDialog extends StatelessWidget {
     required this.profile,
     super.key,
   });
+
+  // Helper: fetch nested canonical personal map if exists
+  Map<String, dynamic> _personal(Map<String, dynamic> p) {
+    if (p.containsKey('personalProfile') && p['personalProfile'] is Map<String, dynamic>) {
+      return Map<String, dynamic>.from(p['personalProfile'] as Map<String, dynamic>);
+    }
+    if (p.containsKey('personal') && p['personal'] is Map<String, dynamic>) {
+      return Map<String, dynamic>.from(p['personal'] as Map<String, dynamic>);
+    }
+    return p;
+  }
+
+  // Mask helpers
+  String maskPhone(String raw) {
+    final s = raw.replaceAll(' ', '');
+    if (s.isEmpty) return '-';
+    if (s.length <= 5) {
+      if (s.length <= 2) return s;
+      final first = s.substring(0, 1);
+      final last = s.substring(s.length - 1);
+      return '$first***$last';
+    }
+    final first = s.substring(0, 3);
+    final last = s.substring(s.length - 2);
+    final midLen = s.length - (3 + 2);
+    final mid = 'x' * (midLen > 0 ? midLen : 1);
+    return '$first$mid$last';
+  }
+
+  String maskEmail(String raw) {
+    if (raw.trim().isEmpty) return '-';
+    final parts = raw.split('@');
+    if (parts.length != 2) return raw;
+    final local = parts[0];
+    final domain = parts[1];
+    final first = local.isNotEmpty ? local[0] : '';
+    return '$first***@$domain';
+  }
+
+  String _maskIfHiddenValue(String? val, {required bool isEmail, required bool isPhone}) {
+    if (val == null || val.trim().isEmpty) return '-';
+    if (!candidate.hideContact) {
+      return val;
+    }
+    if (isEmail) return maskEmail(val);
+    if (isPhone) return maskPhone(val);
+    return '****';
+  }
 
   Widget _sectionHeader(String title, IconData icon) {
     return Container(
@@ -1655,7 +1963,7 @@ class CandidateDetailsDialog extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF6366F1).withOpacity(0.3),
+            color: const Color(0xFF6366F1).withOpacity(0.22),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -1666,7 +1974,7 @@ class CandidateDetailsDialog extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
+              color: Colors.white.withOpacity(0.14),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Icon(icon, color: Colors.white, size: 20),
@@ -1693,11 +2001,9 @@ class CandidateDetailsDialog extends StatelessWidget {
         final dt = dobRaw.toDate().toLocal();
         return '${DateFormat.yMMMMd().format(dt)} • ${_calculateAge(dt)}';
       }
-      if (dobRaw is Map &&
-          (dobRaw.containsKey('seconds') || dobRaw.containsKey('_seconds'))) {
+      if (dobRaw is Map && (dobRaw.containsKey('seconds') || dobRaw.containsKey('_seconds'))) {
         final seconds = (dobRaw['seconds'] ?? dobRaw['_seconds']) as int;
-        final dt = DateTime.fromMillisecondsSinceEpoch(
-            seconds * 1000, isUtc: true).toLocal();
+        final dt = DateTime.fromMillisecondsSinceEpoch(seconds * 1000, isUtc: true).toLocal();
         return '${DateFormat.yMMMMd().format(dt)} • ${_calculateAge(dt)}';
       }
       if (dobRaw is String) {
@@ -1721,10 +2027,7 @@ class CandidateDetailsDialog extends StatelessWidget {
   String _calculateAge(DateTime dob) {
     final now = DateTime.now();
     int years = now.year - dob.year;
-    if (now.month < dob.month ||
-        (now.month == dob.month && now.day < dob.day)) {
-      years--;
-    }
+    if (now.month < dob.month || (now.month == dob.month && now.day < dob.day)) years--;
     return '$years yrs';
   }
 
@@ -1735,62 +2038,33 @@ class CandidateDetailsDialog extends StatelessWidget {
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            const Color(0xFF6366F1).withOpacity(0.08),
-            const Color(0xFF8B5CF6).withOpacity(0.08),
+            iconColor.withOpacity(0.08),
+            iconColor.withOpacity(0.06),
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: const Color(0xFF6366F1).withOpacity(0.2),
-          width: 1,
-        ),
+        border: Border.all(color: iconColor.withOpacity(0.18), width: 1),
       ),
       child: Row(
         children: [
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [iconColor, iconColor.withOpacity(0.7)],
-              ),
+              gradient: LinearGradient(colors: [iconColor, iconColor.withOpacity(0.7)]),
               borderRadius: BorderRadius.circular(10),
-              boxShadow: [
-                BoxShadow(
-                  color: iconColor.withOpacity(0.3),
-                  blurRadius: 6,
-                  offset: const Offset(0, 2),
-                ),
-              ],
+              boxShadow: [BoxShadow(color: iconColor.withOpacity(0.25), blurRadius: 6, offset: const Offset(0, 2))],
             ),
             child: Icon(icon, color: Colors.white, size: 18),
           ),
           const SizedBox(width: 14),
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  style: GoogleFonts.poppins(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                    color: const Color(0xFF64748B),
-                    letterSpacing: 0.5,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  value,
-                  style: GoogleFonts.poppins(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: const Color(0xFF0F172A),
-                  ),
-                ),
-              ],
-            ),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(label, style: GoogleFonts.poppins(fontSize: 11, fontWeight: FontWeight.w600, color: const Color(0xFF64748B))),
+              const SizedBox(height: 4),
+              Text(value, style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w600, color: const Color(0xFF0F172A))),
+            ]),
           ),
         ],
       ),
@@ -1802,190 +2076,73 @@ class CandidateDetailsDialog extends StatelessWidget {
     final company = (exp['company'] ?? exp['organization'] ?? exp['employer'])?.toString() ?? '';
     final start = (exp['start'] ?? exp['from'])?.toString() ?? '';
     final end = (exp['end'] ?? exp['to'] ?? exp['duration'])?.toString() ?? '';
-    final durationText = (start.isNotEmpty || end.isNotEmpty)
-        ? '$start${start.isNotEmpty && end.isNotEmpty ? ' - ' : ''}$end'
-        : '';
+    final durationText = (start.isNotEmpty || end.isNotEmpty) ? '$start${start.isNotEmpty && end.isNotEmpty ? ' - ' : ''}$end' : '';
+
+    // description fallback order: description, details, roleDescription, text, summary
+    final description = (exp['description'] ?? exp['roleDescription'] ?? exp['details'] ?? exp['text'] ?? exp['summary'])?.toString() ?? '';
 
     return Container(
       margin: const EdgeInsets.only(bottom: 14),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            const Color(0xFFF59E0B).withOpacity(0.12),
-            const Color(0xFFEC4899).withOpacity(0.12),
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
+        gradient: LinearGradient(colors: [const Color(0xFFF59E0B).withOpacity(0.12), const Color(0xFFEC4899).withOpacity(0.12)]),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: const Color(0xFFF59E0B).withOpacity(0.3),
-          width: 1,
+        border: Border.all(color: const Color(0xFFF59E0B).withOpacity(0.26), width: 1),
+      ),
+      child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(colors: [Color(0xFFF59E0B), Color(0xFFEC4899)]),
+            borderRadius: BorderRadius.circular(8),
+            boxShadow: [BoxShadow(color: const Color(0xFFF59E0B).withOpacity(0.2), blurRadius: 4, offset: const Offset(0, 2))],
+          ),
+          child: const Icon(Icons.work_outline, color: Colors.white, size: 16),
         ),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Color(0xFFF59E0B), Color(0xFFEC4899)],
-              ),
-              borderRadius: BorderRadius.circular(8),
-              boxShadow: [
-                BoxShadow(
-                  color: const Color(0xFFF59E0B).withOpacity(0.3),
-                  blurRadius: 4,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: const Icon(Icons.work_outline, color: Colors.white, size: 16),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (role.isNotEmpty)
-                  Text(
-                    role,
-                    style: GoogleFonts.poppins(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: const Color(0xFF0F172A),
-                    ),
-                  ),
-                if (company.isNotEmpty) ...[
-                  const SizedBox(height: 4),
-                  Text(
-                    company,
-                    style: GoogleFonts.poppins(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: const Color(0xFF64748B),
-                    ),
-                  ),
-                ],
-                if (durationText.isNotEmpty) ...[
-                  const SizedBox(height: 6),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF59E0B).withOpacity(0.15),
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: Text(
-                      durationText,
-                      style: GoogleFonts.poppins(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                        color: const Color(0xFFF59E0B),
-                      ),
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          ),
-        ],
-      ),
+        const SizedBox(width: 14),
+        Expanded(
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            if (role.isNotEmpty) Text(role, style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w600, color: const Color(0xFF0F172A))),
+            if (company.isNotEmpty) ...[
+              const SizedBox(height: 4),
+              Text(company, style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.w600, color: const Color(0xFF64748B))),
+            ],
+            if (durationText.isNotEmpty) ...[
+              const SizedBox(height: 6),
+              Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4), decoration: BoxDecoration(color: const Color(0xFFF59E0B).withOpacity(0.12), borderRadius: BorderRadius.circular(6)), child: Text(durationText, style: GoogleFonts.poppins(fontSize: 11, fontWeight: FontWeight.w600, color: const Color(0xFFF59E0B)))),
+            ],
+            if (description.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              Text(description, style: GoogleFonts.poppins(fontSize: 12, color: const Color(0xFF475569))),
+            ]
+          ]),
+        )
+      ]),
     );
   }
 
   Widget _educationCard(Map<String, dynamic> edu) {
     final title = (edu['degree'] ?? edu['title'] ?? edu['name'])?.toString() ?? '';
-    final institute = (edu['institute'] ?? edu['company'] ?? edu['organization'])?.toString() ?? '';
-    final year = (edu['year'] ?? edu['end'] ?? edu['to'])?.toString() ?? '';
+    final institute = (edu['institute'] ?? edu['company'] ?? edu['organization'] ?? edu['institutionName'])?.toString() ?? '';
+    final year = (edu['year'] ?? edu['end'] ?? edu['to'] ?? edu['duration'])?.toString() ?? '';
 
     return Container(
       margin: const EdgeInsets.only(bottom: 14),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            const Color(0xFF10B981).withOpacity(0.12),
-            const Color(0xFF059669).withOpacity(0.12),
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
+        gradient: LinearGradient(colors: [const Color(0xFF10B981).withOpacity(0.12), const Color(0xFF059669).withOpacity(0.12)]),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: const Color(0xFF10B981).withOpacity(0.3),
-          width: 1,
-        ),
+        border: Border.all(color: const Color(0xFF10B981).withOpacity(0.26), width: 1),
       ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Color(0xFF10B981), Color(0xFF059669)],
-              ),
-              borderRadius: BorderRadius.circular(8),
-              boxShadow: [
-                BoxShadow(
-                  color: const Color(0xFF10B981).withOpacity(0.3),
-                  blurRadius: 4,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: const Icon(Icons.school_outlined, color: Colors.white, size: 16),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (title.isNotEmpty)
-                  Text(
-                    title,
-                    style: GoogleFonts.poppins(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: const Color(0xFF0F172A),
-                    ),
-                  ),
-                if (institute.isNotEmpty) ...[
-                  const SizedBox(height: 4),
-                  Text(
-                    institute,
-                    style: GoogleFonts.poppins(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: const Color(0xFF64748B),
-                    ),
-                  ),
-                ],
-                if (year.isNotEmpty) ...[
-                  const SizedBox(height: 6),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF10B981).withOpacity(0.15),
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: Text(
-                      year,
-                      style: GoogleFonts.poppins(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                        color: const Color(0xFF10B981),
-                      ),
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          ),
-        ],
-      ),
+      child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Container(padding: const EdgeInsets.all(8), decoration: BoxDecoration(gradient: const LinearGradient(colors: [Color(0xFF10B981), Color(0xFF059669)]), borderRadius: BorderRadius.circular(8), boxShadow: [BoxShadow(color: const Color(0xFF10B981).withOpacity(0.2), blurRadius: 4, offset: const Offset(0, 2))]), child: const Icon(Icons.school_outlined, color: Colors.white, size: 16)),
+        const SizedBox(width: 14),
+        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          if (title.isNotEmpty) Text(title, style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w600, color: const Color(0xFF0F172A))),
+          if (institute.isNotEmpty) ...[ const SizedBox(height: 4), Text(institute, style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.w600, color: const Color(0xFF64748B)))],
+          if (year.isNotEmpty) ...[ const SizedBox(height: 6), Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4), decoration: BoxDecoration(color: const Color(0xFF10B981).withOpacity(0.12), borderRadius: BorderRadius.circular(6)), child: Text(year, style: GoogleFonts.poppins(fontSize: 11, fontWeight: FontWeight.w600, color: const Color(0xFF10B981)))) ],
+        ]))
+      ]),
     );
   }
 
@@ -1994,43 +2151,15 @@ class CandidateDetailsDialog extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            const Color(0xFF6366F1).withOpacity(0.1),
-            const Color(0xFF8B5CF6).withOpacity(0.1),
-          ],
-        ),
+        gradient: LinearGradient(colors: [const Color(0xFF6366F1).withOpacity(0.08), const Color(0xFF8B5CF6).withOpacity(0.06)]),
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(
-          color: const Color(0xFF6366F1).withOpacity(0.3),
-          width: 1,
-        ),
+        border: Border.all(color: const Color(0xFF6366F1).withOpacity(0.26), width: 1),
       ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(6),
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
-              ),
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(Icons.verified_outlined, color: Colors.white, size: 14),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              cert,
-              style: GoogleFonts.poppins(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                color: const Color(0xFF0F172A),
-              ),
-            ),
-          ),
-        ],
-      ),
+      child: Row(children: [
+        Container(padding: const EdgeInsets.all(6), decoration: const BoxDecoration(gradient: LinearGradient(colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)]), shape: BoxShape.circle), child: const Icon(Icons.verified_outlined, color: Colors.white, size: 14)),
+        const SizedBox(width: 12),
+        Expanded(child: Text(cert, style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.w600, color: const Color(0xFF0F172A)))),
+      ]),
     );
   }
 
@@ -2055,339 +2184,302 @@ class CandidateDetailsDialog extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
+          gradient: const LinearGradient(colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)], begin: Alignment.topLeft, end: Alignment.bottomRight),
           borderRadius: BorderRadius.circular(12),
-          boxShadow: [
-            BoxShadow(
-              color: const Color(0xFF6366F1).withOpacity(0.4),
-              blurRadius: 12,
-              offset: const Offset(0, 4),
-            ),
-          ],
+          boxShadow: [BoxShadow(color: const Color(0xFF6366F1).withOpacity(0.22), blurRadius: 12, offset: const Offset(0, 4))],
         ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.picture_as_pdf, color: Colors.white, size: 22),
-            const SizedBox(width: 12),
-            Text(
-              'View Full CV/Resume',
-              style: GoogleFonts.poppins(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: Colors.white,
-                letterSpacing: 0.5,
-              ),
-            ),
-            const SizedBox(width: 8),
-            const Icon(Icons.open_in_new, color: Colors.white, size: 16),
-          ],
-        ),
+        child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+          const Icon(Icons.picture_as_pdf, color: Colors.white, size: 22),
+          const SizedBox(width: 12),
+          Text('View Full CV/Resume', style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.white, letterSpacing: 0.5)),
+          const SizedBox(width: 8),
+          const Icon(Icons.open_in_new, color: Colors.white, size: 16),
+        ]),
       ),
     );
+  }
+
+  Widget _buildContactBadge(IconData icon, String text, {Color? color}) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(color: Colors.white.withOpacity(0.12), borderRadius: BorderRadius.circular(8)),
+      child: Row(mainAxisSize: MainAxisSize.min, children: [
+        Icon(icon, size: 16, color: Colors.white),
+        const SizedBox(width: 8),
+        Flexible(child: Text(text, style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.white), maxLines: 1, overflow: TextOverflow.ellipsis)),
+      ]),
+    );
+  }
+
+  // Safely read list fields with multiple fallback keys
+  List<Map<String, dynamic>> _readList(Map<String, dynamic> p, List<String> keys) {
+    for (final k in keys) {
+      final v = p[k];
+      if (v == null) continue;
+
+      if (v is List) {
+        return v.map<Map<String, dynamic>>((e) {
+          if (e is Map) return Map<String, dynamic>.from(e);
+          return {'text': e?.toString() ?? ''};
+        }).toList();
+      }
+
+      if (v is Map) {
+        final out = <Map<String, dynamic>>[];
+        for (final val in v.values) {
+          if (val is Map) out.add(Map<String, dynamic>.from(val));
+          else out.add({'text': val?.toString() ?? ''});
+        }
+        return out;
+      }
+
+      if (v is String && v.isNotEmpty) {
+        return [
+          {'text': v}
+        ];
+      }
+    }
+    return [];
+  }
+
+  // Read and normalize documents from various keys (also handles misspelling 'docuemnts')
+  List<Map<String, dynamic>> _readDocuments(Map<String, dynamic> p) {
+    final keys = ['documents', 'docuemnts', 'documentsList', 'documentsArray', 'docs', 'files'];
+    for (final k in keys) {
+      final v = p[k];
+      if (v == null) continue;
+
+      List<Map<String, dynamic>> toList = [];
+      if (v is List) {
+        toList = v.map((e) {
+          if (e is Map) return Map<String, dynamic>.from(e);
+          return {'name': e?.toString() ?? '', 'url': ''};
+        }).toList();
+      } else if (v is Map) {
+        for (final val in v.values) {
+          if (val is Map) toList.add(Map<String, dynamic>.from(val));
+          else toList.add({'name': val?.toString() ?? '', 'url': ''});
+        }
+      } else if (v is String && v.isNotEmpty) {
+        toList = [
+          {'name': v}
+        ];
+      }
+
+      return toList.map((doc) {
+        final name = doc['name'] ??
+            doc['fileName'] ??
+            doc['title'] ??
+            doc['displayName'] ??
+            doc['nameString'] ??
+            '';
+        final url = doc['url'] ??
+            doc['link'] ??
+            doc['downloadUrl'] ??
+            doc['fileUrl'] ??
+            doc['download_link'] ??
+            doc['storageUrl'] ??
+            '';
+        final contentType = doc['contentType'] ?? doc['mimeType'] ?? '';
+        final uploadedAt = doc['uploadedAt'] ?? doc['createdAt'] ?? '';
+        return {
+          ...doc,
+          'name': name,
+          'url': url,
+          'contentType': contentType,
+          'uploadedAt': uploadedAt,
+        };
+      }).toList();
+    }
+    return [];
   }
 
   @override
   Widget build(BuildContext context) {
-    final p = profile ?? {};
+    final p = profile ?? <String, dynamic>{};
+    final personal = _personal(p);
     final isMobile = MediaQuery.of(context).size.width < 600;
 
+    // personal quick fields
+    final fullName = candidate.name.isNotEmpty ? candidate.name : (personal['name'] ?? personal['fullName'] ?? '-').toString();
+    final rawEmail = (personal['email'] ?? personal['secondary_email'] ?? candidate.email ?? '').toString();
+    final rawPhone = (personal['contactNumber'] ?? personal['phone'] ?? candidate.phone ?? '').toString();
+
+    final emailDisplay = _maskIfHiddenValue(rawEmail, isEmail: true, isPhone: false);
+    final phoneDisplay = _maskIfHiddenValue(rawPhone, isEmail: false, isPhone: true);
+
+    final socialRaw = (personal['socialLinks'] ?? personal['social'] ?? personal['social_links']);
+    final socialList = <String>[];
+    if (socialRaw is List) {
+      for (final s in socialRaw) if (s != null) socialList.add(s.toString());
+    } else if (socialRaw is String && socialRaw.isNotEmpty) {
+      socialList.addAll(socialRaw.split(RegExp(r'[,;\n]')).map((e) => e.trim()).where((e) => e.isNotEmpty));
+    }
+
+    final educationList = _readList(p, ['educationalProfile', 'education', 'educations', 'qualifications']);
+    final experienceList = _readList(p, ['professionalExperience', 'experiences', 'experience', 'work_experience']);
+    final certificationsList = (p['certifications'] ?? p['certiicaitons'] ?? p['certs'] ?? p['training']) is List ? (p['certifications'] ?? p['certiicaitons'] ?? p['certs'] ?? p['training']).cast<dynamic>().map((e) => e.toString()).toList() : <String>[];
+    final publicationsList = (p['publications'] ?? p['papers']) is List ? (p['publications'] ?? p['papers']).cast<dynamic>().map((e) => e.toString()).toList() : <String>[];
+    final awardsList = (p['awards'] ?? p['honors']) is List ? (p['awards'] ?? p['honors']).cast<dynamic>().map((e) => e.toString()).toList() : <String>[];
+    final referencesList = (p['references'] ?? p['refs']) is List ? (p['references'] ?? p['refs']).cast<dynamic>().map((e) => e.toString()).toList() : <String>[];
+
+    final documentsList = _readDocuments(p);
+
+    // cv link - multiple fallbacks
+    final cvLinkLegacy = (p['Cv/Resume'] ?? p['cv'] ?? p['cv_url'] ?? p['resume'] ?? p['resume_url'] ?? p['cvUrl'] ?? p['resumeUrl'])?.toString();
+    final firstDocUrl = documentsList.isNotEmpty ? (documentsList.first['url']?.toString() ?? '') : '';
+    final cvUrlToShow = firstDocUrl.isNotEmpty ? firstDocUrl : (cvLinkLegacy ?? '');
+
     return Dialog(
-      insetPadding: EdgeInsets.symmetric(
-        horizontal: isMobile ? 16 : 40,
-        vertical: isMobile ? 16 : 24,
-      ),
+      insetPadding: EdgeInsets.symmetric(horizontal: isMobile ? 16 : 40, vertical: isMobile ? 16 : 24),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        child: ConstrainedBox(
-          constraints: BoxConstraints(
-            maxWidth: 500,  // Set your desired max width here
-          ),
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.15),
-              blurRadius: 30,
-              spreadRadius: 5,
-            )
-          ],
-        ),
-        child: SingleChildScrollView(
-          child: Column(
-            children: [
-              // Modern Header with Gradient
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 720),
+        child: Container(
+          decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.12), blurRadius: 30, spreadRadius: 4)]),
+          child: SingleChildScrollView(
+            child: Column(children: [
+              // Header
               Container(
-                padding: const EdgeInsets.all(28),
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(gradient: const LinearGradient(colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)], begin: Alignment.topLeft, end: Alignment.bottomRight), borderRadius: const BorderRadius.only(topLeft: Radius.circular(20), topRight: Radius.circular(20))),
+                child: Row(children: [
+                  Container(
+                    decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: Colors.white, width: 3), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.15), blurRadius: 12, offset: const Offset(0, 4))]),
+                    child: CircleAvatar(radius: 44, backgroundImage: candidate.pictureUrl.isNotEmpty ? NetworkImage(candidate.pictureUrl) as ImageProvider : null, backgroundColor: Colors.white, child: candidate.pictureUrl.isEmpty ? const Icon(Icons.person, size: 44, color: Color(0xFF6366F1)) : null),
                   ),
-                  borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(20),
-                    topRight: Radius.circular(20),
+                  const SizedBox(width: 18),
+                  Expanded(
+                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      Text(fullName, style: GoogleFonts.poppins(fontSize: 22, fontWeight: FontWeight.w600, color: Colors.white)),
+                      const SizedBox(height: 10),
+                      Row(children: [
+                        _buildContactBadge(Icons.email_outlined, emailDisplay),
+                        const SizedBox(width: 8),
+                        _buildContactBadge(Icons.phone_outlined, phoneDisplay),
+                        const SizedBox(width: 8),
+                        if (socialList.isNotEmpty) _buildContactBadge(Icons.link, candidate.hideContact ? '****' : (socialList.join(' • '))),
+                      ]),
+                    ]),
                   ),
-                ),
-                child: Column(
-                  children: [
-                    Row(
-                      children: [
-                        Container(
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            border: Border.all(color: Colors.white, width: 4),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.2),
-                                blurRadius: 15,
-                                offset: const Offset(0, 5),
-                              ),
-                            ],
-                          ),
-                          child: CircleAvatar(
-                            radius: 45,
-                            backgroundImage: candidate.pictureUrl.isNotEmpty
-                                ? NetworkImage(candidate.pictureUrl) as ImageProvider
-                                : null,
-                            backgroundColor: Colors.white,
-                            child: candidate.pictureUrl.isEmpty
-                                ? const Icon(Icons.person, size: 45, color: Color(0xFF6366F1))
-                                : null,
-                          ),
-                        ),
-                        const SizedBox(width: 20),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                candidate.name,
-                                style: GoogleFonts.poppins(
-                                  fontSize: 24,
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.white,
-                                  letterSpacing: 0.5,
-                                ),
-                              ),
-                              const SizedBox(height: 12),
-                              _buildContactBadge(Icons.email_outlined, candidate.email),
-                              const SizedBox(height: 8),
-                              _buildContactBadge(Icons.phone_outlined, candidate.phone),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
+                ]),
               ),
 
-              // Content
+              // Body content
               Padding(
-                padding: const EdgeInsets.all(28),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Personal Information
-                    _sectionHeader('Personal Information', Icons.person_outline),
-                    _infoCard(
-                      Icons.supervisor_account_outlined,
-                      'Father\'s Name',
-                      (p['father_name'] ?? p['father'] ?? '-')?.toString() ?? '-',
-                      const Color(0xFF6366F1),
-                    ),
-                    _infoCard(
-                      Icons.cake_outlined,
-                      'Date of Birth',
-                      _formatDob(p['dob'] ?? p['date_of_birth'] ?? p['birthdate']),
-                      const Color(0xFFEC4899),
-                    ),
-                    _infoCard(
-                      Icons.flag_outlined,
-                      'Nationality',
-                      (p['nationality'] ?? candidate.nationality ?? '-')?.toString() ?? '-',
-                      const Color(0xFF10B981),
-                    ),
-                    _infoCard(
-                      Icons.wc_outlined,
-                      'Gender',
-                      (p['gender'] ?? '-')?.toString() ?? '-',
-                      const Color(0xFFF59E0B),
-                    ),
+                padding: const EdgeInsets.all(20),
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  // Personal Info (section)
+                  _sectionHeader('Personal Information', Icons.person_outline),
+                  _infoCard(Icons.person, 'Full Name', fullName, const Color(0xFF6366F1)),
+                  _infoCard(Icons.email_outlined, 'Email', _maskIfHiddenValue(rawEmail, isEmail: true, isPhone: false), const Color(0xFF8B5CF6)),
+                  _infoCard(Icons.phone, 'Contact Number', _maskIfHiddenValue(rawPhone, isEmail: false, isPhone: true), const Color(0xFFF59E0B)),
+                  _infoCard(Icons.flag_outlined, 'Nationality', (personal['nationality'] ?? candidate.nationality ?? '-').toString(), const Color(0xFF10B981)),
+                  _infoCard(Icons.cake_outlined, 'Date of Birth', _formatDob(personal['dob'] ?? personal['date_of_birth']), const Color(0xFFEC4899)),
+                  if (!candidate.hideContact && personal['socialLinks'] != null) _infoCard(Icons.link, 'Social Links', (socialList.isNotEmpty ? socialList.join(' • ') : '-'), const Color(0xFF6366F1)),
 
-                    // Education
-                    _sectionHeader('Education', Icons.school_outlined),
-                    ...((p['educations'] ?? p['education'] ?? p['qualifications']) as List?)
-                        ?.whereType<Map<String, dynamic>>()
-                        .map((e) => _educationCard(e))
-                        .toList() ??
-                        [
-                          Text(
-                            'No education information available',
-                            style: GoogleFonts.poppins(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                              color: const Color(0xFF64748B),
-                            ),
-                          )
-                        ],
+                  // Educational Profile
+                  _sectionHeader('Educational Profile', Icons.school_outlined),
+                  if (educationList.isNotEmpty)
+                    ...educationList.map((e) => _educationCard(e)).toList()
+                  else
+                    Text('No education information available', style: GoogleFonts.poppins(fontSize: 13, color: const Color(0xFF64748B), fontWeight: FontWeight.w600)),
 
-                    // Experience
-                    _sectionHeader('Professional Experience', Icons.work_outline),
-                    ...((p['experiences'] ?? p['experience'] ?? p['work_experience']) as List?)
-                        ?.whereType<Map<String, dynamic>>()
-                        .map((e) => _experienceCard(e))
-                        .toList() ??
-                        [
-                          Text(
-                            'No experience information available',
-                            style: GoogleFonts.poppins(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                              color: const Color(0xFF64748B),
-                            ),
-                          )
-                        ],
+                  // Professional Summary (professionalProfile.summary)
+                  _sectionHeader('Professional Summary', Icons.article_outlined),
+                  Container(
+                    margin: const EdgeInsets.only(bottom: 12),
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(color: Colors.grey.shade50, borderRadius: BorderRadius.circular(10), border: Border.all(color: Colors.grey.shade200)),
+                    child: Text(
+                      (p['professionalProfile'] is Map && (p['professionalProfile']['summary'] ?? '').toString().isNotEmpty)
+                          ? p['professionalProfile']['summary'].toString()
+                          : (p['professionalSummary'] ?? personal['summary'] ?? '-').toString(),
+                      style: GoogleFonts.poppins(fontSize: 13, color: const Color(0xFF475569), fontWeight: FontWeight.w600),
+                    ),
+                  ),
 
-                    // Skills
-                    _sectionHeader('Skills & Expertise', Icons.emoji_objects_outlined),
-                    if (p['skills'] is List && (p['skills'] as List).isNotEmpty)
-                      Wrap(
-                        spacing: 10,
-                        runSpacing: 10,
-                        children: (p['skills'] as List)
-                            .map<Widget>((s) => Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                          decoration: BoxDecoration(
-                            gradient: const LinearGradient(
-                              colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                            ),
-                            borderRadius: BorderRadius.circular(20),
-                            boxShadow: [
-                              BoxShadow(
-                                color: const Color(0xFF6366F1).withOpacity(0.3),
-                                blurRadius: 6,
-                                offset: const Offset(0, 2),
-                              )
-                            ],
-                          ),
-                          child: Text(
-                            s.toString(),
-                            style: GoogleFonts.poppins(
-                              fontSize: 12,
-                              color: Colors.white,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ))
-                            .toList(),
-                      )
-                    else
-                      Text(
-                        'No skills listed',
-                        style: GoogleFonts.poppins(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                          color: const Color(0xFF64748B),
+                  // Professional Experience
+                  _sectionHeader('Professional Experience', Icons.work_outline),
+                  if (experienceList.isNotEmpty)
+                    ...experienceList.map((e) => _experienceCard(e)).toList()
+                  else
+                    Text('No experience information available', style: GoogleFonts.poppins(fontSize: 13, color: const Color(0xFF64748B), fontWeight: FontWeight.w600)),
+
+                  // Skills & Expertise (from personal.skills)
+                  _sectionHeader('Skills & Expertise', Icons.emoji_objects_outlined),
+                  if ((personal['skills'] ?? p['skills']) is List && ((personal['skills'] ?? p['skills']) as List).isNotEmpty)
+                    Wrap(spacing: 10, runSpacing: 10, children: ((personal['skills'] ?? p['skills']) as List).map<Widget>((s) => Container(padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8), decoration: BoxDecoration(gradient: const LinearGradient(colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)]), borderRadius: BorderRadius.circular(18)), child: Text(s.toString(), style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.white)))).toList())
+                  else
+                    Text('No skills listed', style: GoogleFonts.poppins(fontSize: 13, color: const Color(0xFF64748B), fontWeight: FontWeight.w600)),
+
+                  // Certifications / Trainings
+                  _sectionHeader('Certifications & Trainings', Icons.verified_outlined),
+                  if (certificationsList.isNotEmpty)
+                    ...certificationsList.map((c) => _certificationBadge(c)).toList()
+                  else
+                    Text('No certifications available', style: GoogleFonts.poppins(fontSize: 13, color: const Color(0xFF64748B), fontWeight: FontWeight.w600)),
+
+                  // Publications
+                  _sectionHeader('Publications', Icons.library_books_outlined),
+                  if (publicationsList.isNotEmpty)
+                    ...publicationsList.map((pub) => _certificationBadge(pub)).toList()
+                  else
+                    Text('No publications available', style: GoogleFonts.poppins(fontSize: 13, color: const Color(0xFF64748B), fontWeight: FontWeight.w600)),
+
+                  // Awards
+                  _sectionHeader('Awards & Honours', Icons.emoji_events_outlined),
+                  if (awardsList.isNotEmpty)
+                    ...awardsList.map((a) => _certificationBadge(a)).toList()
+                  else
+                    Text('No awards available', style: GoogleFonts.poppins(fontSize: 13, color: const Color(0xFF64748B), fontWeight: FontWeight.w600)),
+
+                  // References
+                  _sectionHeader('References', Icons.people_outline),
+                  if (referencesList.isNotEmpty)
+                    ...referencesList.map((r) => _certificationBadge(r)).toList()
+                  else
+                    Text('No references available', style: GoogleFonts.poppins(fontSize: 13, color: const Color(0xFF64748B), fontWeight: FontWeight.w600)),
+
+                  // Documents / CV
+                  _sectionHeader('Documents', Icons.description_outlined),
+                  if (documentsList.isNotEmpty) ...[
+                    for (final doc in documentsList)
+                      ListTile(
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 0, vertical: 6),
+                        leading: const Icon(Icons.picture_as_pdf_outlined),
+                        title: Text(doc['name']?.toString() ?? 'Document', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+                        subtitle: (doc['contentType'] ?? doc['uploadedAt']) != null && (doc['contentType']?.toString().isNotEmpty ?? false)
+                            ? Text(doc['contentType']?.toString() ?? doc['uploadedAt'].toString(), style: GoogleFonts.poppins(fontSize: 12))
+                            : null,
+                        trailing: IconButton(
+                          icon: const Icon(Icons.open_in_new),
+                          onPressed: () {
+                            final u = doc['url']?.toString() ?? '';
+                            if (u.isNotEmpty) _openUrl(u);
+                          },
                         ),
                       ),
+                    const SizedBox(height: 8),
+                    if (cvUrlToShow.isNotEmpty) _cvButton(cvUrlToShow),
+                  ] else if (cvUrlToShow.isNotEmpty)
+                    _cvButton(cvUrlToShow)
+                  else
+                    Text('No CV/Resume found', style: GoogleFonts.poppins(fontSize: 13, color: const Color(0xFF64748B), fontWeight: FontWeight.w600)),
 
-                    // Certifications
-                    _sectionHeader('Certifications', Icons.verified_outlined),
-                    ...((p['certiicaitons'] ?? p['certifications'] ?? p['certs']) as List?)
-                        ?.map((c) => _certificationBadge(c.toString()))
-                        .toList() ??
-                        [
-                          Text(
-                            'No certifications available',
-                            style: GoogleFonts.poppins(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                              color: const Color(0xFF64748B),
-                            ),
-                          )
-                        ],
-
-                    // CV/Resume
-                    _sectionHeader('Documents', Icons.description_outlined),
-                    _cvButton(
-                      p['Cv/Resume'] ?? p['cv'] ?? p['resume'] ?? p['cv_url'] ?? p['resume_url'],
-                    ),
-
-                    const SizedBox(height: 24),
-                    // Close Button
-                    Center(
-                      child: TextButton(
-                        onPressed: () => Navigator.pop(context),
-                        style: TextButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(Icons.close, size: 18, color: Color(0xFF64748B)),
-                            const SizedBox(width: 8),
-                            Text(
-                              'Close',
-                              style: GoogleFonts.poppins(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w600,
-                                color: const Color(0xFF64748B),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
+                  const SizedBox(height: 20),
+                  Center(
+                    child: TextButton(onPressed: () => Navigator.pop(context), style: TextButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 12), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))), child: Row(mainAxisSize: MainAxisSize.min, children: [const Icon(Icons.close, color: Color(0xFF64748B)), const SizedBox(width: 8), Text('Close', style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w600, color: const Color(0xFF64748B)))])),
+                  ),
+                ]),
               ),
-            ],
+            ]),
           ),
         ),
-      ),
-            ),
-    );
-  }
-
-  Widget _buildContactBadge(IconData icon, String text) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.2),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 16, color: Colors.white),
-          const SizedBox(width: 8),
-          Flexible(
-            child: Text(
-              text,
-              style: GoogleFonts.poppins(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: Colors.white,
-              ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-        ],
       ),
     );
   }
 }
+
+
+
