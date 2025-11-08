@@ -252,6 +252,97 @@ class _JobListViewState extends State<JobListView>
       ),
     );
   }
+  Widget _buildTopHeader() {
+    return Container(
+      height: 70,
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        border: Border(bottom: BorderSide(color: Color(0xFFE2E8F0))),
+      ),
+      child: Row(
+        children: [
+          // Results count
+          Text(
+            '${_filteredJobs.length} job${_filteredJobs.length == 1 ? '' : 's'} found',
+            style: GoogleFonts.inter(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                color: const Color(0xFF374151)),
+          ),
+
+          const Spacer(),
+
+          // Active jobs badge
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            decoration: BoxDecoration(
+              color: const Color(0xFF10B981).withOpacity(0.1),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                  color: const Color(0xFF10B981).withOpacity(0.2)),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 8,
+                  height: 8,
+                  decoration: const BoxDecoration(
+                    color: Color(0xFF10B981),
+                    shape: BoxShape.circle,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Text('${_filteredJobs.length} Active',
+                    style: GoogleFonts.inter(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: const Color(0xFF10B981))),
+              ],
+            ),
+          ),
+
+          const SizedBox(width: 16),
+
+          // Sort dropdown
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: const Color(0xFFD1D5DB)),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.sort, size: 16, color: Color(0xFF64748B)),
+                const SizedBox(width: 8),
+                DropdownButton<String>(
+                  value: _selectedSortOption,
+                  underline: const SizedBox(),
+                  style: GoogleFonts.inter(
+                      fontSize: 14, color: const Color(0xFF64748B)),
+                  items: const [
+                    DropdownMenuItem(
+                        value: 'newest', child: Text('Newest First')),
+                    DropdownMenuItem(
+                        value: 'oldest', child: Text('Oldest First')),
+                    DropdownMenuItem(
+                        value: 'company', child: Text('Company A→Z')),
+                  ],
+                  onChanged: (val) {
+                    setState(() => _selectedSortOption = val!);
+                    _applyFilters();
+                  },
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
   Widget _buildCollapsedSidebar() {
     return Column(
@@ -431,97 +522,6 @@ class _JobListViewState extends State<JobListView>
     );
   }
 
-  Widget _buildTopHeader() {
-    return Container(
-      height: 70,
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        border: Border(bottom: BorderSide(color: Color(0xFFE2E8F0))),
-      ),
-      child: Row(
-        children: [
-          // Results count
-          Text(
-            '${_filteredJobs.length} job${_filteredJobs.length == 1 ? '' : 's'} found',
-            style: GoogleFonts.inter(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-                color: const Color(0xFF374151)),
-          ),
-
-          const Spacer(),
-
-          // Active jobs badge
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            decoration: BoxDecoration(
-              color: const Color(0xFF10B981).withOpacity(0.1),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                  color: const Color(0xFF10B981).withOpacity(0.2)),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  width: 8,
-                  height: 8,
-                  decoration: const BoxDecoration(
-                    color: Color(0xFF10B981),
-                    shape: BoxShape.circle,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Text('${_filteredJobs.length} Active',
-                    style: GoogleFonts.inter(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: const Color(0xFF10B981))),
-              ],
-            ),
-          ),
-
-          const SizedBox(width: 16),
-
-          // Sort dropdown
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: const Color(0xFFD1D5DB)),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(Icons.sort, size: 16, color: Color(0xFF64748B)),
-                const SizedBox(width: 8),
-                DropdownButton<String>(
-                  value: _selectedSortOption,
-                  underline: const SizedBox(),
-                  style: GoogleFonts.inter(
-                      fontSize: 14, color: const Color(0xFF64748B)),
-                  items: const [
-                    DropdownMenuItem(
-                        value: 'newest', child: Text('Newest First')),
-                    DropdownMenuItem(
-                        value: 'oldest', child: Text('Oldest First')),
-                    DropdownMenuItem(
-                        value: 'company', child: Text('Company A→Z')),
-                  ],
-                  onChanged: (val) {
-                    setState(() => _selectedSortOption = val!);
-                    _applyFilters();
-                  },
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 
   Widget _buildJobsList() {
     if (_filteredJobs.isEmpty) {

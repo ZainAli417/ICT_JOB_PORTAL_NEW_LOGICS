@@ -449,8 +449,8 @@ class _CvUploadSectionState extends State<CvUploadSection> with SingleTickerProv
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey.shade200),
-        boxShadow: [BoxShadow(color: Colors.grey.shade200, blurRadius: 8, offset: const Offset(0, 2))],
+        border: Border.all(color: Color(0xff5C738A),),
+        boxShadow: [BoxShadow(color: Color(0xff5C738A), blurRadius: 8, offset: const Offset(0, 2))],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -523,8 +523,8 @@ class _CvUploadSectionState extends State<CvUploadSection> with SingleTickerProv
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.grey.shade200),
-          boxShadow: [BoxShadow(color: Colors.grey.shade200, blurRadius: 8, offset: const Offset(0, 2))],
+          border: Border.all(color: Color(0xff5C738A),),
+          boxShadow: [BoxShadow(color: Color(0xff5C738A), blurRadius: 8, offset: const Offset(0, 2))],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,

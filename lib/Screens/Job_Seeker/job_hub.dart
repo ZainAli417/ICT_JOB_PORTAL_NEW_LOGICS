@@ -310,7 +310,7 @@ class _job_hubState extends State<job_hub>
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Welcome Back, Zain!',
+          'Welcome to Job Hub !',
           style: GoogleFonts.inter(
             fontSize: 28,
             fontWeight: FontWeight.w700,
@@ -320,7 +320,7 @@ class _job_hubState extends State<job_hub>
         ),
         const SizedBox(height: 8),
         Text(
-          'Here is your job search overview',
+          'Explore Jobs and Be a part of your Dream Company',
           style: GoogleFonts.inter(
             fontSize: 16,
             fontWeight: FontWeight.w500,

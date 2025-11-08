@@ -308,7 +308,7 @@ class _AdminDashboardBodyState extends State<_AdminDashboardBody> {
                 topRight: Radius.circular(20),
               ),
               border: Border(
-                bottom: BorderSide(color: Colors.grey.shade200),
+                bottom: BorderSide(color: Color(0xff5C738A)),
               ),
             ),
             child: Row(
@@ -1559,7 +1559,7 @@ class _CandidateCard extends StatelessWidget {
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.grey.shade200),
+            border: Border.all(color: Color(0xff5C738A)),
             boxShadow: [
               BoxShadow(
                 color: Colors.grey.shade100,

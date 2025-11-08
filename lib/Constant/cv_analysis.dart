@@ -601,10 +601,10 @@ class _ResultsSection extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.analytics_outlined, size: 64, color: Colors.grey.shade300),
+              Icon(Icons.analytics_outlined, size: 64, color: Color(0xFF64748B)),
               const SizedBox(height: 16),
               Text(
-                'Upload a CV to get started',
+                'Upload a CV to get Analysis',
                 style: GoogleFonts.inter(
                   fontSize: 16,
                   fontWeight: FontWeight.w500,

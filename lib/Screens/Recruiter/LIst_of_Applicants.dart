@@ -7,6 +7,8 @@ import 'package:provider/provider.dart';
 
 import '../../widgets/downloadcv.dart';
 import '../../widgets/view_js_profile.dart';
+import 'AI Candidate Matching.dart';
+import 'AI Candidate Matching_Provider.dart';
 import 'LIst_of_Applicants_provider.dart';
 
 class SmoothScrollBehavior extends MaterialScrollBehavior {
@@ -23,8 +25,8 @@ class SmoothScrollBehavior extends MaterialScrollBehavior {
 }
 
 class ApplicantsScreen extends StatefulWidget {
-  const ApplicantsScreen({super.key});
-
+  const ApplicantsScreen({super.key, this.jobId});
+  final String? jobId; // Add this parameter
   @override
   State<ApplicantsScreen> createState() => _ApplicantsScreenState();
 }
@@ -39,8 +41,10 @@ class _ApplicantsScreenState extends State<ApplicantsScreen>
   @override
   void initState() {
     super.initState();
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<ApplicantsProvider>().refresh();
+      // Pass jobId to provider's refresh method
+      context.read<ApplicantsProvider>().refresh(jobId: widget.jobId);
     });
 
     _fadeController = AnimationController(
@@ -58,23 +62,33 @@ class _ApplicantsScreenState extends State<ApplicantsScreen>
     _searchController.dispose();
     super.dispose();
   }
-
-  @override
-  Widget build(BuildContext context) {
-    return ScrollConfiguration(
-      behavior: SmoothScrollBehavior(),
-      child: Recruiter_MainLayout(
-        activeIndex: 2,
-        child: FadeTransition(
-          opacity: _fadeAnimation,
-          child: build_UI(context),
-        ),
-      ),
-    );
+  String _maskEmail(String email) {
+    if (email.isEmpty) return 'Not provided';
+    final parts = email.split('@');
+    if (parts.length != 2) return email;
+    final username = parts[0];
+    final domain = parts[1];
+    if (username.length <= 3) return '***@$domain';
+    return '${username.substring(0, 2)}****${username.substring(username.length - 1)}@$domain';
   }
 
+  String _maskPhone(String phone) {
+    if (phone.isEmpty) return 'Not provided';
+    if (phone.length <= 4) return '****';
+    return '${phone.substring(0, 3)}****${phone.substring(phone.length - 2)}';
+  }
 
-  Widget build_UI(BuildContext context) {
+  String _maskUrl(String url) {
+    if (url.isEmpty) return '';
+    if (url.length <= 15) return '****';
+    return '${url.substring(0, 8)}****${url.substring(url.length - 4)}';
+  }
+
+// State variables for expandable sections (add these at the top with other state variables)
+  final Map<String, bool> _expandedSkills = {};
+  final Map<String, bool> _expandedCerts = {};
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FA),
       body: Consumer<ApplicantsProvider>(
@@ -92,7 +106,7 @@ class _ApplicantsScreenState extends State<ApplicantsScreen>
                   const SizedBox(height: 16),
                   Text(
                     'Error: ${provider.error}',
-                    style: TextStyle(color: Colors.red[700]),
+  style: GoogleFonts.poppins(color: Colors.red[700]),
                   ),
                   const SizedBox(height: 16),
                   ElevatedButton(
@@ -106,34 +120,33 @@ class _ApplicantsScreenState extends State<ApplicantsScreen>
 
           return Row(
             children: [
-              // Left Column - Filters
-              Container(
-                width: 320,
-                decoration: const BoxDecoration(
-                  color: Colors.white,
-                  boxShadow: [
-                    BoxShadow(
-                      color: Color(0x1A000000),
-                      blurRadius: 8,
-                      offset: Offset(2, 0),
-                    ),
-                  ],
-                ),
-                child: _buildFiltersColumn(provider),
-              ),
-
-              // Middle Column - Candidates List
+              // --- Middle Column becomes the main area and gains the Filters on top ---
               Expanded(
                 flex: 2,
                 child: Container(
-                  margin: const EdgeInsets.symmetric(horizontal: 16),
-                  child: _buildCandidatesColumn(provider),
+                  margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                  child: Column(
+                    children: [
+
+                      // Candidates list below filters — expands to fill remaining space
+                      Expanded(
+                        child: Container(
+                          width: double.infinity,
+                          decoration: BoxDecoration(
+                            color: Colors.transparent,
+                          ),
+                          child: _buildCandidatesColumn(provider),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
 
-              // Right Column - Helper Widgets
+              // Right Column - Helper Widgets (unchanged)
               Container(
                 width: 350,
+                margin: const EdgeInsets.only(right: 16),
                 decoration: const BoxDecoration(
                   color: Colors.white,
                   boxShadow: [
@@ -155,24 +168,316 @@ class _ApplicantsScreenState extends State<ApplicantsScreen>
 
 
 
+  Widget _buildCandidatesColumn(ApplicantsProvider provider) {
+    return RepaintBoundary(
+      child: Column(
+        children: [
+          // Header with count and sort
+          Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  const Color(0xFF1E40AF),
+                  const Color(0xFF3B82F6),
+                  const Color(0xFF60A5FA),
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(20),
+                topRight: Radius.circular(20),
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFF3B82F6).withOpacity(0.4),
+                  blurRadius: 16,
+                  offset: const Offset(0, 8),
+                  spreadRadius: 0,
+                ),
+                BoxShadow(
+                  color: const Color(0xFF1E40AF).withOpacity(0.2),
+                  blurRadius: 32,
+                  offset: const Offset(0, 16),
+                  spreadRadius: 0,
+                ),
+              ],
+            ),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: Colors.white.withOpacity(0.2),
+                      width: 1,
+                    ),
+                  ),
+                  child: Icon(
+                    Icons.people_alt_outlined,
+                    color: Colors.white,
+                    size: 28,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Applied Candidates',
+                        style: GoogleFonts.poppins(
+                          fontSize: 24,
+                          fontWeight: FontWeight.w800,
+                          color: Colors.white,
+                          letterSpacing: -0.5,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Review and manage applications',
+                        style: GoogleFonts.poppins(
+                          fontSize: 14,
+                          color: Colors.white.withOpacity(0.8),
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        Colors.white.withOpacity(0.2),
+                        Colors.white.withOpacity(0.1),
+                      ],
+                    ),
+                    borderRadius: BorderRadius.circular(25),
+                    border: Border.all(
+                      color: Colors.white.withOpacity(0.3),
+                      width: 1,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.1),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 8,
+                        height: 8,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF10B981),
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(0xFF10B981).withOpacity(0.6),
+                              blurRadius: 6,
+                              spreadRadius: 2,
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        '${provider.filteredCount} candidates found',
+                        style: const TextStyle(
+                          fontSize: 14,
+                          color: Colors.white,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 0.2,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 16),
+                _buildSortDropdown(provider),
+                const SizedBox(width: 16),
+
+                Consumer<AIMatchProvider>(
+                  builder: (context, aiProvider, child) {
+                    return Container(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            const Color(0xFF8B5CF6),
+                            const Color(0xFF7C3AED),
+                          ],
+                        ),
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFF8B5CF6).withOpacity(0.3),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(12),
+                          onTap: aiProvider.isAnalyzing ? null : () {
+                            // Show AI Match Processing Dialog
+                            showDialog(
+                              context: context,
+                              barrierDismissible: false,
+                              builder: (context) => AIMatchScoreScreen(
+                                jobId: widget.jobId ?? '',
+                                jobTitle: provider.applicants.isNotEmpty
+                                    ? (provider.applicants.first.jobData?.title ?? 'Job Position')
+                                    : 'Job Position',
+                              ),
+                            );
+                          },
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                if (aiProvider.isAnalyzing) ...[
+                                  SizedBox(
+                                    width: 16,
+                                    height: 16,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      valueColor: AlwaysStoppedAnimation(Colors.white),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                ] else ...[
+                                  Icon(
+                                    Icons.psychology_outlined,
+                                    color: Colors.white,
+                                    size: 18,
+                                  ),
+                                  const SizedBox(width: 8),
+                                ],
+                                Text(
+                                  aiProvider.isAnalyzing
+                                      ? 'Analyzing...'
+                                      : 'AI Match Analysis',
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w700,
+                                    color: Colors.white,
+                                    letterSpacing: 0.2,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+
+
+              ],
+            ),
+          ),
+
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+            child: _buildFiltersColumn(provider),
+          ),
+          // Candidates List
+          Expanded(
+            child: Container(
+              // internal padding so items don't touch rounded edges of the parent
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [ Color(0xFFF8FAFC), Color(0xFFF1F5F9) ],
+                ),
+                borderRadius: const BorderRadius.only(
+                  bottomLeft: Radius.circular(20),
+                  bottomRight: Radius.circular(20),
+                ),
+              ),
+              child: provider.applicants.isEmpty
+                  ? _buildEmptyState()
+                  : AnimatedList(
+                // keep initialItemCount in sync with provider length
+                initialItemCount: provider.applicants.length,
+                // remove internal padding here — parent has padding now
+                padding: EdgeInsets.zero,
+                itemBuilder: (context, index, animation) {
+                  if (index >= provider.applicants.length) return const SizedBox();
+
+                  // horizontal gap between items and parent edges
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8.0),
+                    child: SizeTransition(
+                      sizeFactor: animation,
+                      axis: Axis.vertical,
+                      child: FadeTransition(
+                        opacity: animation,
+                        child: Material(
+                          color: Colors.transparent,
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(12),
+                            // Use a subtle panel style so each item visually belongs to the parent panel
+                            child: Container(
+                              // use white panel with light border (no heavy shadow)
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: const Color(0xFFE8EEF6)),
+                              ),
+                              child: _buildCandidateCard(
+                                provider.applicants[index],
+                                provider,
+                                index,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
 
   //FILTERING SECTION
   Widget _buildFiltersColumn(ApplicantsProvider provider) {
-    return Container(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [Color(0xFFF8FAFC), Color(0xFFF1F5F9)],
-        ),
-      ),
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Header
-            Container(
+    final sectionWidth = 250.0; // tweak this if you want wider/narrower cards
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(10),
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          /*
+          ConstrainedBox(
+            constraints: BoxConstraints(
+              minWidth: sectionWidth,
+              maxWidth: sectionWidth,
+            ),
+            child: Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
                 gradient: LinearGradient(
@@ -210,7 +515,7 @@ class _ApplicantsScreenState extends State<ApplicantsScreen>
                   const Expanded(
                     child: Text(
                       'Advanced Filters',
-                      style: TextStyle(
+    style: GoogleFonts.poppins(
                         fontSize: 20,
                         fontWeight: FontWeight.w700,
                         color: Colors.white,
@@ -227,7 +532,7 @@ class _ApplicantsScreenState extends State<ApplicantsScreen>
                       ),
                       child: const Text(
                         'Active',
-                        style: TextStyle(
+      style: GoogleFonts.poppins(
                           fontSize: 10,
                           fontWeight: FontWeight.w600,
                           color: Colors.white,
@@ -238,53 +543,126 @@ class _ApplicantsScreenState extends State<ApplicantsScreen>
                 ],
               ),
             ),
-            const SizedBox(height: 24),
+          ),
+           */
+          // --- Search ---
+          ConstrainedBox(
+            constraints: BoxConstraints(
+              minWidth: sectionWidth,
+              maxWidth: sectionWidth,
+            ),
+            child: _buildSearchField(provider),
+          ),
 
-            // Search
-            _buildSearchField(provider),
-            const SizedBox(height: 24),
+          const SizedBox(width: 20),
 
-            // Status Filter
-            _buildStatusFilter(provider),
-            const SizedBox(height: 20),
+          // --- Status ---
+          ConstrainedBox(
+            constraints: BoxConstraints(
+              minWidth: sectionWidth,
+              maxWidth: sectionWidth,
+            ),
+            child: _buildStatusFilter(provider),
+          ),
 
-            // Job Filter
-            _buildJobFilter(provider),
-            const SizedBox(height: 20),
+          const SizedBox(width: 20),
 
-            // Experience Filter
-            _buildExperienceFilter(provider),
-            const SizedBox(height: 20),
+          // --- Job ---
+          ConstrainedBox(
+            constraints: BoxConstraints(
+              minWidth: sectionWidth,
+              maxWidth: sectionWidth,
+            ),
+            child: _buildJobFilter(provider),
+          ),
 
-            // Location Filter
-            _buildLocationFilter(provider),
-            const SizedBox(height: 20),
+          const SizedBox(width: 20),
 
-            // Education Filter
-            _buildEducationFilter(provider),
-            const SizedBox(height: 20),
+          // --- Experience ---
+          ConstrainedBox(
+            constraints: BoxConstraints(
+              minWidth: sectionWidth,
+              maxWidth: sectionWidth,
+            ),
+            child: _buildExperienceFilter(provider),
+          ),
 
-            // Work Type Filter
-            _buildWorkTypeFilter(provider),
-            const SizedBox(height: 20),
+          const SizedBox(width: 20),
 
-            // Skills Filter
-            _buildSkillsFilter(provider),
-            const SizedBox(height: 20),
+          // --- Location ---
+          ConstrainedBox(
+            constraints: BoxConstraints(
+              minWidth: sectionWidth,
+              maxWidth: sectionWidth,
+            ),
+            child: _buildLocationFilter(provider),
+          ),
 
-            // Salary Range
-            _buildSalaryRangeFilter(provider),
-            const SizedBox(height: 20),
+          const SizedBox(width: 20),
 
-            // Date Range Filter
-            _buildDateRangeFilter(provider),
-            const SizedBox(height: 24),
+          // --- Education ---
+          ConstrainedBox(
+            constraints: BoxConstraints(
+              minWidth: sectionWidth,
+              maxWidth: sectionWidth,
+            ),
+            child: _buildEducationFilter(provider),
+          ),
 
-            // Clear Filters Button
-            if (provider.hasActiveFilters)
-              AnimatedContainer(
+          const SizedBox(width: 20),
+    /*
+          // --- Work Type ---
+          ConstrainedBox(
+            constraints: BoxConstraints(
+              minWidth: sectionWidth,
+              maxWidth: sectionWidth,
+            ),
+            child: _buildWorkTypeFilter(provider),
+          ),
+          // --- Skills ---
+          ConstrainedBox(
+            constraints: BoxConstraints(
+              minWidth: sectionWidth,
+              maxWidth: sectionWidth,
+            ),
+            child: _buildSkillsFilter(provider),
+          ),
+
+          const SizedBox(width: 20),
+
+          // --- Salary Range ---
+          ConstrainedBox(
+            constraints: BoxConstraints(
+              minWidth: sectionWidth,
+              maxWidth: sectionWidth,
+            ),
+            child: _buildSalaryRangeFilter(provider),
+          ),
+
+
+     */
+
+          // --- Date Range ---
+          ConstrainedBox(
+            constraints: BoxConstraints(
+              minWidth: sectionWidth,
+              maxWidth: sectionWidth,
+            ),
+            child: _buildDateRangeFilter(provider),
+          ),
+
+          const SizedBox(width: 20),
+
+          // --- Clear all (if active) ---
+          if (provider.hasActiveFilters)
+            ConstrainedBox(
+              constraints: BoxConstraints(
+                minWidth: sectionWidth,
+                maxWidth: sectionWidth,
+              ),
+              child: AnimatedContainer(
                 duration: const Duration(milliseconds: 300),
-                width: double.infinity,
+                width: sectionWidth,
                 child: ElevatedButton.icon(
                   onPressed: provider.clearAllFilters,
                   icon: const Icon(Icons.clear_all_outlined, size: 18),
@@ -306,12 +684,13 @@ class _ApplicantsScreenState extends State<ApplicantsScreen>
                   ),
                 ),
               ),
-          ],
-        ),
+            ),
+
+          const SizedBox(width: 12),
+        ],
       ),
     );
   }
-
   Widget _buildSearchField(ApplicantsProvider provider) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -324,12 +703,12 @@ class _ApplicantsScreenState extends State<ApplicantsScreen>
               color: const Color(0xFF3B82F6),
             ),
             const SizedBox(width: 8),
-            const Text(
+            Text(
               'Search Candidates',
-              style: TextStyle(
+              style: GoogleFonts.poppins(
                 fontSize: 14,
                 fontWeight: FontWeight.w700,
-                color: Color(0xFF0F172A),
+                color: const Color(0xFF0F172A),
                 letterSpacing: 0.2,
               ),
             ),
@@ -352,7 +731,7 @@ class _ApplicantsScreenState extends State<ApplicantsScreen>
             onChanged: provider.updateSearchQuery,
             decoration: InputDecoration(
               hintText: 'Search by name, skills, or job title...',
-              hintStyle: TextStyle(
+              hintStyle: GoogleFonts.poppins(
                 color: const Color(0xFF94A3B8),
                 fontSize: 14,
               ),
@@ -390,7 +769,6 @@ class _ApplicantsScreenState extends State<ApplicantsScreen>
       ],
     );
   }
-
   Widget _buildStatusFilter(ApplicantsProvider provider) {
     return _buildDropdownFilter(
       title: 'Application Status',
@@ -413,7 +791,6 @@ class _ApplicantsScreenState extends State<ApplicantsScreen>
       },
     );
   }
-
   Widget _buildJobFilter(ApplicantsProvider provider) {
     final jobs = ['All', ...provider.availableJobs.toList()..sort()];
     return _buildDropdownFilter(
@@ -425,7 +802,6 @@ class _ApplicantsScreenState extends State<ApplicantsScreen>
       onChanged: provider.updateJobFilter,
     );
   }
-
   Widget _buildExperienceFilter(ApplicantsProvider provider) {
     final experiences = ['All', ...provider.availableExperiences];
     return _buildDropdownFilter(
@@ -437,7 +813,6 @@ class _ApplicantsScreenState extends State<ApplicantsScreen>
       onChanged: provider.updateExperienceFilter,
     );
   }
-
   Widget _buildLocationFilter(ApplicantsProvider provider) {
     final locations = ['All', ...provider.availableLocations.toList()..sort()];
     return _buildDropdownFilter(
@@ -449,7 +824,6 @@ class _ApplicantsScreenState extends State<ApplicantsScreen>
       onChanged: provider.updateLocationFilter,
     );
   }
-
   Widget _buildEducationFilter(ApplicantsProvider provider) {
     final educations = ['All', ...provider.availableEducations.toList()..sort()];
     return _buildDropdownFilter(
@@ -461,7 +835,7 @@ class _ApplicantsScreenState extends State<ApplicantsScreen>
       onChanged: provider.updateEducationFilter,
     );
   }
-
+  /*
   Widget _buildWorkTypeFilter(ApplicantsProvider provider) {
     final workTypes = ['All', ...provider.availableWorkTypes];
     return _buildDropdownFilter(
@@ -474,6 +848,7 @@ class _ApplicantsScreenState extends State<ApplicantsScreen>
     );
   }
 
+   */
   Widget _buildDropdownFilter({
     required String title,
     required IconData icon,
@@ -521,7 +896,7 @@ class _ApplicantsScreenState extends State<ApplicantsScreen>
                 ),
                 child: Text(
                   '1',
-                  style: TextStyle(
+style: GoogleFonts.poppins(
                     fontSize: 10,
                     fontWeight: FontWeight.w600,
                     color: iconColor,
@@ -582,7 +957,7 @@ class _ApplicantsScreenState extends State<ApplicantsScreen>
                         Expanded(
                           child: Text(
                             getDisplayText?.call(item) ?? item,
-                            style: TextStyle(
+          style: GoogleFonts.poppins(
                               fontSize: 14,
                               fontWeight: FontWeight.w500,
                               color: item == value ? color : const Color(0xFF0F172A),
@@ -621,7 +996,7 @@ class _ApplicantsScreenState extends State<ApplicantsScreen>
                         Expanded(
                           child: Text(
                             getDisplayText?.call(item) ?? item,
-                            style: TextStyle(
+          style: GoogleFonts.poppins(
                               fontSize: 14,
                               fontWeight: FontWeight.w600,
                               color: const Color(0xFF0F172A),
@@ -639,7 +1014,7 @@ class _ApplicantsScreenState extends State<ApplicantsScreen>
       ],
     );
   }
-
+  /*
   Widget _buildSkillsFilter(ApplicantsProvider provider) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -661,7 +1036,7 @@ class _ApplicantsScreenState extends State<ApplicantsScreen>
             const SizedBox(width: 8),
             const Text(
               'Skills & Technologies',
-              style: TextStyle(
+              style: GoogleFonts.poppins(
                 fontSize: 14,
                 fontWeight: FontWeight.w700,
                 color: Color(0xFF0F172A),
@@ -764,7 +1139,7 @@ class _ApplicantsScreenState extends State<ApplicantsScreen>
                           if (isSelected) const SizedBox(width: 4),
                           Text(
                             skill,
-                            style: TextStyle(
+          style: GoogleFonts.poppins(
                               fontSize: 12,
                               fontWeight: FontWeight.w600,
                               color: isSelected ? Colors.white : const Color(0xFF475569),
@@ -784,6 +1159,8 @@ class _ApplicantsScreenState extends State<ApplicantsScreen>
     );
   }
 
+   */
+  /*
   Widget _buildSalaryRangeFilter(ApplicantsProvider provider) {
     // Ensure values are within bounds
     final double minValue = provider.minExpectedSalary.clamp(0.0, 200000.0);
@@ -809,7 +1186,7 @@ class _ApplicantsScreenState extends State<ApplicantsScreen>
             const SizedBox(width: 8),
             const Text(
               'Expected Salary Range',
-              style: TextStyle(
+              style: GoogleFonts.poppins(
                 fontSize: 14,
                 fontWeight: FontWeight.w700,
                 color: Color(0xFF0F172A),
@@ -895,7 +1272,7 @@ class _ApplicantsScreenState extends State<ApplicantsScreen>
                     ),
                     child: Text(
                       '\$0k',
-                      style: TextStyle(
+    style: GoogleFonts.poppins(
                         fontSize: 11,
                         fontWeight: FontWeight.w600,
                         color: const Color(0xFF64748B),
@@ -910,7 +1287,7 @@ class _ApplicantsScreenState extends State<ApplicantsScreen>
                     ),
                     child: Text(
                       '\$200k',
-                      style: TextStyle(
+    style: GoogleFonts.poppins(
                         fontSize: 11,
                         fontWeight: FontWeight.w600,
                         color: const Color(0xFF64748B),
@@ -926,6 +1303,7 @@ class _ApplicantsScreenState extends State<ApplicantsScreen>
     );
   }
 
+   */
   Widget _buildDateRangeFilter(ApplicantsProvider provider) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -945,12 +1323,12 @@ class _ApplicantsScreenState extends State<ApplicantsScreen>
               ),
             ),
             const SizedBox(width: 8),
-            const Text(
+            Text(
               'Application Date Range',
-              style: TextStyle(
+              style: GoogleFonts.poppins(
                 fontSize: 14,
                 fontWeight: FontWeight.w700,
-                color: Color(0xFF0F172A),
+                color: const Color(0xFF0F172A),
                 letterSpacing: 0.2,
               ),
             ),
@@ -998,7 +1376,7 @@ class _ApplicantsScreenState extends State<ApplicantsScreen>
           },
           child: Container(
             width: double.infinity,
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(12),
@@ -1036,9 +1414,9 @@ class _ApplicantsScreenState extends State<ApplicantsScreen>
                     provider.appliedDateRange == null
                         ? 'Select date range'
                         : '${DateFormat('MMM dd').format(provider.appliedDateRange!.start)} - ${DateFormat('MMM dd').format(provider.appliedDateRange!.end)}',
-                    style: TextStyle(
+  style: GoogleFonts.poppins(
                       fontSize: 14,
-                      fontWeight: FontWeight.w600,
+                      fontWeight: FontWeight.w500,
                       color: provider.appliedDateRange == null
                           ? const Color(0xFF94A3B8)
                           : const Color(0xFF0F172A),
@@ -1074,199 +1452,6 @@ class _ApplicantsScreenState extends State<ApplicantsScreen>
       ],
     );
   }
-
-
-
-
-
-  Widget _buildCandidatesColumn(ApplicantsProvider provider) {
-    return RepaintBoundary(
-      child: Column(
-        children: [
-          // Header with count and sort
-          Container(
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  const Color(0xFF1E40AF),
-                  const Color(0xFF3B82F6),
-                  const Color(0xFF60A5FA),
-                ],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(20),
-                topRight: Radius.circular(20),
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: const Color(0xFF3B82F6).withOpacity(0.4),
-                  blurRadius: 16,
-                  offset: const Offset(0, 8),
-                  spreadRadius: 0,
-                ),
-                BoxShadow(
-                  color: const Color(0xFF1E40AF).withOpacity(0.2),
-                  blurRadius: 32,
-                  offset: const Offset(0, 16),
-                  spreadRadius: 0,
-                ),
-              ],
-            ),
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.15),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: Colors.white.withOpacity(0.2),
-                      width: 1,
-                    ),
-                  ),
-                  child: Icon(
-                    Icons.people_alt_outlined,
-                    color: Colors.white,
-                    size: 28,
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Applied Candidates',
-                        style: TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.w800,
-                          color: Colors.white,
-                          letterSpacing: -0.5,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Review and manage applications',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.white.withOpacity(0.8),
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [
-                        Colors.white.withOpacity(0.2),
-                        Colors.white.withOpacity(0.1),
-                      ],
-                    ),
-                    borderRadius: BorderRadius.circular(25),
-                    border: Border.all(
-                      color: Colors.white.withOpacity(0.3),
-                      width: 1,
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.1),
-                        blurRadius: 8,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Container(
-                        width: 8,
-                        height: 8,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF10B981),
-                          shape: BoxShape.circle,
-                          boxShadow: [
-                            BoxShadow(
-                              color: const Color(0xFF10B981).withOpacity(0.6),
-                              blurRadius: 6,
-                              spreadRadius: 2,
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        '${provider.filteredCount} candidates found',
-                        style: const TextStyle(
-                          fontSize: 14,
-                          color: Colors.white,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: 0.2,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 16),
-                _buildSortDropdown(provider),
-              ],
-            ),
-          ),
-
-          // Candidates List
-          Expanded(
-            child: Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    const Color(0xFFF8FAFC),
-                    const Color(0xFFF1F5F9),
-                  ],
-                ),
-                borderRadius: const BorderRadius.only(
-                  bottomLeft: Radius.circular(20),
-                  bottomRight: Radius.circular(20),
-                ),
-              ),
-              child: provider.applicants.isEmpty
-                  ? _buildEmptyState()
-                  : AnimatedList(
-                padding: const EdgeInsets.all(20),
-                initialItemCount: provider.applicants.length,
-                itemBuilder: (context, index, animation) {
-                  if (index >= provider.applicants.length) return const SizedBox();
-                  return SlideTransition(
-                    position: animation.drive(
-                      Tween(begin: const Offset(1.0, 0.0), end: Offset.zero)
-                          .chain(CurveTween(curve: Curves.easeOutCubic)),
-                    ),
-                    child: FadeTransition(
-                      opacity: animation,
-                      child: RepaintBoundary(
-                        child: _buildCandidateCard(
-                          provider.applicants[index],
-                          provider,
-                          index,
-                        ),
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildSortDropdown(ApplicantsProvider provider) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 4),
@@ -1462,7 +1647,6 @@ class _ApplicantsScreenState extends State<ApplicantsScreen>
       ),
     );
   }
-
   Widget _buildSortItem(String text, IconData icon, Color color) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -1484,7 +1668,7 @@ class _ApplicantsScreenState extends State<ApplicantsScreen>
           Expanded(
             child: Text(
               text,
-              style: TextStyle(
+              style: GoogleFonts.poppins(
                 color: const Color(0xFF0F172A),
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
@@ -1536,7 +1720,7 @@ class _ApplicantsScreenState extends State<ApplicantsScreen>
             const SizedBox(height: 32),
             Text(
               'No Applications Found',
-              style: TextStyle(
+              style: GoogleFonts.poppins(
                 fontSize: 24,
                 color: const Color(0xFF475569),
                 fontWeight: FontWeight.w700,
@@ -1547,41 +1731,11 @@ class _ApplicantsScreenState extends State<ApplicantsScreen>
             Text(
               'Try adjusting your filters or search criteria\nto discover more candidates',
               textAlign: TextAlign.center,
-              style: TextStyle(
+              style: GoogleFonts.poppins(
                 fontSize: 16,
                 color: const Color(0xFF64748B),
                 fontWeight: FontWeight.w500,
                 height: 1.5,
-              ),
-            ),
-            const SizedBox(height: 24),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-              decoration: BoxDecoration(
-                color: const Color(0xFF3B82F6).withOpacity(0.1),
-                borderRadius: BorderRadius.circular(25),
-                border: Border.all(
-                  color: const Color(0xFF3B82F6).withOpacity(0.2),
-                ),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    Icons.lightbulb_outline,
-                    size: 16,
-                    color: const Color(0xFF3B82F6),
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Clear filters to see all candidates',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: const Color(0xFF3B82F6),
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
               ),
             ),
           ],
@@ -1590,20 +1744,26 @@ class _ApplicantsScreenState extends State<ApplicantsScreen>
     );
   }
 
-// make sure you have:
-// import 'package:intl/intl.dart';
-// import 'package:google_fonts/google_fonts.dart';
-// import 'package:your_app/widgets/view_applicant_details.dart';
-// import 'package:your_app/utils/downloadcv.dart'; // if used
+
+
+
+
+
+
+
 
   Widget _buildCandidateCard(ApplicantRecord applicant, ApplicantsProvider provider, int index) {
-    final isEven = index % 2 == 0;
+    final applicantId = applicant.userId;
+
+    // Initialize expansion states
+    _expandedSkills[applicantId] ??= false;
+    _expandedCerts[applicantId] ??= false;
 
     // Determine mandatory fields presence
     final hasEmail = applicant.email.isNotEmpty;
     final hasPhone = applicant.phone.isNotEmpty;
     final hasNationality = applicant.nationality.isNotEmpty;
-    final hasCv = applicant.cvUrl.isNotEmpty;
+    final hasCv = applicant.documents.isNotEmpty;
     final hasDob = applicant.dob.isNotEmpty;
 
     final missingMandatoryCount = [
@@ -1614,221 +1774,413 @@ class _ApplicantsScreenState extends State<ApplicantsScreen>
       hasDob,
     ].where((ok) => !ok).length;
 
-    Widget chip(String text, {Color? color, IconData? icon}) {
-      return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-        margin: const EdgeInsets.only(right: 6, bottom: 6),
-        decoration: BoxDecoration(
-          color: (color ?? Colors.grey[200])!.withOpacity(0.25),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: (color ?? Colors.grey).withOpacity(0.18)),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (icon != null) Icon(icon, size: 14, color: color ?? Colors.black87),
-            if (icon != null) const SizedBox(width: 6),
-            Text(text, style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w600)),
-          ],
-        ),
-      );
-    }
-
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 300),
-      curve: Curves.easeOutCubic,
+    return Container(
       margin: const EdgeInsets.only(bottom: 20),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(20),
         border: Border.all(color: const Color(0xFFE2E8F0), width: 1),
         boxShadow: [
-          BoxShadow(color: const Color(0xFF1E293B).withOpacity(0.06), blurRadius: 16, offset: const Offset(0, 4)),
-          BoxShadow(color: const Color(0xFF1E293B).withOpacity(0.04), blurRadius: 4, offset: const Offset(0, 2)),
+          BoxShadow(
+            color: const Color(0xFF1E293B).withOpacity(0.06),
+            blurRadius: 20,
+            offset: const Offset(0, 4),
+          ),
         ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header Row with Profile Info
+          // Elegant White Gradient Header with Proper Contrast
           Container(
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Color(0xFF334155), Color(0xFF475569)],
+              gradient: LinearGradient(
+                colors: [
+                  const Color(0xFFFFFFFF),
+                  const Color(0xFFFAFAFA),
+                  const Color(0xFFF5F5F5),
+                ],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
-              borderRadius: const BorderRadius.only(topLeft: Radius.circular(16), topRight: Radius.circular(16)),
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(20),
+                topRight: Radius.circular(20),
+              ),
+              border: Border(
+                bottom: BorderSide(
+                  color: const Color(0xFFE2E8F0),
+                  width: 1,
+                ),
+              ),
             ),
             child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                // Avatar / picture
+                // Enhanced Avatar with Status
                 Stack(
                   children: [
-                    CircleAvatar(
-                      radius: 28,
-                      backgroundColor: const Color(0xFF3B82F6),
-                      backgroundImage: applicant.pictureUrl.isNotEmpty ? NetworkImage(applicant.pictureUrl) : null,
-                      child: applicant.pictureUrl.isEmpty
-                          ? Text(applicant.name.isNotEmpty ? applicant.name[0].toUpperCase() : 'U',
-                          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: Colors.white))
-                          : null,
+                    Container(
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(color: const Color(0xFFE2E8F0), width: 3),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFF3B82F6).withOpacity(0.15),
+                            blurRadius: 16,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: CircleAvatar(
+                        radius: 40,
+                        backgroundColor: const Color(0xFF3B82F6),
+                        backgroundImage: applicant.pictureUrl.isNotEmpty
+                            ? NetworkImage(applicant.pictureUrl)
+                            : null,
+                        child: applicant.pictureUrl.isEmpty
+                            ? Text(
+                          applicant.name.isNotEmpty
+                              ? applicant.name[0].toUpperCase()
+                              : 'JS',
+                          style: GoogleFonts.poppins(
+                            fontSize: 28,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
+                          ),
+                        )
+                            : null,
+                      ),
                     ),
                     Positioned(
                       bottom: 2,
                       right: 2,
                       child: Container(
-                        width: 16,
-                        height: 16,
+                        width: 18,
+                        height: 18,
                         decoration: BoxDecoration(
                           color: _getStatusColor(applicant.status),
                           shape: BoxShape.circle,
-                          border: Border.all(color: Colors.white, width: 2),
-                          boxShadow: [BoxShadow(color: _getStatusColor(applicant.status).withOpacity(0.4), blurRadius: 4)],
+                          border: Border.all(color: Colors.white, width: 3),
+                          boxShadow: [
+                            BoxShadow(
+                              color: _getStatusColor(applicant.status).withOpacity(0.5),
+                              blurRadius: 8,
+                              spreadRadius: 1,
+                            ),
+                          ],
                         ),
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(width: 16),
 
-                // Name and Job Info
+                const SizedBox(width: 20),
+
+                // Name, Job, and Applied Date
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(applicant.name,
-                          style: GoogleFonts.poppins(fontSize: 20, fontWeight: FontWeight.w700, color: Colors.white)),
-                      const SizedBox(height: 6),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                        decoration: BoxDecoration(color: Colors.white.withOpacity(0.15), borderRadius: BorderRadius.circular(20)),
-                        child: Text(applicant.jobData?.title ?? 'Job Title Not Available',
-                            style: const TextStyle(fontSize: 13, color: Colors.white, fontWeight: FontWeight.w600),
-                            overflow: TextOverflow.ellipsis),
+                      Text(
+                        applicant.name,
+                        style: GoogleFonts.poppins(
+                          fontSize: 26,
+                          fontWeight: FontWeight.w700,
+                          color: const Color(0xFF0F172A),
+                          letterSpacing: -0.5,
+                        ),
                       ),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: 10),
                       Row(
                         children: [
-                          Icon(Icons.schedule_outlined, color: Colors.white.withOpacity(0.8), size: 14),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [
+                                  const Color(0xFF3B82F6),
+                                  const Color(0xFF2563EB),
+                                ],
+                              ),
+                              borderRadius: BorderRadius.circular(8),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: const Color(0xFF3B82F6).withOpacity(0.3),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.work_outline_rounded,
+                                  size: 16,
+                                  color: Colors.white,
+                                ),
+                                const SizedBox(width: 6),
+                                Text(
+                                  applicant.jobData?.title ?? 'Job Title Not Available',
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 13,
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Icon(
+                            Icons.calendar_today_rounded,
+                            size: 14,
+                            color: const Color(0xFF64748B),
+                          ),
                           const SizedBox(width: 6),
-                          Text('Applied ${DateFormat('MMM dd, yyyy').format(applicant.appliedAt)}',
-                              style: TextStyle(fontSize: 12, color: Colors.white.withOpacity(0.8), fontWeight: FontWeight.w500)),
+                          Text(
+                            'Applied ${DateFormat('MMM dd, yyyy').format(applicant.appliedAt)}',
+                            style: GoogleFonts.poppins(
+                              fontSize: 13,
+                              color: const Color(0xFF475569),
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
                         ],
                       ),
                     ],
                   ),
                 ),
 
-                // Status Badge and Actions
-                Column(
+                // Right Side Actions - Arranged in Row
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    // Status Badge
                     _buildStatusBadge(applicant.status),
-                    const SizedBox(height: 12),
+
+                    const SizedBox(width: 12),
+
+                    // Status Update Dropdown
                     _buildStatusUpdateDropdown(applicant, provider),
+
+                    const SizedBox(width: 12),
+
+                    // Column for AI Match & Missing Fields
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        // AI Match Score Badge
+                        Consumer<AIMatchProvider>(
+                          builder: (context, aiProvider, child) {
+                            final matchResult = aiProvider.getMatchResult(applicantId);
+                            final isProcessing = aiProvider.isProcessingApplicant(applicantId);
+
+                            if (isProcessing) {
+                              return Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFF3F4F6),
+                                  borderRadius: BorderRadius.circular(10),
+                                  border: Border.all(color: const Color(0xFFE5E7EB)),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    SizedBox(
+                                      width: 12,
+                                      height: 12,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        valueColor: const AlwaysStoppedAnimation(
+                                          Color(0xFF8B5CF6),
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      'Analyzing...',
+                                      style: GoogleFonts.poppins(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w600,
+                                        color: const Color(0xFF6B7280),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            }
+
+                            if (matchResult != null) {
+                              return InkWell(
+                                onTap: () => _showMatchDetailsDialog(context, matchResult),
+                                borderRadius: BorderRadius.circular(10),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 15),
+                                  decoration: BoxDecoration(
+                                    gradient: LinearGradient(
+                                      colors: [
+                                        matchResult.getScoreColor().withOpacity(0.15),
+                                        matchResult.getScoreColor().withOpacity(0.05),
+                                      ],
+                                    ),
+                                    borderRadius: BorderRadius.circular(10),
+                                    border: Border.all(
+                                      color: matchResult.getScoreColor().withOpacity(0.3),
+                                    ),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        Icons.stars_rounded,
+                                        size: 20,
+                                        color: matchResult.getScoreColor(),
+                                      ),
+                                      const SizedBox(width: 6),
+                                      Text(
+                                        '${matchResult.overallScore}% Match',
+                                        style: GoogleFonts.poppins(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w700,
+                                          color: matchResult.getScoreColor(),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 4),
+                                      Icon(
+                                        Icons.info_outline_rounded,
+                                        size: 12,
+                                        color: matchResult.getScoreColor(),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            }
+
+                            return const SizedBox.shrink();
+                          },
+                        ),
+
+                        // Missing Fields Warning
+                        if (missingMandatoryCount > 0) ...[
+                          const SizedBox(height: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 15),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFFEF2F2),
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(
+                                color: const Color(0xFFDC2626).withOpacity(0.3),
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.warning_amber_rounded,
+                                  size: 20,
+                                  color: const Color(0xFFDC2626),
+                                ),
+                                const SizedBox(width: 6),
+                                Text(
+                                  '$missingMandatoryCount missing',
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
+                                    color: const Color(0xFFDC2626),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
                   ],
                 ),
               ],
             ),
           ),
 
-          // Content Area
+          // Content Area - Professional Layout
           Padding(
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.all(24),
             child: Column(
               children: [
-                // Quick mandatory info row (chips)
+                // Contact & Professional Info Cards
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Expanded(
-                      child: Wrap(
-                        runSpacing: 6,
-                        children: [
-                          chip(hasEmail ? 'Email: ${applicant.email}' : 'Email: missing',
-                              color: hasEmail ? const Color(0xFF2563EB) : const Color(0xFFEF4444), icon: Icons.email_outlined),
-                          chip(hasPhone ? 'Phone: ${applicant.phone}' : 'Phone: missing',
-                              color: hasPhone ? const Color(0xFF059669) : const Color(0xFFEF4444), icon: Icons.phone_outlined),
-                          chip(hasNationality ? 'Nationality: ${applicant.nationality}' : 'Nationality: missing',
-                              color: hasNationality ? const Color(0xFF7C3AED) : const Color(0xFFEF4444), icon: Icons.flag_outlined),
-                          chip(hasDob ? 'DOB' : 'DOB missing', color: hasDob ? Colors.orange : const Color(0xFFEF4444), icon: Icons.cake_outlined),
-                          chip(hasCv ? 'CV attached' : 'CV missing', color: hasCv ? const Color(0xFF10B981) : const Color(0xFFEF4444), icon: Icons.description_outlined),
-                        ],
-                      ),
-                    ),
-
-                    // Missing count indicator
-                    if (missingMandatoryCount > 0)
-                      Container(
-                        margin: const EdgeInsets.only(left: 8),
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                        decoration: BoxDecoration(color: const Color(0xFFFEF2F2), borderRadius: BorderRadius.circular(12)),
-                        child: Row(
-                          children: [
-                            Icon(Icons.error_outline, size: 14, color: const Color(0xFFDC2626)),
-                            const SizedBox(width: 6),
-                            Text('$missingMandatoryCount missing', style: GoogleFonts.poppins(fontSize: 12, color: const Color(0xFFDC2626))),
-                          ],
-                        ),
-                      ),
-                  ],
-                ),
-
-                const SizedBox(height: 16),
-
-                // Profile Details in Rows and Columns (same layout but ensure data from new keys)
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Left Column - Contact & Basic Info
+                    // Contact Information
                     Expanded(
                       child: Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(color: const Color(0xFFF8FAFC), borderRadius: BorderRadius.circular(12), border: Border.all(color: const Color(0xFFE2E8F0))),
+                        padding: const EdgeInsets.all(20),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFAFAFA),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: const Color(0xFFE2E8F0)),
+                        ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Row(
                               children: [
                                 Container(
-                                  padding: const EdgeInsets.all(6),
-                                  decoration: BoxDecoration(color: const Color(0xFF3B82F6).withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
-                                  child: Icon(Icons.contact_page_outlined, color: const Color(0xFF3B82F6), size: 16),
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    gradient: const LinearGradient(
+                                      colors: [Color(0xFF3B82F6), Color(0xFF2563EB)],
+                                    ),
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: Icon(
+                                    Icons.contact_page_rounded,
+                                    color: Colors.white,
+                                    size: 18,
+                                  ),
                                 ),
-                                const SizedBox(width: 8),
-                                Text('Contact Information', style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w700)),
+                                const SizedBox(width: 10),
+                                Text(
+                                  'Contact Info',
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w700,
+                                    color: const Color(0xFF0F172A),
+                                  ),
+                                ),
                               ],
                             ),
                             const SizedBox(height: 16),
-                            _buildDetailItem(Icons.email_outlined, 'Email', applicant.email),
-                            _buildDetailItem(Icons.phone_outlined, 'Phone', applicant.phone),
-                            _buildDetailItem(Icons.location_on_outlined, 'Location', applicant.location),
-                            _buildDetailItem(Icons.flag_outlined, 'Nationality', applicant.nationality),
-                            _buildDetailItem(Icons.cake_outlined, 'DOB', applicant.dob),
-                            _buildDetailItem(Icons.person_outline, 'Father', applicant.fatherName),
-                            const SizedBox(height: 8),
-                            Row(children: [
-                              if (applicant.cvUrl.isNotEmpty)
-                                TextButton.icon(
-                                  onPressed: () async {
-                                   try {
-                                      await downloadCvForUser(context, applicant.userId, applicant: applicant);
-
-                                   } catch (e) {
-                                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Download failed: $e')));
-                                    }
-
-
-                                  },
-
-
-                                  icon: const Icon(Icons.download_outlined, size: 16),
-                                  label: const Text('Download CV'),
-                                )
-                              else
-                                Text('No CV attached', style: GoogleFonts.poppins(fontSize: 13, color: Colors.grey[600])),
-                            ]),
+                            _buildMaskedDetailItem(
+                              Icons.email_rounded,
+                              'Email',
+                              _maskEmail(applicant.email),
+                              applicant.email,
+                            ),
+                            _buildMaskedDetailItem(
+                              Icons.phone_rounded,
+                              'Phone',
+                              _maskPhone(applicant.phone),
+                              applicant.phone,
+                            ),
+                            _buildDetailItem(
+                              Icons.location_on_rounded,
+                              'Location',
+                              applicant.location,
+                            ),
+                            _buildDetailItem(
+                              Icons.flag_rounded,
+                              'Nationality',
+                              applicant.nationality,
+                            ),
+                            _buildDetailItem(
+                              Icons.cake_rounded,
+                              'Date of Birth',
+                              applicant.dob,
+                            ),
                           ],
                         ),
                       ),
@@ -1836,33 +2188,71 @@ class _ApplicantsScreenState extends State<ApplicantsScreen>
 
                     const SizedBox(width: 16),
 
-                    // Right Column - Professional Info
+                    // Professional Details
                     Expanded(
                       child: Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(color: const Color(0xFFF8FAFC), borderRadius: BorderRadius.circular(12), border: Border.all(color: const Color(0xFFE2E8F0))),
+                        padding: const EdgeInsets.all(20),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFAFAFA),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: const Color(0xFFE2E8F0)),
+                        ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Row(
                               children: [
                                 Container(
-                                  padding: const EdgeInsets.all(6),
-                                  decoration: BoxDecoration(color: const Color(0xFF10B981).withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
-                                  child: Icon(Icons.work_outline, color: const Color(0xFF10B981), size: 16),
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    gradient: const LinearGradient(
+                                      colors: [Color(0xFF10B981), Color(0xFF059669)],
+                                    ),
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: Icon(
+                                    Icons.work_rounded,
+                                    color: Colors.white,
+                                    size: 18,
+                                  ),
                                 ),
-                                const SizedBox(width: 8),
-                                Text('Professional Details', style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w700)),
+                                const SizedBox(width: 10),
+                                Text(
+                                  'Professional Details',
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w700,
+                                    color: const Color(0xFF0F172A),
+                                  ),
+                                ),
                               ],
                             ),
                             const SizedBox(height: 16),
-                            _buildDetailItem(Icons.trending_up_outlined, 'Experience', '${applicant.experienceYears} years'),
-                            _buildDetailItem(Icons.school_outlined, 'Education', applicant.education),
-                            _buildDetailItem(Icons.apartment_outlined, 'University', applicant.university),
-                            _buildDetailItem(Icons.schedule_outlined, 'Availability', applicant.availability),
-                            _buildDetailItem(Icons.work_outline, 'Work Type', applicant.workType),
-                            _buildDetailItem(Icons.attach_money_outlined, 'Expected Salary',
-                                applicant.expectedSalary > 0 ? '\$${applicant.expectedSalary.toStringAsFixed(0)}' : 'Not specified'),
+                            _buildDetailItem(
+                              Icons.trending_up_rounded,
+                              'Experience',
+                              '${applicant.experienceYears} years',
+                            ),
+                            _buildDetailItem(
+                              Icons.school_rounded,
+                              'Education',
+                              applicant.education,
+                            ),
+                            _buildDetailItem(
+                              Icons.apartment_rounded,
+                              'University',
+                              applicant.university,
+                            ),
+                            _buildDetailItem(
+                              Icons.business_rounded,
+                              'Company',
+                              applicant.jobData?.company ?? 'Unknown Company',
+                            ),
+                            _buildDetailItem(
+                              Icons.place_rounded,
+                              'Job Location',
+                              applicant.jobData?.location ?? 'Location not specified',
+                            ),
                           ],
                         ),
                       ),
@@ -1870,102 +2260,79 @@ class _ApplicantsScreenState extends State<ApplicantsScreen>
                   ],
                 ),
 
-                const SizedBox(height: 16),
-
-                // Show short profile summary (bio) if present
-                if (applicant.bio.isNotEmpty)
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(color: const Color(0xFFFEFEFE), borderRadius: BorderRadius.circular(12), border: Border.all(color: const Color(0xFFE2E8F0))),
-                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      Row(children: [
-                        Container(padding: const EdgeInsets.all(6), decoration: BoxDecoration(color: const Color(0xFF8B5CF6).withOpacity(0.1), borderRadius: BorderRadius.circular(8)), child: Icon(Icons.person_outline, color: const Color(0xFF8B5CF6), size: 16)),
-                        const SizedBox(width: 8),
-                        Text('About', style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w700)),
-                      ]),
-                      const SizedBox(height: 12),
-                      Text(applicant.bio, style: GoogleFonts.poppins(fontSize: 14, color: const Color(0xFF475569), height: 1.6)),
-                    ]),
-                  ),
-
-                const SizedBox(height: 16),
-
-                // Compact lists: skills / certifications (only show a few on main card)
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    if (applicant.skills.isNotEmpty)
-                      Expanded(
-                        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                          Text('Skills', style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.w700)),
-                          const SizedBox(height: 8),
-                          Wrap(spacing: 6, runSpacing: 6, children: applicant.skills.take(6).map((s) => Chip(label: Text(s))).toList()),
-                          if (applicant.skills.length > 6) const SizedBox(height: 6),
-                          if (applicant.skills.length > 6) Text('+ more', style: GoogleFonts.poppins(fontSize: 12, color: Colors.grey[600])),
-                        ]),
-                      ),
-                    if (applicant.certifications.isNotEmpty) const SizedBox(width: 12),
-                    if (applicant.certifications.isNotEmpty)
-                      Expanded(
-                        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                          Text('Certifications', style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.w700)),
-                          const SizedBox(height: 8),
-                          Wrap(spacing: 6, runSpacing: 6, children: applicant.certifications.take(6).map((c) => Chip(label: Text(c))).toList()),
-                          if (applicant.certifications.length > 6) const SizedBox(height: 6),
-                          if (applicant.certifications.length > 6) Text('+ more', style: GoogleFonts.poppins(fontSize: 12, color: Colors.grey[600])),
-                        ]),
-                      ),
-                  ],
-                ),
-
                 const SizedBox(height: 20),
 
-                // Action Buttons Row (View full profile / download CV)
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(color: const Color(0xFFF8FAFC), borderRadius: BorderRadius.circular(12), border: Border.all(color: const Color(0xFFE2E8F0))),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                          Text('Applied for: ${applicant.jobData?.title ?? 'Unknown Position'}', style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w600)),
-                          const SizedBox(height: 2),
-                          Text('Company: ${applicant.jobData?.company ?? 'Unknown Company'}', style: GoogleFonts.poppins(fontSize: 12, color: const Color(0xFF64748B), fontWeight: FontWeight.w500)),
-                        ]),
+                // Action Buttons Row
+                Row(
+                  children: [
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        onPressed: () {
+                          showDialog(
+                            context: context,
+                            builder: (ctx) => ViewApplicantDetails(applicant: applicant),
+                          );
+                        },
+                        icon: const Icon(Icons.visibility_rounded, size: 18),
+                        label: Text(
+                          'View Full Profile',
+                          style: GoogleFonts.poppins(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF3B82F6),
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          elevation: 0,
+                        ),
                       ),
-
-                      Row(children: [
-                        ElevatedButton.icon(
-                          onPressed: () {
-                            showDialog(context: context, builder: (ctx) => ViewApplicantDetails(applicant: applicant));
-                          },
-                          icon: const Icon(Icons.visibility_outlined, size: 16),
-                          label: const Text('View Profile'),
-                          style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF3B82F6), foregroundColor: Colors.white),
-                        ),
-                        const SizedBox(width: 12),
-                        ElevatedButton.icon(
-                          onPressed: () async {
-                            if (applicant.cvUrl.isNotEmpty) {
-                              try {
-                                await downloadCvForUser(context, applicant.userId, applicant: applicant);
-                              } catch (e) {
-                                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to download CV: $e')));
-                              }
-
-
-                            } else {
-                              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('CV not available')));
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: () async {
+                          if (applicant.cvUrl.isNotEmpty || applicant.documents.isNotEmpty) {
+                            try {
+                              await downloadCvForUser(
+                                context,
+                                applicant.userId,
+                                applicant: applicant,
+                              );
+                            } catch (e) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text('Download failed: $e')),
+                              );
                             }
-                          },
-                          icon: const Icon(Icons.download_outlined, size: 16),
-                          label: const Text('Download CV'),
-                          style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF10B981), foregroundColor: Colors.white),
+                          } else {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('CV not available')),
+                            );
+                          }
+                        },
+                        icon: const Icon(Icons.download_rounded, size: 18),
+                        label: Text(
+                          'Download CV',
+                          style: GoogleFonts.poppins(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
-                      ]),
-                    ],
-                  ),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: const Color(0xFF10B981),
+                          side: const BorderSide(color: Color(0xFF10B981), width: 1.5),
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -1974,6 +2341,544 @@ class _ApplicantsScreenState extends State<ApplicantsScreen>
       ),
     );
   }
+
+  void _showMatchDetailsDialog(BuildContext context, AIMatchResult result) {
+    showDialog(
+      context: context,
+      builder: (ctx) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        child: Container(
+          constraints: const BoxConstraints(maxWidth: 600, maxHeight: 700),
+          child: Column(
+            children: [
+              // Header
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      result.getScoreColor(),
+                      result.getScoreColor().withOpacity(0.8),
+                    ],
+                  ),
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(20),
+                    topRight: Radius.circular(20),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.psychology, color: Colors.white, size: 28),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            result.applicantName,
+                            style: GoogleFonts.poppins(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.white,
+                            ),
+                          ),
+                          Text(
+                            'AI Match Analysis',
+                            style: GoogleFonts.poppins(
+                              fontSize: 12,
+                              color: Colors.white.withOpacity(0.9),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.2),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Text(
+                        '${result.overallScore}',
+                        style: GoogleFonts.poppins(
+                          fontSize: 24,
+                          fontWeight: FontWeight.w800,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              // Content
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Recommendation Badge
+                      Center(
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 20,
+                            vertical: 10,
+                          ),
+                          decoration: BoxDecoration(
+                            color: result.getRecommendationColor().withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                              color: result.getRecommendationColor(),
+                              width: 2,
+                            ),
+                          ),
+                          child: Text(
+                            result.recommendation,
+                            style: GoogleFonts.poppins(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w700,
+                              color: result.getRecommendationColor(),
+                            ),
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(height: 24),
+
+                      // Score Breakdown
+                      Text(
+                        'Score Breakdown',
+                        style: GoogleFonts.poppins(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+
+                      _buildScoreRow('Skills Match', result.skillsMatch),
+                      const SizedBox(height: 12),
+                      _buildScoreRow('Experience', result.experienceMatch),
+                      const SizedBox(height: 12),
+                      _buildScoreRow('Education', result.educationMatch),
+                      const SizedBox(height: 24),
+
+                      // Strengths
+                      if (result.strengths.isNotEmpty) ...[
+                        Row(
+                          children: [
+                            Icon(Icons.check_circle,
+                                color: const Color(0xFF10B981), size: 20),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Key Strengths',
+                              style: GoogleFonts.poppins(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        ...result.strengths.map((s) => Padding(
+                          padding: const EdgeInsets.only(bottom: 8),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Container(
+                                margin: const EdgeInsets.only(top: 6),
+                                width: 6,
+                                height: 6,
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF10B981),
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Text(
+                                  s,
+                                  style: GoogleFonts.poppins(fontSize: 13),
+                                ),
+                              ),
+                            ],
+                          ),
+                        )),
+                        const SizedBox(height: 16),
+                      ],
+
+                      // Weaknesses
+                      if (result.weaknesses.isNotEmpty) ...[
+                        Row(
+                          children: [
+                            Icon(Icons.warning_amber_rounded,
+                                color: const Color(0xFFF59E0B), size: 20),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Areas for Improvement',
+                              style: GoogleFonts.poppins(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        ...result.weaknesses.map((w) => Padding(
+                          padding: const EdgeInsets.only(bottom: 8),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Container(
+                                margin: const EdgeInsets.only(top: 6),
+                                width: 6,
+                                height: 6,
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFF59E0B),
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Text(
+                                  w,
+                                  style: GoogleFonts.poppins(fontSize: 13),
+                                ),
+                              ),
+                            ],
+                          ),
+                        )),
+                        const SizedBox(height: 16),
+                      ],
+
+                      // Detailed Analysis
+                      Text(
+                        'Detailed Analysis',
+                        style: GoogleFonts.poppins(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF8FAFC),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          result.detailedAnalysis,
+                          style: GoogleFonts.poppins(
+                            fontSize: 13,
+                            height: 1.6,
+                            color: const Color(0xFF475569),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+              // Close Button
+              Padding(
+                padding: const EdgeInsets.all(20),
+                child: SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () => Navigator.pop(ctx),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: result.getScoreColor(),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: Text(
+                      'Close',
+                      style: GoogleFonts.poppins(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildScoreRow(String label, int score) {
+    final color = score >= 80
+        ? const Color(0xFF10B981)
+        : score >= 60
+        ? const Color(0xFF3B82F6)
+        : score >= 40
+        ? const Color(0xFFF59E0B)
+        : const Color(0xFFEF4444);
+
+    return Row(
+      children: [
+        Expanded(
+          flex: 2,
+          child: Text(
+            label,
+            style: GoogleFonts.poppins(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+        Expanded(
+          flex: 3,
+          child: Row(
+            children: [
+              Expanded(
+                child: Container(
+                  height: 8,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFE5E7EB),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: FractionallySizedBox(
+                    alignment: Alignment.centerLeft,
+                    widthFactor: score / 100,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: color,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                '$score%',
+                style: GoogleFonts.poppins(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                  color: color,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+
+
+
+  Widget _buildMaskedDetailItem(
+      IconData icon,
+      String label,
+      String maskedValue,
+      String originalValue,
+      ) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 14),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(
+              color: const Color(0xFF64748B).withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(
+              icon,
+              size: 16,
+              color: const Color(0xFF64748B),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: GoogleFonts.poppins(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: const Color(0xFF64748B),
+                    letterSpacing: 0.5,
+                    textBaseline: TextBaseline.alphabetic,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        maskedValue,
+                        style: GoogleFonts.poppins(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: const Color(0xFF0F172A),
+                        ),
+                      ),
+                    ),
+                    if (originalValue.isNotEmpty)
+                      Tooltip(
+                        message: 'Sensitive data masked',
+                        child: Container(
+                          padding: const EdgeInsets.all(4),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF3B82F6).withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Icon(
+                            Icons.visibility_off_outlined,
+                            size: 14,
+                            color: const Color(0xFF3B82F6),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+
+  Widget _buildExpandableChipSection({
+    required String title,
+    required IconData icon,
+    required Color color,
+    required List<String> items,
+    required bool isExpanded,
+    required VoidCallback onToggle,
+  }) {
+    // Limit when collapsed
+    final displayItems = isExpanded ? items : items.take(6).toList();
+    final hasMore = items.length > 6;
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF1E293B).withOpacity(0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header row
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: color.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(icon, size: 18, color: color),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  title,
+                  style: GoogleFonts.poppins(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    color: const Color(0xFF0F172A),
+                  ),
+                ),
+              ),
+
+              // Toggle button (only shown if there are more items)
+              if (hasMore)
+                GestureDetector(
+                  onTap: onToggle,
+                  child: Row(
+                    children: [
+                      Text(
+                        isExpanded ? 'Show less' : 'Show more',
+                        style: GoogleFonts.poppins(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: const Color(0xFF374151),
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      Icon(
+                        isExpanded ? Icons.expand_less : Icons.expand_more,
+                        size: 18,
+                        color: const Color(0xFF374151),
+                      ),
+                    ],
+                  ),
+                ),
+            ],
+          ),
+
+          const SizedBox(height: 14),
+
+          // Chips grid
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: displayItems.map((item) {
+              return Chip(
+                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                visualDensity: VisualDensity.compact,
+                labelPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 0),
+                label: Text(
+                  item,
+                  style: GoogleFonts.poppins(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                    color: const Color(0xFF0F172A),
+                  ),
+                ),
+                backgroundColor: const Color(0xFFF8FAFC),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  side: BorderSide(color: const Color(0xFFE6EEF7)),
+                ),
+              );
+            }).toList(),
+          ),
+
+          // If collapsed and there are more items, show a subtle count hint
+          if (!isExpanded && hasMore) ...[
+            const SizedBox(height: 12),
+            Text(
+              '+${items.length - displayItems.length} more',
+              style: GoogleFonts.poppins(
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+                color: const Color(0xFF6B7280),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+
+
+
 
   Widget _buildDetailItem(IconData icon, String label, String value) {
     if (value.isEmpty) return const SizedBox.shrink();
@@ -2002,7 +2907,7 @@ class _ApplicantsScreenState extends State<ApplicantsScreen>
               children: [
                 Text(
                   label,
-                  style: TextStyle(
+style: GoogleFonts.poppins(
                     fontSize: 11,
                     fontWeight: FontWeight.w600,
                     color: const Color(0xFF64748B),
@@ -2012,7 +2917,7 @@ class _ApplicantsScreenState extends State<ApplicantsScreen>
                 const SizedBox(height: 2),
                 Text(
                   value,
-                  style: TextStyle(
+style: GoogleFonts.poppins(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
                     color: const Color(0xFF0F172A),
@@ -2025,50 +2930,72 @@ class _ApplicantsScreenState extends State<ApplicantsScreen>
       ),
     );
   }
-
-  Widget _buildStatusBadge(String status) {
-    Color backgroundColor;
-    Color textColor;
+  Widget _buildStatusBadge(String status, {bool compact = true}) {
+    Color color;
+    String label;
     IconData icon;
 
     switch (status.toLowerCase()) {
+      case 'pending':
+        color = const Color(0xFFF59E0B);
+        label = 'Pending';
+        icon = Icons.schedule_rounded;
+        break;
       case 'accepted':
-        backgroundColor = const Color(0xFFDCFCE7);
-        textColor = const Color(0xFF166534);
-        icon = Icons.check_circle_outline;
+        color = const Color(0xFF10B981);
+        label = 'Accepted';
+        icon = Icons.check_circle_rounded;
         break;
       case 'rejected':
-        backgroundColor = const Color(0xFFFEE2E2);
-        textColor = const Color(0xFF991B1B);
-        icon = Icons.cancel_outlined;
+        color = const Color(0xFFEF4444);
+        label = 'Rejected';
+        icon = Icons.cancel_rounded;
         break;
-      case 'pending':
       default:
-        backgroundColor = const Color(0xFFFEF3C7);
-        textColor = const Color(0xFF92400E);
-        icon = Icons.schedule_outlined;
-        break;
+        color = const Color(0xFF64748B);
+        label = status.isNotEmpty ? status[0].toUpperCase() + status.substring(1) : 'Unknown';
+        icon = Icons.help_outline_rounded;
     }
 
+    final fontSize = compact ? 12.0 : 13.0;
+    final vertical = compact ? 6.0 : 8.0;
+    final horizontal = compact ? 12.0 : 14.0;
+
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      padding: EdgeInsets.symmetric(horizontal: horizontal, vertical: vertical),
       decoration: BoxDecoration(
-        color: backgroundColor,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: textColor.withOpacity(0.2)),
+        gradient: LinearGradient(
+          colors: [
+            color.withOpacity(0.15),
+            color.withOpacity(0.08),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: color.withOpacity(0.3), width: 1),
+        boxShadow: [
+          BoxShadow(
+            color: color.withOpacity(0.1),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 12, color: textColor),
-          const SizedBox(width: 4),
+          Icon(
+            icon,
+            size: 14,
+            color: color,
+          ),
+          const SizedBox(width: 6),
           Text(
-            status.toUpperCase(),
-            style: TextStyle(
-              fontSize: 10,
+            label,
+            style: GoogleFonts.poppins(
+              fontSize: fontSize,
+              color: color,
               fontWeight: FontWeight.w700,
-              color: textColor,
-              letterSpacing: 0.5,
+              letterSpacing: 0.2,
             ),
           ),
         ],
@@ -2090,11 +3017,22 @@ class _ApplicantsScreenState extends State<ApplicantsScreen>
 
   Widget _buildStatusUpdateDropdown(ApplicantRecord applicant, ApplicantsProvider provider) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.15),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.white.withOpacity(0.2)),
+        gradient: LinearGradient(
+          colors: [
+            const Color(0xFF64748B),
+            const Color(0xFF475569),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(10),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF64748B).withOpacity(0.3),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<String>(
@@ -2102,51 +3040,94 @@ class _ApplicantsScreenState extends State<ApplicantsScreen>
           onChanged: (newStatus) {
             if (newStatus != null && newStatus != applicant.status) {
               provider.updateApplicationStatus(applicant.userId, applicant.docId, newStatus);
+
+              // Get status color and label
+              Color statusColor;
+              String statusLabel;
+              IconData statusIcon;
+
+              switch (newStatus.toLowerCase()) {
+                case 'accepted':
+                  statusColor = const Color(0xFF10B981);
+                  statusLabel = 'Accepted';
+                  statusIcon = Icons.check_circle_rounded;
+                  break;
+                case 'rejected':
+                  statusColor = const Color(0xFFEF4444);
+                  statusLabel = 'Rejected';
+                  statusIcon = Icons.cancel_rounded;
+                  break;
+                default:
+                  statusColor = const Color(0xFFF59E0B);
+                  statusLabel = 'Pending';
+                  statusIcon = Icons.schedule_rounded;
+              }
+
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  content: Text('Status updated to $newStatus'),
-                  backgroundColor: const Color(0xFF10B981),
+                  content: Row(
+                    children: [
+                      Icon(statusIcon, color: Colors.white, size: 20),
+                      const SizedBox(width: 10),
+                      Text(
+                        'Status updated to $statusLabel',
+                        style: GoogleFonts.poppins(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ],
+                  ),
+                  backgroundColor: statusColor,
                   behavior: SnackBarBehavior.floating,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  margin: const EdgeInsets.all(16),
+                  duration: const Duration(seconds: 3),
                 ),
               );
             }
           },
           dropdownColor: Colors.white,
-          borderRadius: BorderRadius.circular(8),
-          elevation: 8,
-          style: const TextStyle(color: Colors.white, fontSize: 12),
+          borderRadius: BorderRadius.circular(12),
+          elevation: 16,
           icon: Container(
-            margin: const EdgeInsets.only(right: 4),
+            margin: const EdgeInsets.only(left: 4, right: 8),
             child: Icon(
               Icons.keyboard_arrow_down_rounded,
-              color: Colors.white.withOpacity(0.8),
-              size: 16,
+              color: Colors.white,
+              size: 18,
             ),
           ),
           items: [
             DropdownMenuItem(
               value: 'pending',
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Container(
-                      width: 8,
-                      height: 8,
+                      padding: const EdgeInsets.all(6),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFF59E0B),
+                        color: const Color(0xFFF59E0B).withOpacity(0.1),
                         shape: BoxShape.circle,
                       ),
+                      child: Icon(
+                        Icons.schedule_rounded,
+                        color: const Color(0xFFF59E0B),
+                        size: 16,
+                      ),
                     ),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: 10),
                     Text(
                       'Pending',
-                      style: TextStyle(
+                      style: GoogleFonts.poppins(
                         color: const Color(0xFF0F172A),
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
                   ],
@@ -2156,25 +3137,29 @@ class _ApplicantsScreenState extends State<ApplicantsScreen>
             DropdownMenuItem(
               value: 'accepted',
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Container(
-                      width: 8,
-                      height: 8,
+                      padding: const EdgeInsets.all(6),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF10B981),
+                        color: const Color(0xFF10B981).withOpacity(0.1),
                         shape: BoxShape.circle,
                       ),
+                      child: Icon(
+                        Icons.check_circle_rounded,
+                        color: const Color(0xFF10B981),
+                        size: 16,
+                      ),
                     ),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: 10),
                     Text(
                       'Accepted',
-                      style: TextStyle(
+                      style: GoogleFonts.poppins(
                         color: const Color(0xFF0F172A),
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
                   ],
@@ -2184,25 +3169,29 @@ class _ApplicantsScreenState extends State<ApplicantsScreen>
             DropdownMenuItem(
               value: 'rejected',
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Container(
-                      width: 8,
-                      height: 8,
+                      padding: const EdgeInsets.all(6),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFEF4444),
+                        color: const Color(0xFFEF4444).withOpacity(0.1),
                         shape: BoxShape.circle,
                       ),
+                      child: Icon(
+                        Icons.cancel_rounded,
+                        color: const Color(0xFFEF4444),
+                        size: 16,
+                      ),
                     ),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: 10),
                     Text(
                       'Rejected',
-                      style: TextStyle(
+                      style: GoogleFonts.poppins(
                         color: const Color(0xFF0F172A),
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
                   ],
@@ -2212,16 +3201,32 @@ class _ApplicantsScreenState extends State<ApplicantsScreen>
           ],
           selectedItemBuilder: (context) {
             return ['pending', 'accepted', 'rejected'].map((status) {
+              String displayText = 'Update Status';
+              if (status == 'accepted') displayText = 'Accepted';
+              if (status == 'rejected') displayText = 'Rejected';
+
               return Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                 alignment: Alignment.center,
-                child: Text(
-                  status == 'pending' ? 'Update' : status,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                  ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.edit_rounded,
+                      color: Colors.white,
+                      size: 14,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      displayText,
+                      style: GoogleFonts.poppins(
+                        color: Colors.white,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 0.2,
+                      ),
+                    ),
+                  ],
                 ),
               );
             }).toList();
@@ -2230,7 +3235,6 @@ class _ApplicantsScreenState extends State<ApplicantsScreen>
       ),
     );
   }
-
   Widget _buildHelperColumn(ApplicantsProvider provider) {
     return Container(
       decoration: const BoxDecoration(
@@ -2264,26 +3268,19 @@ class _ApplicantsScreenState extends State<ApplicantsScreen>
       ),
     );
   }
-
+// COMPACT: Statistics panel
   Widget _buildStatisticsWidget(ApplicantsProvider provider) {
     return Container(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(12), // was 24
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(12), // was 16
         border: Border.all(color: const Color(0xFFE2E8F0), width: 1),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF1E293B).withOpacity(0.08),
-            blurRadius: 16,
-            offset: const Offset(0, 4),
-            spreadRadius: 0,
-          ),
-          BoxShadow(
-            color: const Color(0xFF1E293B).withOpacity(0.04),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
-            spreadRadius: 0,
+            color: const Color(0xFF1E293B).withOpacity(0.06), // lighter
+            blurRadius: 10,
+            offset: const Offset(0, 3),
           ),
         ],
       ),
@@ -2293,30 +3290,26 @@ class _ApplicantsScreenState extends State<ApplicantsScreen>
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(8),
+                padding: const EdgeInsets.all(6),
                 decoration: BoxDecoration(
                   color: const Color(0xFF3B82F6).withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(8),
                 ),
-                child: Icon(
-                  Icons.analytics_outlined,
-                  color: const Color(0xFF3B82F6),
-                  size: 20,
-                ),
+                child: Icon(Icons.analytics_outlined, color: const Color(0xFF3B82F6), size: 16),
               ),
-              const SizedBox(width: 12),
-              const Text(
+              const SizedBox(width: 10),
+              Text(
                 'Application Statistics',
-                style: TextStyle(
-                  fontSize: 18,
+                style: GoogleFonts.poppins(
+                  fontSize: 15, // was 18
                   fontWeight: FontWeight.w700,
-                  color: Color(0xFF0F172A),
-                  letterSpacing: -0.5,
+                  color: const Color(0xFF0F172A),
+                  letterSpacing: -0.3,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 12),
 
           Row(
             children: [
@@ -2326,21 +3319,23 @@ class _ApplicantsScreenState extends State<ApplicantsScreen>
                   provider.totalApplicants.toString(),
                   const Color(0xFF3B82F6),
                   Icons.assessment_outlined,
+                  compact: true,
                 ),
               ),
-              const SizedBox(width: 16),
+              const SizedBox(width: 10),
               Expanded(
                 child: _buildStatCard(
                   'Under Review',
                   provider.pendingCount.toString(),
                   const Color(0xFFF59E0B),
                   Icons.schedule_outlined,
+                  compact: true,
                 ),
               ),
             ],
           ),
 
-          const SizedBox(height: 16),
+          const SizedBox(height: 10),
 
           Row(
             children: [
@@ -2350,15 +3345,17 @@ class _ApplicantsScreenState extends State<ApplicantsScreen>
                   provider.acceptedCount.toString(),
                   const Color(0xFF10B981),
                   Icons.check_circle_outline,
+                  compact: true,
                 ),
               ),
-              const SizedBox(width: 16),
+              const SizedBox(width: 10),
               Expanded(
                 child: _buildStatCard(
                   'Rejected',
                   provider.rejectedCount.toString(),
                   const Color(0xFFEF4444),
                   Icons.cancel_outlined,
+                  compact: true,
                 ),
               ),
             ],
@@ -2368,24 +3365,24 @@ class _ApplicantsScreenState extends State<ApplicantsScreen>
     );
   }
 
-  Widget _buildStatCard(String title, String value, Color color, IconData icon) {
+// COMPACT: Stat card (adds compact flag)
+  Widget _buildStatCard(String title, String value, Color color, IconData icon, {bool compact = false}) {
+    final padding = compact ? 10.0 : 16.0;
+    final valueSize = compact ? 20.0 : 28.0;
+    final titleSize = compact ? 11.0 : 12.0;
+    final iconSize = compact ? 16.0 : 18.0;
+
     return AnimatedContainer(
-      duration: const Duration(milliseconds: 300),
-      padding: const EdgeInsets.all(16),
+      duration: const Duration(milliseconds: 250),
+      padding: EdgeInsets.all(padding),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [
-            color.withOpacity(0.08),
-            color.withOpacity(0.12),
-          ],
+          colors: [color.withOpacity(0.06), color.withOpacity(0.10)],
         ),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: color.withOpacity(0.2),
-          width: 1,
-        ),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: color.withOpacity(0.14), width: 1),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -2393,48 +3390,43 @@ class _ApplicantsScreenState extends State<ApplicantsScreen>
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Icon(
-                icon,
-                color: color,
-                size: 18,
-              ),
+              Icon(icon, color: color, size: iconSize),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
-                  color: color.withOpacity(0.15),
-                  borderRadius: BorderRadius.circular(20),
+                  color: color.withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(16),
                 ),
                 child: Text(
                   'Live',
-                  style: TextStyle(
+                  style: GoogleFonts.poppins(
                     fontSize: 10,
                     fontWeight: FontWeight.w600,
                     color: color,
-                    letterSpacing: 0.5,
+                    letterSpacing: 0.4,
                   ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: compact ? 8 : 12),
           AnimatedDefaultTextStyle(
-            duration: const Duration(milliseconds: 500),
-            style: TextStyle(
-              fontSize: 28,
+            duration: const Duration(milliseconds: 350),
+            style: GoogleFonts.poppins(
+              fontSize: valueSize,
               fontWeight: FontWeight.w800,
               color: color,
-              letterSpacing: -1,
+              letterSpacing: -0.8,
             ),
             child: Text(value),
           ),
           const SizedBox(height: 4),
           Text(
             title,
-            style: TextStyle(
-              fontSize: 12,
+            style: GoogleFonts.poppins(
+              fontSize: titleSize,
               color: const Color(0xFF64748B),
               fontWeight: FontWeight.w500,
-              letterSpacing: 0.2,
             ),
           ),
         ],
@@ -2442,21 +3434,21 @@ class _ApplicantsScreenState extends State<ApplicantsScreen>
     );
   }
 
+// COMPACT: Recent Applications widget
   Widget _buildRecentApplicationsWidget(ApplicantsProvider provider) {
     final recentApplicants = provider.allApplicants.take(5).toList();
 
     return Container(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(12), // was 24
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(12),
         border: Border.all(color: const Color(0xFFE2E8F0), width: 1),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF1E293B).withOpacity(0.08),
-            blurRadius: 16,
-            offset: const Offset(0, 4),
-            spreadRadius: 0,
+            color: const Color(0xFF1E293B).withOpacity(0.06),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
           ),
         ],
       ),
@@ -2466,55 +3458,38 @@ class _ApplicantsScreenState extends State<ApplicantsScreen>
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(8),
+                padding: const EdgeInsets.all(6),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF8B5CF6).withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(10),
+                  color: const Color(0xFF8B5CF6).withOpacity(0.08),
+                  borderRadius: BorderRadius.circular(8),
                 ),
-                child: Icon(
-                  Icons.schedule_outlined,
-                  color: const Color(0xFF8B5CF6),
-                  size: 20,
-                ),
+                child: Icon(Icons.schedule_outlined, color: const Color(0xFF8B5CF6), size: 16),
               ),
-              const SizedBox(width: 12),
-              const Text(
+              const SizedBox(width: 10),
+              Text(
                 'Recent Applications',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700,
-                  color: Color(0xFF0F172A),
-                  letterSpacing: -0.5,
-                ),
+                style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.w700, color: const Color(0xFF0F172A)),
               ),
             ],
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 12),
 
           if (recentApplicants.isEmpty)
             Center(
               child: Column(
                 children: [
                   Container(
-                    padding: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
                       color: const Color(0xFFF1F5F9),
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(10),
                     ),
-                    child: Icon(
-                      Icons.inbox_outlined,
-                      size: 32,
-                      color: const Color(0xFF94A3B8),
-                    ),
+                    child: Icon(Icons.inbox_outlined, size: 28, color: const Color(0xFF94A3B8)),
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 10),
                   Text(
                     'No recent applications',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: const Color(0xFF64748B),
-                      fontWeight: FontWeight.w500,
-                    ),
+                    style: GoogleFonts.poppins(fontSize: 13, color: const Color(0xFF64748B), fontWeight: FontWeight.w500),
                   ),
                 ],
               ),
@@ -2522,66 +3497,45 @@ class _ApplicantsScreenState extends State<ApplicantsScreen>
           else
             ...recentApplicants.map((applicant) {
               return Container(
-                margin: const EdgeInsets.only(bottom: 12),
-                padding: const EdgeInsets.all(16),
+                margin: const EdgeInsets.only(bottom: 10),
+                padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
                   color: const Color(0xFFFAFAFA),
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(10),
                   border: Border.all(color: const Color(0xFFE2E8F0)),
                 ),
                 child: Row(
                   children: [
                     Container(
-                      width: 44,
-                      height: 44,
+                      width: 36, // was 44
+                      height: 36,
                       decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [
-                            const Color(0xFF3B82F6),
-                            const Color(0xFF1D4ED8),
-                          ],
-                        ),
-                        borderRadius: BorderRadius.circular(12),
+                        gradient: const LinearGradient(colors: [Color(0xFF3B82F6), Color(0xFF1D4ED8)]),
+                        borderRadius: BorderRadius.circular(10),
                       ),
                       child: Center(
                         child: Text(
                           applicant.name.isNotEmpty ? applicant.name[0].toUpperCase() : 'U',
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w700,
-                            color: Colors.white,
-                          ),
+                          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: Colors.white),
                         ),
                       ),
                     ),
-                    const SizedBox(width: 16),
+                    const SizedBox(width: 12),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            applicant.name,
-                            style: const TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w600,
-                              color: Color(0xFF0F172A),
-                            ),
-                            overflow: TextOverflow.ellipsis,
-                          ),
+                          Text(applicant.name,
+                              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF0F172A)),
+                              overflow: TextOverflow.ellipsis),
                           const SizedBox(height: 4),
-                          Text(
-                            applicant.jobData?.title ?? 'Job Title',
-                            style: TextStyle(
-                              fontSize: 13,
-                              color: const Color(0xFF64748B),
-                              fontWeight: FontWeight.w500,
-                            ),
-                            overflow: TextOverflow.ellipsis,
-                          ),
+                          Text(applicant.jobData?.title ?? 'Job Title',
+                              style: GoogleFonts.poppins(fontSize: 12, color: const Color(0xFF64748B), fontWeight: FontWeight.w500),
+                              overflow: TextOverflow.ellipsis),
                         ],
                       ),
                     ),
-                    _buildStatusBadge(applicant.status),
+                    _buildStatusBadge(applicant.status, compact: true),
                   ],
                 ),
               );
@@ -2591,6 +3545,7 @@ class _ApplicantsScreenState extends State<ApplicantsScreen>
     );
   }
 
+// COMPACT: Applications overview chart (more compact)
   Widget _buildApplicationStatusChart(ApplicantsProvider provider) {
     final total = provider.totalApplicants;
     final pendingPercentage = total > 0 ? (provider.pendingCount / total) : 0.0;
@@ -2598,17 +3553,16 @@ class _ApplicantsScreenState extends State<ApplicantsScreen>
     final rejectedPercentage = total > 0 ? (provider.rejectedCount / total) : 0.0;
 
     return Container(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(12),
         border: Border.all(color: const Color(0xFFE2E8F0), width: 1),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF1E293B).withOpacity(0.08),
-            blurRadius: 16,
-            offset: const Offset(0, 4),
-            spreadRadius: 0,
+            color: const Color(0xFF1E293B).withOpacity(0.06),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
           ),
         ],
       ),
@@ -2618,64 +3572,32 @@ class _ApplicantsScreenState extends State<ApplicantsScreen>
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF06B6D4).withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Icon(
-                  Icons.pie_chart_outline,
-                  color: const Color(0xFF06B6D4),
-                  size: 20,
-                ),
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(color: const Color(0xFF06B6D4).withOpacity(0.08), borderRadius: BorderRadius.circular(8)),
+                child: Icon(Icons.pie_chart_outline, color: const Color(0xFF06B6D4), size: 16),
               ),
-              const SizedBox(width: 12),
-              const Text(
-                'Applications Overview',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700,
-                  color: Color(0xFF0F172A),
-                  letterSpacing: -0.5,
-                ),
-              ),
+              const SizedBox(width: 10),
+              Text('Applications Overview', style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.w700, color: const Color(0xFF0F172A))),
             ],
           ),
-          const SizedBox(height: 20),
-
+          const SizedBox(height: 12),
           if (total == 0)
             Center(
               child: Column(
                 children: [
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF1F5F9),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Icon(
-                      Icons.bar_chart_outlined,
-                      size: 32,
-                      color: const Color(0xFF94A3B8),
-                    ),
+                  Container(padding: const EdgeInsets.all(12), decoration: BoxDecoration(color: const Color(0xFFF1F5F9), borderRadius: BorderRadius.circular(10)),
+                    child: Icon(Icons.bar_chart_outlined, size: 28, color: const Color(0xFF94A3B8)),
                   ),
-                  const SizedBox(height: 12),
-                  Text(
-                    'No applications yet',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: const Color(0xFF64748B),
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
+                  const SizedBox(height: 10),
+                  Text('No applications yet', style: GoogleFonts.poppins(fontSize: 13, color: const Color(0xFF64748B))),
                 ],
               ),
             )
           else ...[
             _buildProgressBar('Under Review', provider.pendingCount, pendingPercentage, const Color(0xFFF59E0B)),
-            const SizedBox(height: 16),
+            const SizedBox(height: 10),
             _buildProgressBar('Accepted', provider.acceptedCount, acceptedPercentage, const Color(0xFF10B981)),
-            const SizedBox(height: 16),
+            const SizedBox(height: 10),
             _buildProgressBar('Rejected', provider.rejectedCount, rejectedPercentage, const Color(0xFFEF4444)),
           ],
         ],
@@ -2683,6 +3605,7 @@ class _ApplicantsScreenState extends State<ApplicantsScreen>
     );
   }
 
+// COMPACT: small tweak to progress bar (keeps same look but thinner)
   Widget _buildProgressBar(String label, int count, double percentage, Color color) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -2690,57 +3613,28 @@ class _ApplicantsScreenState extends State<ApplicantsScreen>
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(
-              label,
-              style: const TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.w600,
-                color: Color(0xFF0F172A),
-              ),
-            ),
+            Text(label, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF0F172A))),
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                color: color.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Text(
-                '$count (${(percentage * 100).toStringAsFixed(1)}%)',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: color,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+              decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(10)),
+              child: Text('$count (${(percentage * 100).toStringAsFixed(0)}%)', style: GoogleFonts.poppins(fontSize: 11, color: color, fontWeight: FontWeight.w600)),
             ),
           ],
         ),
         const SizedBox(height: 8),
         Container(
-          height: 8,
-          decoration: BoxDecoration(
-            color: const Color(0xFFF1F5F9),
-            borderRadius: BorderRadius.circular(4),
-          ),
+          height: 6, // thinner than before
+          decoration: BoxDecoration(color: const Color(0xFFF1F5F9), borderRadius: BorderRadius.circular(4)),
           child: AnimatedContainer(
-            duration: const Duration(milliseconds: 800),
+            duration: const Duration(milliseconds: 600),
             curve: Curves.easeOutCubic,
             child: FractionallySizedBox(
               alignment: Alignment.centerLeft,
               widthFactor: percentage,
               child: Container(
                 decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [color, color.withOpacity(0.8)],
-                  ),
+                  gradient: LinearGradient(colors: [color, color.withOpacity(0.9)]),
                   borderRadius: BorderRadius.circular(4),
-                  boxShadow: [
-                    BoxShadow(
-                      color: color.withOpacity(0.3),
-                      blurRadius: 4,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
                 ),
               ),
             ),
@@ -2750,20 +3644,16 @@ class _ApplicantsScreenState extends State<ApplicantsScreen>
     );
   }
 
+// COMPACT: Quick actions widget (less padding, tighter buttons)
   Widget _buildQuickActionsWidget(ApplicantsProvider provider) {
     return Container(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(12),
         border: Border.all(color: const Color(0xFFE2E8F0), width: 1),
         boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF1E293B).withOpacity(0.08),
-            blurRadius: 16,
-            offset: const Offset(0, 4),
-            spreadRadius: 0,
-          ),
+          BoxShadow(color: const Color(0xFF1E293B).withOpacity(0.06), blurRadius: 10, offset: const Offset(0, 3)),
         ],
       ),
       child: Column(
@@ -2771,116 +3661,55 @@ class _ApplicantsScreenState extends State<ApplicantsScreen>
         children: [
           Row(
             children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFEC4899).withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Icon(
-                  Icons.flash_on_outlined,
-                  color: const Color(0xFFEC4899),
-                  size: 20,
-                ),
+              Container(padding: const EdgeInsets.all(6), decoration: BoxDecoration(color: const Color(0xFFEC4899).withOpacity(0.08), borderRadius: BorderRadius.circular(8)),
+                child: Icon(Icons.flash_on_outlined, color: const Color(0xFFEC4899), size: 16),
               ),
-              const SizedBox(width: 12),
-              const Text(
-                'Quick Actions',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700,
-                  color: Color(0xFF0F172A),
-                  letterSpacing: -0.5,
-                ),
-              ),
+              const SizedBox(width: 10),
+              Text('Quick Actions', style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.w700, color: const Color(0xFF0F172A))),
             ],
           ),
-          const SizedBox(height: 20),
-
-          _buildQuickActionButton(
-            icon: Icons.refresh_outlined,
-            label: 'Refresh Data',
-            onPressed: provider.refresh,
-            color: const Color(0xFF3B82F6),
-          ),
-
           const SizedBox(height: 12),
-
-          _buildQuickActionButton(
-            icon: Icons.filter_list_off_outlined,
-            label: 'Clear All Filters',
-            onPressed: provider.hasActiveFilters ? provider.clearAllFilters : null,
-            color: const Color(0xFFF59E0B),
-          ),
-
-          const SizedBox(height: 12),
-
-          _buildQuickActionButton(
-            icon: Icons.download_outlined,
-            label: 'Export Applications',
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: const Text('Export feature coming soon'),
-                  backgroundColor: const Color(0xFF10B981),
-                  behavior: SnackBarBehavior.floating,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                ),
-              );
-            },
-            color: const Color(0xFF10B981),
-          ),
-
-          const SizedBox(height: 12),
-
-          _buildQuickActionButton(
-            icon: Icons.email_outlined,
-            label: 'Send Bulk Email',
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: const Text('Bulk email feature coming soon'),
-                  backgroundColor: const Color(0xFF8B5CF6),
-                  behavior: SnackBarBehavior.floating,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                ),
-              );
-            },
-            color: const Color(0xFF8B5CF6),
-          ),
+          _buildQuickActionButton(icon: Icons.refresh_outlined, label: 'Refresh Data', onPressed: provider.refresh, color: const Color(0xFF3B82F6), compact: true),
+          const SizedBox(height: 8),
+          _buildQuickActionButton(icon: Icons.filter_list_off_outlined, label: 'Clear All Filters', onPressed: provider.hasActiveFilters ? provider.clearAllFilters : null, color: const Color(0xFFF59E0B), compact: true),
+          const SizedBox(height: 8),
+          _buildQuickActionButton(icon: Icons.download_outlined, label: 'Export Applications', onPressed: () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Export feature coming soon'))), color: const Color(0xFF10B981), compact: true),
+          const SizedBox(height: 8),
+          _buildQuickActionButton(icon: Icons.email_outlined, label: 'Send Bulk Email', onPressed: () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Bulk email coming soon'))), color: const Color(0xFF8B5CF6), compact: true),
         ],
       ),
     );
   }
 
+// COMPACT: Quick action button
   Widget _buildQuickActionButton({
     required IconData icon,
     required String label,
     required VoidCallback? onPressed,
     required Color color,
+    bool compact = false,
   }) {
+    final vertical = compact ? 10.0 : 16.0;
+    final fontSize = compact ? 13.0 : 14.0;
+
     return SizedBox(
       width: double.infinity,
       child: ElevatedButton.icon(
         onPressed: onPressed,
-        icon: Icon(icon, size: 18),
+        icon: Icon(icon, size: 16),
         label: Text(label),
         style: ElevatedButton.styleFrom(
           backgroundColor: onPressed != null ? color : const Color(0xFFF1F5F9),
           foregroundColor: onPressed != null ? Colors.white : const Color(0xFF94A3B8),
-          padding: const EdgeInsets.symmetric(vertical: 16),
-          textStyle: const TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-            letterSpacing: 0.2,
-          ),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          elevation: onPressed != null ? 2 : 0,
-          shadowColor: onPressed != null ? color.withOpacity(0.3) : Colors.transparent,
+          padding: EdgeInsets.symmetric(vertical: vertical),
+          textStyle: TextStyle(fontSize: fontSize, fontWeight: FontWeight.w600),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          elevation: onPressed != null ? 1 : 0,
         ),
       ),
     );
   }
+
+
+
 }

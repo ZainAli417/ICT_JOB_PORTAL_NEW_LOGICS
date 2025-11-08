@@ -476,7 +476,7 @@ class SignUpWidgets {
             Container(
               height: 8,
               decoration: BoxDecoration(
-                color: Colors.grey.shade200,
+                                                                    color: Color(0xff5C738A),
                 borderRadius: BorderRadius.circular(10),
               ),
             ),
@@ -532,7 +532,8 @@ class SignUpWidgets {
       decoration: BoxDecoration(
         color: Colors.grey.shade50,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey.shade200),
+        border: Border.all(                                                    color: Color(0xff5C738A),
+),
       ),
       child: TextField(
         controller: controller,
@@ -559,7 +560,8 @@ class SignUpWidgets {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.grey.shade200),
+        border: Border.all(                                                    color: Color(0xff5C738A),
+),
         boxShadow: [BoxShadow(color: Colors.grey.shade100, blurRadius: 10, offset: const Offset(0, 4))],
       ),
       child: Column(
@@ -617,7 +619,8 @@ class SignUpWidgets {
         decoration: BoxDecoration(
           color: Colors.grey.shade50,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.grey.shade200, style: BorderStyle.solid, width: 2),
+          border: Border.all(                                                    color: Color(0xff5C738A),
+ style: BorderStyle.solid, width: 2),
         ),
         child: Column(
           children: [

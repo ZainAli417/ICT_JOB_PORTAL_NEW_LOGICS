@@ -267,8 +267,7 @@ class _Recruiter_SignUpScreenState extends State<Recruiter_SignUpScreen> {
                                                     BorderRadius.circular(
                                                         12),
                                                     borderSide: BorderSide(
-                                                        color: Colors
-                                                            .grey.shade200),
+                                                        color: Color(0xFF64748B)),
                                                   ),
                                                   enabledBorder:
                                                   OutlineInputBorder(
@@ -276,8 +275,8 @@ class _Recruiter_SignUpScreenState extends State<Recruiter_SignUpScreen> {
                                                     BorderRadius.circular(
                                                         12),
                                                     borderSide: BorderSide(
-                                                        color: Colors
-                                                            .grey.shade200),
+                                                        color:Color(0xFF64748B)
+                                                    ),
                                                   ),
                                                   focusedBorder:
                                                   OutlineInputBorder(
@@ -352,13 +351,15 @@ class _Recruiter_SignUpScreenState extends State<Recruiter_SignUpScreen> {
                                               borderRadius:
                                               BorderRadius.circular(12),
                                               borderSide: BorderSide(
-                                                  color: Colors.grey.shade200),
+                                                                                                      color: Color(0xff5C738A),
+),
                                             ),
                                             enabledBorder: OutlineInputBorder(
                                               borderRadius:
                                               BorderRadius.circular(12),
                                               borderSide: BorderSide(
-                                                  color: Colors.grey.shade200),
+                                                                                                      color: Color(0xff5C738A),
+),
                                             ),
                                             focusedBorder: OutlineInputBorder(
                                               borderRadius:
@@ -444,13 +445,15 @@ class _Recruiter_SignUpScreenState extends State<Recruiter_SignUpScreen> {
                                               borderRadius:
                                               BorderRadius.circular(12),
                                               borderSide: BorderSide(
-                                                  color: Colors.grey.shade200),
+                                                                                                      color: Color(0xff5C738A),
+),
                                             ),
                                             enabledBorder: OutlineInputBorder(
                                               borderRadius:
                                               BorderRadius.circular(12),
                                               borderSide: BorderSide(
-                                                  color: Colors.grey.shade200),
+                                                                                                      color: Color(0xff5C738A),
+),
                                             ),
                                             focusedBorder: OutlineInputBorder(
                                               borderRadius:
@@ -663,11 +666,13 @@ class _Recruiter_SignUpScreenState extends State<Recruiter_SignUpScreen> {
             : null),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.grey.shade200),
+          borderSide: BorderSide(                                                    color: Color(0xff5C738A),
+),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.grey.shade200),
+          borderSide: BorderSide(                                                    color: Color(0xff5C738A),
+),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),

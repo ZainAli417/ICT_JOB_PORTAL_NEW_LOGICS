@@ -255,7 +255,7 @@ class _recruiter_job_listingState extends State<recruiter_job_listing> with Tick
                   decoration: BoxDecoration(
                     color: Colors.grey.shade50,
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: Colors.grey.shade200),
+                    border: Border.all(color: Color(0xff5C738A)),
                     boxShadow: [
                       BoxShadow(
                         color: Colors.grey.withOpacity(0.1),
@@ -508,7 +508,7 @@ class _FilterDropdown extends StatelessWidget {
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.grey.shade200),
+              border: Border.all(color: Color(0xff5C738A)),
               boxShadow: [
                 BoxShadow(
                   color: Colors.grey.withOpacity(0.1),

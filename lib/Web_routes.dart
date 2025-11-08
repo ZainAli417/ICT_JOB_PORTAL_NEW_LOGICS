@@ -368,7 +368,6 @@ final GoRouter router = GoRouter(
 
       path: '/profile',
       pageBuilder: (c, s) => _buildPage(child: const ProfileScreen_NEW(), context: c, state: s),//index1
-     // pageBuilder: (c, s) => _buildPage(child: const CVGeneratorButton(), context: c, state: s),//index1
     ),
     GoRoute(
       path: '/ai-tools',

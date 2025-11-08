@@ -162,7 +162,8 @@ class SidebarProfile extends StatelessWidget {
                           LinearProgressIndicator(
                             value: percent,
                             minHeight: 10,
-                            backgroundColor: Colors.grey.shade200,
+                            backgroundColor:                                                     Color(0xff5C738A)
+                        ,
                             valueColor: AlwaysStoppedAnimation<Color>(
                               totalScore >= 70 ? Colors.green : (totalScore >= 40 ? Colors.orange : Colors.red),
                             ),

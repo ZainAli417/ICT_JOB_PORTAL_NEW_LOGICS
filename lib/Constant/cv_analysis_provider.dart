@@ -46,7 +46,7 @@ class CVAnalyzerBackendProvider extends ChangeNotifier {
   CVAnalyzerBackendProvider({
     this.useDirectGemini = true,
     String? geminiApiKey, // accept nullable
-    this.geminiModel = 'gemini-2.0-flash-exp',
+    this.geminiModel = 'gemini-2.0-flash-lite',
   }) : geminiApiKey = geminiApiKey ?? Env.geminiApiKey; // init list sets final field
 
   // State setters

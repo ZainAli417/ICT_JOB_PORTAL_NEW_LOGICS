@@ -1,4 +1,4 @@
-// Modern Glassmorphic Top Navigation - Matching Dashboard Gradients
+// Modern Glassmorphic Top Navigation - Responsive & Sticky
 import 'dart:math' as math;
 import 'dart:ui';
 
@@ -32,7 +32,6 @@ class _MainLayoutState extends State<MainLayout>
   late AnimationController _shimmerController;
   late AnimationController _particleController;
 
-
   @override
   void initState() {
     super.initState();
@@ -56,7 +55,6 @@ class _MainLayoutState extends State<MainLayout>
 
   @override
   Widget build(BuildContext context) {
-
     return ChangeNotifierProvider<JS_TopNavProvider>(
       create: (_) => JS_TopNavProvider(),
       child: RepaintBoundary(child: _buildScaffold(context)),
@@ -70,83 +68,49 @@ class _MainLayoutState extends State<MainLayout>
       backgroundColor: _isDarkMode
           ? const Color(0xFF0A0E27)
           : const Color(0xFFFFFFFF),
-      body: Stack(
+      body: Column(
         children: [
-          // Animated gradient background
-
-          Column(
-            children: [
-              RepaintBoundary(
-                child: _buildModernGlassmorphicHeader(initials),
-              ),
-              Expanded(
-                child: AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 400),
-                  transitionBuilder: (child, animation) {
-                    return FadeTransition(
-                      opacity: animation,
-                      child: SlideTransition(
-                        position: Tween<Offset>(
-                          begin: const Offset(0.0, 0.03),
-                          end: Offset.zero,
-                        ).animate(CurvedAnimation(
-                          parent: animation,
-                          curve: Curves.easeOutCubic,
-                        )),
-                        child: child,
-                      ),
-                    );
-                  },
-                  child: widget.child,
-                ),
-              ),
-            ],
+          RepaintBoundary(
+            child: _buildModernGlassmorphicHeader(initials),
+          ),
+          Expanded(
+            child: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 400),
+              transitionBuilder: (child, animation) {
+                return FadeTransition(
+                  opacity: animation,
+                  child: SlideTransition(
+                    position: Tween<Offset>(
+                      begin: const Offset(0.0, 0.03),
+                      end: Offset.zero,
+                    ).animate(CurvedAnimation(
+                      parent: animation,
+                      curve: Curves.easeOutCubic,
+                    )),
+                    child: child,
+                  ),
+                );
+              },
+              child: widget.child,
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildAnimatedBackground() {
-    return AnimatedBuilder(
-      animation: _particleController,
-      builder: (context, child) {
-        return Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: _isDarkMode
-                  ? [
-                const Color(0xFF0A0E27),
-                const Color(0xFF1A1F3A),
-                const Color(0xFF2D1B4E),
-              ]
-                  : [
-                const Color(0xFFF0F4FF),
-                const Color(0xFFE8F0FE),
-                const Color(0xFFF5F7FA),
-              ],
-              stops: [
-                0.0,
-                0.5 + math.sin(_particleController.value * 2 * math.pi) * 0.1,
-                1.0,
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-
   Widget _buildModernGlassmorphicHeader(String initials) {
     final primaryColor = Theme.of(context).primaryColor;
+    final screenWidth = MediaQuery.of(context).size.width;
 
     return Container(
-      height: 80,
-      margin: const EdgeInsets.all(16),
+      height: screenWidth < 1200 ? 70 : 80,
+      margin: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: const BorderRadius.only(
+          bottomLeft: Radius.circular(24),
+          bottomRight: Radius.circular(24),
+        ),
         boxShadow: [
           BoxShadow(
             color: _isDarkMode
@@ -159,7 +123,10 @@ class _MainLayoutState extends State<MainLayout>
         ],
       ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: const BorderRadius.only(
+          bottomLeft: Radius.circular(24),
+          bottomRight: Radius.circular(24),
+        ),
         child: BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
           child: Container(
@@ -177,7 +144,10 @@ class _MainLayoutState extends State<MainLayout>
                   Colors.white.withOpacity(0.65),
                 ],
               ),
-              borderRadius: BorderRadius.circular(24),
+              borderRadius: const BorderRadius.only(
+                bottomLeft: Radius.circular(24),
+                bottomRight: Radius.circular(24),
+              ),
               border: Border.all(
                 color: _isDarkMode
                     ? Colors.white.withOpacity(0.15)
@@ -185,154 +155,244 @@ class _MainLayoutState extends State<MainLayout>
                 width: 1.5,
               ),
             ),
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-            child: Row(
-              children: [
-                _buildEnhancedLogo(),
-                const SizedBox(width: 60),
-                Expanded(
-
-
-                  child: Row(
-                    children: [
-                      _buildModernNavItem(
-                        icon: Icons.dashboard_rounded,
-                        label: 'Dashboard',
-                        isActive: widget.activeIndex == 0,
-                        onTap: () {
-                          if (widget.activeIndex != 0) {
-                            context.go('/dashboard');
-                          }
-                        },
-                      ),
-                      const SizedBox(width: 16),
-                      _buildModernNavItem(
-                        icon: Icons.post_add_rounded,
-                        label: 'Profile',
-                        isActive: widget.activeIndex == 1,
-                        onTap: () {
-                          if (widget.activeIndex != 1) context.go('/profile');
-                        },
-                      ),
-                      const SizedBox(width: 16),
-                      _buildModernNavItem(
-                        icon: Icons.auto_awesome_outlined,
-                        label: 'AI Tools',
-                        isActive: widget.activeIndex == 2,
-                        onTap: () {
-                          if (widget.activeIndex != 2) {
-                            context.go('/ai-tools');
-                          }
-                        },
-                      ),
-                      const SizedBox(width: 16),
-                      _buildModernNavItem(
-                        icon: Icons.description_rounded,
-                        label: 'Job Hub',
-                        isActive: widget.activeIndex == 3,
-                        onTap: () {
-                          if (widget.activeIndex != 3) {
-                            context.go('/applied-jobs');
-                          }
-                        },
-                      ),
-                      const SizedBox(width: 16),
-                      _buildModernNavItem(
-                        icon: Icons.video_call_rounded,
-                        label: 'Interviews',
-                        isActive: widget.activeIndex == 4,
-                        onTap: () {
-                          if (widget.activeIndex != 4) context.go('/alerts');
-                        },
-                      ),
-                    ],
-                  ),
-                ),
-
-                const SizedBox(width: 16),
-                _buildGlassmorphicIconButton(
-                  tooltip: 'Quick Links',
-                  icon: Icons.apps_rounded,
-                  onPressed: () => _showQuickLinks(context),
-                  isActive: _activeMenu == 0,
-                ),
-                const SizedBox(width: 12),
-                _buildGlassmorphicIconButton(
-                  tooltip: 'Notifications',
-                  icon: Icons.notifications_none_rounded,
-                  activeIcon: Icons.notifications_rounded,
-                  onPressed: () =>
-                      setState(() => _activeMenu = _activeMenu == 0 ? null : 0),
-                  badge: 3,
-                  isActive: _activeMenu == 1,
-                ),
-                const SizedBox(width: 12),
-                _buildGlassmorphicIconButton(
-                  tooltip: 'Messages',
-                  icon: Icons.chat_bubble_outline_rounded,
-                  activeIcon: Icons.chat_bubble_rounded,
-                  onPressed: () =>
-                      setState(() => _activeMenu = _activeMenu == 1 ? null : 1),
-                  isActive: _activeMenu == 2,
-                ),
-                Container(
-                  height: 40,
-                  width: 1,
-                  margin: const EdgeInsets.symmetric(horizontal: 14),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [
-                        Colors.transparent,
-                        _isDarkMode
-                            ? Colors.white.withOpacity(0.2)
-                            : Colors.grey.withOpacity(0.3),
-                        Colors.transparent,
-                      ],
-                    ),
-                  ),
-                ),
-                _buildGlassmorphicIconButton(
-                  tooltip: _isDarkMode ? 'Light Mode' : 'Dark Mode',
-                  icon: _isDarkMode
-                      ? Icons.light_mode_rounded
-                      : Icons.dark_mode_rounded,
-                  onPressed: () => setState(() => _isDarkMode = !_isDarkMode),
-                ),
-                const SizedBox(width: 16),
-                _buildProfileMenu(primaryColor,initials),
-              ],
+            padding: EdgeInsets.symmetric(
+              horizontal: screenWidth < 1200 ? 16 : 24,
+              vertical: 12,
             ),
+            child: screenWidth < 1400
+                ? _buildCompactNavigation(primaryColor, initials, screenWidth)
+                : _buildFullNavigation(primaryColor, initials),
           ),
         ),
       ),
     );
   }
-  Widget _buildEnhancedLogo() {
+
+  Widget _buildFullNavigation(Color primaryColor, String initials) {
     return Row(
       children: [
-        // --- Replace shimmer container with your logo image
-        Image.asset(
-          'images/logo.png',
-          width: 180,
-          height: 60,
-          fit: BoxFit.fill,
+        _buildEnhancedLogo(),
+        const SizedBox(width: 60),
+        Expanded(
+          child: Row(
+            children: [
+              _buildModernNavItem(
+                icon: Icons.dashboard_rounded,
+                label: 'Dashboard',
+                isActive: widget.activeIndex == 0,
+                onTap: () {
+                  if (widget.activeIndex != 0) {
+                    context.go('/dashboard');
+                  }
+                },
+              ),
+              const SizedBox(width: 16),
+              _buildModernNavItem(
+                icon: Icons.post_add_rounded,
+                label: 'Profile',
+                isActive: widget.activeIndex == 1,
+                onTap: () {
+                  if (widget.activeIndex != 1) context.go('/profile');
+                },
+              ),
+              const SizedBox(width: 16),
+              _buildModernNavItem(
+                icon: Icons.auto_awesome_outlined,
+                label: 'AI Tools',
+                isActive: widget.activeIndex == 2,
+                onTap: () {
+                  if (widget.activeIndex != 2) {
+                    context.go('/ai-tools');
+                  }
+                },
+              ),
+              const SizedBox(width: 16),
+              _buildModernNavItem(
+                icon: Icons.description_rounded,
+                label: 'Job Hub',
+                isActive: widget.activeIndex == 3,
+                onTap: () {
+                  if (widget.activeIndex != 3) {
+                    context.go('/job-hub');
+                  }
+                },
+              ),
+              const SizedBox(width: 16),
+              _buildModernNavItem(
+                icon: Icons.video_call_rounded,
+                label: 'Interviews',
+                isActive: widget.activeIndex == 4,
+                onTap: () {
+                  if (widget.activeIndex != 4) context.go('/alerts');
+                },
+              ),
+            ],
+          ),
         ),
-
-        const SizedBox(width: 14),
-
-        // --- Brand title and subtitle
+        const SizedBox(width: 16),
+        _buildGlassmorphicIconButton(
+          tooltip: 'Quick Links',
+          icon: Icons.apps_rounded,
+          onPressed: () => _showQuickLinks(context),
+          isActive: _activeMenu == 0,
+        ),
+        const SizedBox(width: 12),
+        _buildGlassmorphicIconButton(
+          tooltip: 'Notifications',
+          icon: Icons.notifications_none_rounded,
+          activeIcon: Icons.notifications_rounded,
+          onPressed: () =>
+              setState(() => _activeMenu = _activeMenu == 0 ? null : 0),
+          badge: 3,
+          isActive: _activeMenu == 1,
+        ),
+        const SizedBox(width: 12),
+        _buildGlassmorphicIconButton(
+          tooltip: 'Messages',
+          icon: Icons.chat_bubble_outline_rounded,
+          activeIcon: Icons.chat_bubble_rounded,
+          onPressed: () =>
+              setState(() => _activeMenu = _activeMenu == 1 ? null : 1),
+          isActive: _activeMenu == 2,
+        ),
+        Container(
+          height: 40,
+          width: 1,
+          margin: const EdgeInsets.symmetric(horizontal: 14),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                Colors.transparent,
+                _isDarkMode
+                    ? Colors.white.withOpacity(0.2)
+                    : Colors.grey.withOpacity(0.3),
+                Colors.transparent,
+              ],
+            ),
+          ),
+        ),
+        _buildGlassmorphicIconButton(
+          tooltip: _isDarkMode ? 'Light Mode' : 'Dark Mode',
+          icon: _isDarkMode
+              ? Icons.light_mode_rounded
+              : Icons.dark_mode_rounded,
+          onPressed: () => setState(() => _isDarkMode = !_isDarkMode),
+        ),
+        const SizedBox(width: 16),
+        _buildProfileMenu(primaryColor, initials),
       ],
     );
   }
 
+  Widget _buildCompactNavigation(Color primaryColor, String initials, double screenWidth) {
+    return Row(
+      children: [
+        if (screenWidth >= 900) ...[
+          _buildEnhancedLogo(compact: true),
+          const SizedBox(width: 20),
+        ],
+        Expanded(
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: [
+                _buildModernNavItem(
+                  icon: Icons.dashboard_rounded,
+                  label: screenWidth < 900 ? '' : 'Dashboard',
+                  isActive: widget.activeIndex == 0,
+                  onTap: () {
+                    if (widget.activeIndex != 0) {
+                      context.go('/dashboard');
+                    }
+                  },
+                  compact: screenWidth < 900,
+                ),
+                const SizedBox(width: 8),
+                _buildModernNavItem(
+                  icon: Icons.post_add_rounded,
+                  label: screenWidth < 900 ? '' : 'Profile',
+                  isActive: widget.activeIndex == 1,
+                  onTap: () {
+                    if (widget.activeIndex != 1) context.go('/profile');
+                  },
+                  compact: screenWidth < 900,
+                ),
+                const SizedBox(width: 8),
+                _buildModernNavItem(
+                  icon: Icons.auto_awesome_outlined,
+                  label: screenWidth < 900 ? '' : 'AI Tools',
+                  isActive: widget.activeIndex == 2,
+                  onTap: () {
+                    if (widget.activeIndex != 2) {
+                      context.go('/ai-tools');
+                    }
+                  },
+                  compact: screenWidth < 900,
+                ),
+                const SizedBox(width: 8),
+                _buildModernNavItem(
+                  icon: Icons.description_rounded,
+                  label: screenWidth < 900 ? '' : 'Job Hub',
+                  isActive: widget.activeIndex == 3,
+                  onTap: () {
+                    if (widget.activeIndex != 3) {
+                      context.go('/job-hub');
+                    }
+                  },
+                  compact: screenWidth < 900,
+                ),
+                const SizedBox(width: 8),
+                _buildModernNavItem(
+                  icon: Icons.video_call_rounded,
+                  label: screenWidth < 900 ? '' : 'Interviews',
+                  isActive: widget.activeIndex == 4,
+                  onTap: () {
+                    if (widget.activeIndex != 4) context.go('/alerts');
+                  },
+                  compact: screenWidth < 900,
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(width: 12),
+        _buildGlassmorphicIconButton(
+          tooltip: 'Notifications',
+          icon: Icons.notifications_none_rounded,
+          activeIcon: Icons.notifications_rounded,
+          onPressed: () =>
+              setState(() => _activeMenu = _activeMenu == 0 ? null : 0),
+          badge: 3,
+          isActive: _activeMenu == 1,
+        ),
+        const SizedBox(width: 8),
+        _buildProfileMenu(primaryColor, initials),
+      ],
+    );
+  }
+
+  Widget _buildEnhancedLogo({bool compact = false}) {
+    return Row(
+      children: [
+        Image.asset(
+          'images/logo.png',
+          width: compact ? 120 : 180,
+          height: compact ? 40 : 60,
+          fit: BoxFit.fill,
+        ),
+        const SizedBox(width: 14),
+      ],
+    );
+  }
 
   Widget _buildModernNavItem({
     required IconData icon,
     required String label,
     required bool isActive,
     required VoidCallback onTap,
+    bool compact = false,
   }) {
     return _ModernHoverNavItem(
       icon: icon,
@@ -340,68 +400,7 @@ class _MainLayoutState extends State<MainLayout>
       isActive: isActive,
       onTap: onTap,
       isDarkMode: _isDarkMode,
-    );
-  }
-
-  Widget _buildGlowingActionButton({
-    required String text,
-    required IconData icon,
-    required VoidCallback onPressed,
-  }) {
-    return RepaintBoundary(
-      child: MouseRegion(
-        cursor: SystemMouseCursors.click,
-        child: GestureDetector(
-          onTap: onPressed,
-          child: AnimatedBuilder(
-            animation: _shimmerController,
-            builder: (context, child) {
-              return Container(
-                padding:
-                const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [
-                      Color(0xFF6366F1),
-                      Color(0xFF8B5CF6),
-                    ],
-                  ),
-                  borderRadius: BorderRadius.circular(14),
-                  boxShadow: [
-                    BoxShadow(
-                      color: const Color(0xFF6366F1).withOpacity(0.4),
-                      blurRadius: 20,
-                      offset: const Offset(0, 6),
-                      spreadRadius: -2,
-                    ),
-                    BoxShadow(
-                      color: const Color(0xFF8B5CF6).withOpacity(0.2),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(icon, size: 18, color: Colors.white),
-                    const SizedBox(width: 8),
-                    Text(
-                      text,
-                      style: GoogleFonts.poppins(
-                        fontWeight: FontWeight.w600,
-                        fontSize: 14,
-                        color: Colors.white,
-                        letterSpacing: 0.3,
-                      ),
-                    ),
-                  ],
-                ),
-              );
-            },
-          ),
-        ),
-      ),
+      compact: compact,
     );
   }
 
@@ -538,8 +537,10 @@ class _MainLayoutState extends State<MainLayout>
         ),
       ),
       itemBuilder: (context) => [
-        _buildPopupMenuItem('Profile', Icons.person_outline_rounded, () => context.go('/NA')),
-        _buildPopupMenuItem('Settings', Icons.settings_outlined, () => context.go('/NA')),
+        _buildPopupMenuItem(
+            'Profile', Icons.person_outline_rounded, () => context.go('/NA')),
+        _buildPopupMenuItem(
+            'Settings', Icons.settings_outlined, () => context.go('/NA')),
         _buildPopupMenuItem('Help', Icons.help_outline_rounded, () {}),
         const PopupMenuDivider(),
         PopupMenuItem<String>(
@@ -567,13 +568,17 @@ class _MainLayoutState extends State<MainLayout>
     );
   }
 
-  PopupMenuItem<String> _buildPopupMenuItem(String title, IconData icon, VoidCallback onTap, {bool isDestructive = false}) {
+  PopupMenuItem<String> _buildPopupMenuItem(
+      String title, IconData icon, VoidCallback onTap,
+      {bool isDestructive = false}) {
     return PopupMenuItem<String>(
       value: title.toLowerCase(),
       onTap: onTap,
       child: Row(
         children: [
-          Icon(icon, size: 18, color: isDestructive ? Colors.red.shade500 : Color(0xFF64748B)),
+          Icon(icon,
+              size: 18,
+              color: isDestructive ? Colors.red.shade500 : Color(0xFF64748B)),
           const SizedBox(width: 12),
           Flexible(
             child: Text(
@@ -590,11 +595,6 @@ class _MainLayoutState extends State<MainLayout>
       ),
     );
   }
-
-
-
-
-
 
   void _showQuickLinks(BuildContext context) =>
       print('Showing Quick Links menu');
@@ -744,6 +744,7 @@ class _ModernHoverNavItem extends StatefulWidget {
   final bool isActive;
   final VoidCallback onTap;
   final bool isDarkMode;
+  final bool compact;
 
   const _ModernHoverNavItem({
     required this.icon,
@@ -751,6 +752,7 @@ class _ModernHoverNavItem extends StatefulWidget {
     required this.isActive,
     required this.onTap,
     required this.isDarkMode,
+    this.compact = false,
   });
 
   @override
@@ -785,7 +787,9 @@ class _ModernHoverNavItemState extends State<_ModernHoverNavItem>
             duration: const Duration(milliseconds: 250),
             curve: Curves.easeOutCubic,
             height: 48,
-            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+            padding: widget.compact
+                ? const EdgeInsets.all(12)
+                : const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
             decoration: BoxDecoration(
               gradient: isHighlighted
                   ? LinearGradient(
@@ -811,17 +815,18 @@ class _ModernHoverNavItemState extends State<_ModernHoverNavItem>
                 width: 1.5,
               )
                   : null,
-              boxShadow: isHighlighted
-                  ? [
-                BoxShadow(
-                  color: const Color(0xFF6366F1).withOpacity(0.15),
-                  blurRadius: 12,
-                  offset: const Offset(0, 4),
-                ),
-              ]
-                  : null,
             ),
-            child: Row(
+            child: widget.compact
+                ? Icon(
+              widget.icon,
+              color: isHighlighted
+                  ? const Color(0xFF6366F1)
+                  : (widget.isDarkMode
+                  ? Colors.white.withOpacity(0.7)
+                  : const Color(0xFF64748B)),
+              size: 20,
+            )
+                : Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Icon(
@@ -833,20 +838,23 @@ class _ModernHoverNavItemState extends State<_ModernHoverNavItem>
                       : const Color(0xFF64748B)),
                   size: 20,
                 ),
-                const SizedBox(width: 10),
-                Text(
-                  widget.label,
-                  style: GoogleFonts.poppins(
-                    fontSize: 14,
-                    fontWeight: isHighlighted ? FontWeight.w600 : FontWeight.w500,
-                    color: isHighlighted
-                        ? const Color(0xFF6366F1)
-                        : (widget.isDarkMode
-                        ? Colors.white.withOpacity(0.7)
-                        : const Color(0xFF64748B)),
-                    letterSpacing: 0.2,
+                if (widget.label.isNotEmpty) ...[
+                  const SizedBox(width: 10),
+                  Text(
+                    widget.label,
+                    style: GoogleFonts.poppins(
+                      fontSize: 14,
+                      fontWeight:
+                      isHighlighted ? FontWeight.w600 : FontWeight.w500,
+                      color: isHighlighted
+                          ? const Color(0xFF6366F1)
+                          : (widget.isDarkMode
+                          ? Colors.white.withOpacity(0.7)
+                          : const Color(0xFF64748B)),
+                      letterSpacing: 0.2,
+                    ),
                   ),
-                ),
+                ],
               ],
             ),
           ),

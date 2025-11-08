@@ -1366,7 +1366,7 @@ class _job_seeker_dashboardState extends State<job_seeker_dashboard>
                                 decoration: BoxDecoration(
                                   color: Colors.grey.shade50,
                                   borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(color: Colors.grey.shade200),
+                                  border: Border.all(color: Color(0xff5C738A)),
                                 ),
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,

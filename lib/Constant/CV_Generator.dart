@@ -89,7 +89,7 @@ class CVPreviewDialog extends StatelessWidget {
                 children: [
                   CircleAvatar(
                     radius: 28,
-                    backgroundColor: Colors.grey.shade200,
+                    backgroundColor:  Color(0xff5C738A),
                     backgroundImage: provider.profilePicUrl.isNotEmpty
                         ? NetworkImage(provider.profilePicUrl)
                         : null,

@@ -283,7 +283,8 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
 
   Widget _buildTabBar() {
     return Container(
-      decoration: BoxDecoration(border: Border(bottom: BorderSide(color: Colors.grey.shade200))),
+      decoration: BoxDecoration(border: Border(bottom: BorderSide(                                                    color: Color(0xff5C738A),
+      ))),
       child: TabBar(
         controller: _tabController,
         isScrollable: true,

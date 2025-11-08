@@ -10,7 +10,7 @@ import 'package:job_portal/main.dart';
 // CONSTANT COLORS
 // --------------------------------------------------
 class AppColors {
-  static const Color primary = Color(0xFF003366);
+  static const Color primary = Color(0xFF6366F1);
   static const Color white = Colors.white;
   static const Color offWhite = Color(0xFFFAFAFA);
   static const Color paleWhite = Color(0xFFF5F5F5);
@@ -35,7 +35,7 @@ class ChatMessage {
 // --------------------------------------------------
 class GeminiService {
   // 🚨 WARNING: Do NOT hardcode your API key in production apps.
-  static const String _model = 'gemini-2.0-flash';
+  static const String _model = 'gemini-2.0-flash-lite';
   static final String _endpoint =
       'https://generativelanguage.googleapis.com/v1beta/models/$_model:generateContent?key==${Env.geminiApiKey}';
 

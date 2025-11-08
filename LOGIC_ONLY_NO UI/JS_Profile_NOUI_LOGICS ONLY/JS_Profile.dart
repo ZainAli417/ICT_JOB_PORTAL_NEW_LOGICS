@@ -188,7 +188,8 @@ class _ProfileScreen_NEWState extends State<ProfileScreen_NEW> with TickerProvid
 
   Widget _buildTabBar() {
     return Container(
-      decoration: BoxDecoration(border: Border(bottom: BorderSide(color: Colors.grey.shade200))),
+      decoration: BoxDecoration(border: Border(bottom: BorderSide(                                                    color: Color(0xff5C738A),
+      ))),
       child: TabBar(
         controller: _tabController,
         isScrollable: true,
