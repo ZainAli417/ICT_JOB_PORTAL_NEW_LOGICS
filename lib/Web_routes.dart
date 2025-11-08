@@ -283,10 +283,8 @@ CustomTransitionPage<T> _buildPage<T>({
     },
   );
 }
-
 // ========== ROUTER ==========
 final _authNotifier = AuthNotifier();
-
 final GoRouter router = GoRouter(
   initialLocation: '/',
   refreshListenable: _authNotifier,
