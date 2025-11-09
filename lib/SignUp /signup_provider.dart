@@ -420,7 +420,7 @@ class SignupProvider extends ChangeNotifier {
       'dob': dob != null ? DateFormat('yyyy-MM-dd').format(dob!) : null,
     },
     'educationalProfile': educationalProfile,
-    'professionalProfile': {'summary': result.professionalSummary ?? ''},
+    'professionalProfile': {'summary': result.professionalSummary},
     'professionalExperience': result.experiences,
     'certifications': result.certifications,
     'publications': result.publications,

@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../Job_Seeker/job_hub.dart';
 import 'R_Top_Bar.dart';
 import 'Recruiter_provider.dart';
 
@@ -76,19 +77,48 @@ class _RecruiterDashboardState extends State<RecruiterDashboard>
     return '•••-•••-${cleaned.substring(cleaned.length - 2)}';
   }
 
+
+
+
   @override
   Widget build(BuildContext context) {
-    return Recruiter_MainLayout(
-      activeIndex: 0,
-      child: FadeTransition(
-        opacity: _fade,
-        child: SlideTransition(
-          position: _slide,
-          child: _buildDashboardContent(context),
+    const double topBarHeight = 120.0;
+
+    return ScrollConfiguration(
+      behavior: SmoothScrollBehavior(),
+      child: SizedBox.expand(
+        child: Stack(
+          children: [
+            // Main content area sits below the top bar.
+            Positioned.fill(
+              top: topBarHeight,
+              child: FadeTransition(
+                opacity: _fade,
+                child: _buildDashboardContent(context), // unchanged: contains ChangeNotifierProvider + Scaffold
+              ),
+            ),
+
+            // Top navigation bar overlay (MainLayout used as the bar)
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              height: topBarHeight,
+              child: Recruiter_MainLayout(
+                activeIndex: 0,
+                child: const SizedBox.shrink(),
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
+
+
+
+
+
 
   Widget _buildDashboardContent(BuildContext context) {
     final isMobile = MediaQuery.of(context).size.width < 768;

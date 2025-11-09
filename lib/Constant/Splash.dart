@@ -40,12 +40,13 @@ class _LandingPageState extends State<LandingPage> with TickerProviderStateMixin
   late Animation<double> _workflowAnimation;
   late AnimationController _rotationController;
   late Animation<double> _rotationAnimation;
+  late AnimationController _controller;
 
   late AnimationController _contentAnimationController;
   static const Color pureWhite = Color(0xFFFFFFFF);
   static Color charcoalGray = Colors.black87;
   // Your existing variables
-  bool isDarkMode = false;
+  bool isDarkMode = true;
   int _activeStage = 0;
 
   // ADD THIS: Animation controller for particles
@@ -110,6 +111,11 @@ class _LandingPageState extends State<LandingPage> with TickerProviderStateMixin
   @override
   void initState() {
     super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 30),
+    )..repeat();
+
     _rotationController = AnimationController(
       duration: const Duration(seconds: 30),
       vsync: this,
@@ -157,6 +163,8 @@ class _LandingPageState extends State<LandingPage> with TickerProviderStateMixin
   @override
   void dispose() {
     _stageTimer?.cancel();
+    _controller.dispose();
+
     _workflowController.dispose();
     _fadeController.dispose();
     _rotationController.dispose();
@@ -172,46 +180,51 @@ class _LandingPageState extends State<LandingPage> with TickerProviderStateMixin
   }
 
   @override
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: isDarkMode ? const Color(0xFF0F172A) : Colors.white,
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            _buildTopBar(),
-            _buildHeroSection(),
-            //_buildWorkflowVisualization(),
-            _buildFeaturesSection(),
-            _buildStatsShowcase(),
-            _buildFooter(),
-          ],
-        ),
+      backgroundColor: isDarkMode ? const Color(0xFF0F172A) : Colors.transparent,
+      body: Stack(
+        children: [
+          // Animated grid pattern background
+          Positioned.fill(
+            child: AnimatedBuilder(
+              animation: _controller,
+              builder: (context, child) {
+                return CustomPaint(
+                  painter: _GridPainter(_controller.value),
+                  size: Size.infinite,
+                );
+              },
+            ),
+          ),
+
+          // Content on top of background
+          SingleChildScrollView(
+            child: Column(
+              children: [
+                _buildTopBar(),
+                _buildHeroSection(),
+                //_buildWorkflowVisualization(),
+                _buildFeaturesSection(),
+                isDarkMode? _buildStatsShowcase() : Container(),
+                _buildFooter(),
+
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
-
   // ==================== TOP BAR ====================
   Widget _buildTopBar() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 65, vertical: 10),
       decoration: BoxDecoration(
         color: isDarkMode
-            ? const Color(0xFF1E293B).withOpacity(0.95)
-            : Colors.white.withOpacity(0.95),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(isDarkMode ? 0.3 : 0.05),
-            blurRadius: 20,
-            offset: const Offset(0, 4),
-          ),
-        ],
-        border: Border(
-          bottom: BorderSide(
-            color: isDarkMode ? const Color(0xFF334155) : const Color(
-                0xFFE5E7EB),
-            width: 1,
-          ),
-        ),
+            ? const Color(0x00f9fafb)
+            : Colors.transparent,
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -504,11 +517,11 @@ class _LandingPageState extends State<LandingPage> with TickerProviderStateMixin
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: isDarkMode
-              ? [const Color(0xFF0F172A), const Color(0xFF1E293B)]
+              ? [const Color(0x00f9fafb), const Color(0x00f9fafb)]
               : [
-            const Color(0xFFF9FAFB),
-            const Color(0xFFEEF2FF),
-            const Color(0xFFF9FAFB)
+            const Color(0x00f9fafb),
+            const Color(0x00f9fafb),
+            const Color(0x00f9fafb)
           ],
         ),
       ),
@@ -2043,11 +2056,11 @@ class _LandingPageState extends State<LandingPage> with TickerProviderStateMixin
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: isDarkMode
-              ? [const Color(0xFF1E293B), const Color(0xFF0F172A)]
+              ? [const Color(0x00f9fafb), const Color(0x00f9fafb)]
               : [
-            const Color(0xFFF8FAFC),
-            const Color(0xFFEFF6FF),
-            const Color(0xFFFAF5FF)
+            const Color(0x00f9fafb),
+            const Color(0x00f9fafb),
+            const Color(0x00f9fafb)
           ],
         ),
       ),
@@ -2266,14 +2279,14 @@ class _LandingPageState extends State<LandingPage> with TickerProviderStateMixin
           end: Alignment.bottomRight,
           colors: isDarkMode
               ? [
-            const Color(0xFF1F2937),
-            const Color(0xFF111827),
-            const Color(0xFF1F2937)
+            const Color(0x00f9fafb),
+            const Color(0x00f9fafb),
+            const Color(0x00f9fafb)
           ]
               : [
-            const Color(0xFF6366F1),
-            const Color(0xFF8B5CF6),
-            const Color(0xFF6366F1)
+            const Color(0x00f9fafb),
+            const Color(0x00f9fafb),
+            const Color(0x00f9fafb)
           ],
         ),
       ),
@@ -2387,7 +2400,7 @@ class _LandingPageState extends State<LandingPage> with TickerProviderStateMixin
       child: Column(
         children: [
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 80, vertical: 70),
+            padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 50),
             child: Column(
               children: [
                 Row(
@@ -2650,12 +2663,12 @@ class _LandingPageState extends State<LandingPage> with TickerProviderStateMixin
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(icon, color: const Color(0xFF818CF8), size: 18),
+                Icon(icon, color: const Color(0xFF7233FB), size: 18),
                 const SizedBox(width: 10),
                 Text(
                   badge,
                   style: GoogleFonts.poppins(
-                    color: const Color(0xFFA5B4FC),
+                    color: const Color(0xFF7233FB),
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
                     letterSpacing: 0.5,
@@ -2837,6 +2850,153 @@ class FeatureItem {
   FeatureItem(this.title, this.description, this.icon);
 }
 // ==================== CUSTOM PAINTERS ====================
+class _GridPainter extends CustomPainter {
+  final double animationValue;
+
+  _GridPainter(this.animationValue);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    const double gridSize = 100.0;
+    final offset = animationValue * gridSize;
+
+    // Base grid paint (dimmed, more prominent)
+    final baseGridPaint = Paint()
+      ..color = const Color(0xFF4A90E2).withOpacity(0.15)
+      ..strokeWidth = 1.6
+      ..style = PaintingStyle.stroke;
+
+    // Neon beam paint for grid lines
+    final beamPaint = Paint()
+      ..strokeWidth = 2.0
+      ..style = PaintingStyle.stroke
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6);
+
+    // Draw vertical lines with moving beam effect
+    int verticalIndex = 0;
+    for (double x = -gridSize + (offset % gridSize);
+    x < size.width + gridSize;
+    x += gridSize) {
+
+      // Draw base line
+      canvas.drawLine(
+        Offset(x, 0),
+        Offset(x, size.height),
+        baseGridPaint,
+      );
+
+      // Create moving beam along the line
+      final beamProgress = (animationValue * 2 + verticalIndex * 0.3) % 1.0;
+      final beamStart = beamProgress * size.height;
+      final beamLength = size.height * 0.4; // Beam covers 30% of line
+
+      final verticalGradient = LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: [
+          Colors.transparent,
+          const Color(0xFFF7E6FF).withOpacity(0.4),
+          const Color(0xFFF7E6FF).withOpacity(0.9),
+          const Color(0xFFF7E6FF).withOpacity(0.4),
+          Colors.transparent,
+        ],
+        stops: const [0.0, 0.2, 0.5, 0.8, 1.0],
+      );
+
+      beamPaint.shader = verticalGradient.createShader(
+        Rect.fromLTWH(x - 20, beamStart - beamLength/2, 40, beamLength),
+      );
+
+      canvas.drawLine(
+        Offset(x, math.max(0, beamStart - beamLength/2)),
+        Offset(x, math.min(size.height, beamStart + beamLength/2)),
+        beamPaint,
+      );
+
+      verticalIndex++;
+    }
+
+    // Draw horizontal lines with moving beam effect
+    int horizontalIndex = 0;
+    for (double y = -gridSize + (offset % gridSize);
+    y < size.height + gridSize;
+    y += gridSize) {
+
+      // Draw base line
+      canvas.drawLine(
+        Offset(0, y),
+        Offset(size.width, y),
+        baseGridPaint,
+      );
+
+      // Create moving beam along the line
+      final beamProgress = (animationValue * 1.5 + horizontalIndex * 0.25) % 1.0;
+      final beamStart = beamProgress * size.width;
+      final beamLength = size.width * 0.6; // Beam covers 30% of line
+
+      final horizontalGradient = LinearGradient(
+        colors: [
+          Colors.transparent,
+          const Color(0xFFE6EFFF).withOpacity(0.4),
+          const Color(0xFFE6EFFF).withOpacity(0.9),
+          const Color(0xFFE6EFFF).withOpacity(0.4),
+          Colors.transparent,
+        ],
+        stops: const [0.0, 0.2, 0.5, 0.8, 1.0],
+      );
+
+      beamPaint.shader = horizontalGradient.createShader(
+        Rect.fromLTWH(beamStart - beamLength/2, y - 20, beamLength, 40),
+      );
+
+      canvas.drawLine(
+        Offset(math.max(0, beamStart - beamLength/2), y),
+        Offset(math.min(size.width, beamStart + beamLength/2), y),
+        beamPaint,
+      );
+
+      horizontalIndex++;
+    }
+
+    // Add extra glow at beam intersections
+    final intersectionPaint = Paint()
+      ..color = const Color(0xFFFFFFFF).withOpacity(0.3)
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 15);
+
+    verticalIndex = 0;
+    for (double x = -gridSize + (offset % gridSize);
+    x < size.width + gridSize;
+    x += gridSize) {
+      horizontalIndex = 0;
+      for (double y = -gridSize + (offset % gridSize);
+      y < size.height + gridSize;
+      y += gridSize) {
+
+        final beamProgressV = (animationValue * 2 + verticalIndex * 0.3) % 1.0;
+        final beamProgressH = (animationValue * 1.5 + horizontalIndex * 0.25) % 1.0;
+
+        // Check if beams are near intersection
+        final verticalBeamY = beamProgressV * size.height;
+        final horizontalBeamX = beamProgressH * size.width;
+
+        if ((verticalBeamY - y).abs() < 50 && (horizontalBeamX - x).abs() < 50) {
+          canvas.drawCircle(
+            Offset(x, y),
+            8,
+            intersectionPaint,
+          );
+        }
+
+        horizontalIndex++;
+      }
+      verticalIndex++;
+    }
+  }
+
+  @override
+  bool shouldRepaint(_GridPainter oldDelegate) => true;
+}
+
 // ==================== CIRCULAR WORKFLOW PAINTER ====================
 class CreativeWorkflowPainter extends CustomPainter {
   final int activeStage;
