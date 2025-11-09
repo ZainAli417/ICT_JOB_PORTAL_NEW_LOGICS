@@ -93,7 +93,7 @@ class CvExtractor {
 
   CvExtractor({
     required this.geminiApiKey,
-    this.geminiModel = 'gemini-2.0-flash-lite',
+    this.geminiModel = 'gemini-2.0-flash',
     this.timeout = const Duration(seconds: 90),
   });
 

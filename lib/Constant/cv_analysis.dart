@@ -19,7 +19,8 @@ class CVAnalysisScreen extends StatefulWidget {
   final String geminiApiKey;
 
   CVAnalysisScreen({super.key, String? geminiApiKey})
-      : geminiApiKey = geminiApiKey ?? Env.geminiApiKey;
+     : geminiApiKey = geminiApiKey ?? Env.geminiApiKey;
+  //: geminiApiKey = geminiApiKey ?? '';
 
   @override
   State<CVAnalysisScreen> createState() => _CVAnalysisScreenState();

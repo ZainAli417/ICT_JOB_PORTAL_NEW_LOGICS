@@ -35,8 +35,9 @@ class ChatMessage {
 // --------------------------------------------------
 class GeminiService {
   // 🚨 WARNING: Do NOT hardcode your API key in production apps.
-  static const String _model = 'gemini-2.0-flash-lite';
+  static const String _model = 'gemini-2.0-flash';
   static final String _endpoint =
+     // 'https://generativelanguage.googleapis.com/v1beta/models/$_model:generateContent?key==';
       'https://generativelanguage.googleapis.com/v1beta/models/$_model:generateContent?key==${Env.geminiApiKey}';
 
   static Future<String> generateContent(String prompt) async {

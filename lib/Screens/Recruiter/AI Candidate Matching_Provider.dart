@@ -12,7 +12,7 @@ import 'LIst_of_Applicants_provider.dart';
 class AIMatchProvider with ChangeNotifier {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   // Replace with your actual Gemini API key
-  static const String _geminiApiUrl ='https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:generateContent';
+  static const String _geminiApiUrl ='https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
 
   // State management
   bool _isAnalyzing = false;
@@ -320,8 +320,8 @@ Return ONLY the JSON object, no markdown formatting, no additional text.
   Future<String> _callGeminiAPI(String prompt) async {
     try {
       final response = await http.post(
-      //  Uri.parse('$_geminiApiUrl?key=${Env.geminiApiKey}'),
-        Uri.parse('$_geminiApiUrl?key=${Env.geminiApiKey}'),
+       Uri.parse('$_geminiApiUrl?key=${Env.geminiApiKey}'),
+        //Uri.parse('$_geminiApiUrl?key='),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'contents': [

@@ -36,6 +36,7 @@ class _SignUp_Screen2State extends State<SignUp_Screen2> with TickerProviderStat
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
   static final String GEMINI_API_KEY = Env.geminiApiKey;
+  //static final String GEMINI_API_KEY = '';
   late final extractor = CvExtractor(geminiApiKey: GEMINI_API_KEY);
   final GlobalKey _cvSectionKey = GlobalKey();
   @override
