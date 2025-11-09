@@ -1,5 +1,6 @@
 // lib/providers/signup_provider.dart
 import 'dart:convert';
+import 'dart:js_interop';
 import 'dart:typed_data';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -10,7 +11,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 
 import 'dart:async';
-import 'dart:html' as html;
+import 'package:web/web.dart';
 
 
 class SignupProvider extends ChangeNotifier {
@@ -472,26 +473,39 @@ class SignupProvider extends ChangeNotifier {
 
   Future<Map<String, dynamic>?> pickImageWebImpl({int maxBytes = 2 * 1024 * 1024}) async {
     try {
-      final uploadInput = html.FileUploadInputElement();
+      final uploadInput = HTMLInputElement();
+      uploadInput.type = 'file';
       uploadInput.accept = 'image/*';
       uploadInput.multiple = false;
-
       // Hide and attach to DOM so some browsers behave consistently.
       uploadInput.style.display = 'none';
-      html.document.body?.append(uploadInput);
+      document.body?.appendChild(uploadInput);
+
+      // Create a completer to wait for file selection
+      final completer = Completer<void>();
+
+      // Listen for change event
+      uploadInput.addEventListener('change', (Event e) {
+        completer.complete();
+      }.toJS);
 
       // Trigger the file picker (user gesture because this runs from a button tap).
       uploadInput.click();
 
       // Wait for user selection (or cancel)
-      await uploadInput.onChange.first;
+      await completer.future;
+
       final files = uploadInput.files;
-      if (files == null || files.isEmpty) {
+      if (files == null || files.length == 0) {
         uploadInput.remove();
         return null; // user cancelled
       }
 
-      final file = files.first;
+      final file = files.item(0);
+      if (file == null) {
+        uploadInput.remove();
+        return null;
+      }
 
       // Size validation
       if (file.size > maxBytes) {
@@ -501,24 +515,39 @@ class SignupProvider extends ChangeNotifier {
       }
 
       // Read as Data URL (for preview)
-      final readerDataUrl = html.FileReader();
-      readerDataUrl.readAsDataUrl(file);
-      await readerDataUrl.onLoad.first;
-      final dataUrl = readerDataUrl.result as String?;
+      final dataUrlCompleter = Completer<String?>();
+      final readerDataUrl = FileReader();
+
+      readerDataUrl.addEventListener('load', (Event e) {
+        dataUrlCompleter.complete(readerDataUrl.result as String?);
+      }.toJS);
+
+      readerDataUrl.addEventListener('error', (Event e) {
+        dataUrlCompleter.completeError('Error reading file as DataURL');
+      }.toJS);
+
+      readerDataUrl.readAsDataURL(file);
+      final dataUrl = await dataUrlCompleter.future;
 
       // Read as ArrayBuffer (for bytes)
-      final readerBinary = html.FileReader();
-      readerBinary.readAsArrayBuffer(file);
-      await readerBinary.onLoad.first;
-      final resultBuffer = readerBinary.result;
+      final bytesCompleter = Completer<dynamic>();
+      final readerBinary = FileReader();
 
-      // Convert result to Uint8List robustly
+      readerBinary.addEventListener('load', (Event e) {
+        bytesCompleter.complete(readerBinary.result);
+      }.toJS);
+
+      readerBinary.addEventListener('error', (Event e) {
+        bytesCompleter.completeError('Error reading file as ArrayBuffer');
+      }.toJS);
+
+      readerBinary.readAsArrayBuffer(file);
+      final resultBuffer = await bytesCompleter.future;
+
+      // Convert result to Uint8List
       Uint8List bytes;
       if (resultBuffer is ByteBuffer) {
         bytes = resultBuffer.asUint8List();
-      } else if (resultBuffer is List) {
-        // sometimes it's a List<int>
-        bytes = Uint8List.fromList(List<int>.from(resultBuffer));
       } else {
         uploadInput.remove();
         return {'error': 'Unable to read file bytes (unsupported result type)'};
@@ -537,4 +566,5 @@ class SignupProvider extends ChangeNotifier {
       return {'error': 'Image pick failed: $e'};
     }
   }
+
 }

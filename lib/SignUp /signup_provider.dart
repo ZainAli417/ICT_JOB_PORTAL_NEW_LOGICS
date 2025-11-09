@@ -1,7 +1,8 @@
 // lib/providers/signup_provider.dart
+import 'dart:async';
 import 'dart:convert';
+import 'dart:js_interop';
 import 'dart:typed_data';
-import 'dart:html' as html;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
@@ -10,6 +11,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import '../extractor_CV/cv_extractor.dart';
+import 'package:web/web.dart';
 
 class SignupProvider extends ChangeNotifier {
   // ========== STATE ==========
@@ -92,7 +94,7 @@ class SignupProvider extends ChangeNotifier {
   Future<void> pickProfilePicture() async {
     try {
       if (kIsWeb) {
-        final res = await _pickImageWeb();
+        final res = await pickImageWebImpl();
         if (res == null) return;
         if (res.containsKey('error')) {
           generalError = res['error'] as String?;
@@ -518,48 +520,91 @@ class SignupProvider extends ChangeNotifier {
     } catch (_) {}
   }
 
-  Future<Map<String, dynamic>?> _pickImageWeb({int maxBytes = 2 * 1024 * 1024}) async {
+  Future<Map<String, dynamic>?> pickImageWebImpl({int maxBytes = 2 * 1024 * 1024}) async {
     try {
-      final uploadInput = html.FileUploadInputElement()
-        ..accept = 'image/*'
-        ..multiple = false
-        ..style.display = 'none';
+      final uploadInput = HTMLInputElement();
+      uploadInput.type = 'file';
+      uploadInput.accept = 'image/*';
+      uploadInput.multiple = false;
+      // Hide and attach to DOM so some browsers behave consistently.
+      uploadInput.style.display = 'none';
+      document.body?.appendChild(uploadInput);
 
-      html.document.body?.append(uploadInput);
+      // Create a completer to wait for file selection
+      final completer = Completer<void>();
+
+      // Listen for change event
+      uploadInput.addEventListener('change', (Event e) {
+        completer.complete();
+      }.toJS);
+
+      // Trigger the file picker (user gesture because this runs from a button tap).
       uploadInput.click();
-      await uploadInput.onChange.first;
+
+      // Wait for user selection (or cancel)
+      await completer.future;
 
       final files = uploadInput.files;
-      if (files == null || files.isEmpty) {
+      if (files == null || files.length == 0) {
+        uploadInput.remove();
+        return null; // user cancelled
+      }
+
+      final file = files.item(0);
+      if (file == null) {
         uploadInput.remove();
         return null;
       }
 
-      final file = files.first;
+      // Size validation
       if (file.size > maxBytes) {
         uploadInput.remove();
-        return {'error': 'Selected image exceeds ${(maxBytes / (1024 * 1024)).toStringAsFixed(1)} MB'};
+        final maxMb = (maxBytes / (1024 * 1024)).toStringAsFixed(1);
+        return {'error': 'Selected image exceeds $maxMb MB'};
       }
 
-      final readerDataUrl = html.FileReader()..readAsDataUrl(file);
-      await readerDataUrl.onLoad.first;
-      final dataUrl = readerDataUrl.result as String?;
+      // Read as Data URL (for preview)
+      final dataUrlCompleter = Completer<String?>();
+      final readerDataUrl = FileReader();
 
-      final readerBinary = html.FileReader()..readAsArrayBuffer(file);
-      await readerBinary.onLoad.first;
-      final resultBuffer = readerBinary.result;
+      readerDataUrl.addEventListener('load', (Event e) {
+        dataUrlCompleter.complete(readerDataUrl.result as String?);
+      }.toJS);
 
+      readerDataUrl.addEventListener('error', (Event e) {
+        dataUrlCompleter.completeError('Error reading file as DataURL');
+      }.toJS);
+
+      readerDataUrl.readAsDataURL(file);
+      final dataUrl = await dataUrlCompleter.future;
+
+      // Read as ArrayBuffer (for bytes)
+      final bytesCompleter = Completer<dynamic>();
+      final readerBinary = FileReader();
+
+      readerBinary.addEventListener('load', (Event e) {
+        bytesCompleter.complete(readerBinary.result);
+      }.toJS);
+
+      readerBinary.addEventListener('error', (Event e) {
+        bytesCompleter.completeError('Error reading file as ArrayBuffer');
+      }.toJS);
+
+      readerBinary.readAsArrayBuffer(file);
+      final resultBuffer = await bytesCompleter.future;
+
+      // Convert result to Uint8List
       Uint8List bytes;
       if (resultBuffer is ByteBuffer) {
         bytes = resultBuffer.asUint8List();
-      } else if (resultBuffer is List) {
-        bytes = Uint8List.fromList(List<int>.from(resultBuffer));
       } else {
         uploadInput.remove();
-        return {'error': 'Unable to read file bytes'};
+        return {'error': 'Unable to read file bytes (unsupported result type)'};
       }
 
+      // Clean up the DOM element
       uploadInput.remove();
+
       return {
         'dataUrl': dataUrl,
         'bytes': bytes,

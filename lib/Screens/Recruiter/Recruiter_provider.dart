@@ -257,7 +257,7 @@ class RecruiterProvider2 extends ChangeNotifier {
     try {
       final docSnap = await _firestore.collection('job_seeker').doc(uid).get(const GetOptions(source: Source.serverAndCache));
       if (!docSnap.exists) return null;
-      final raw = docSnap.data() as Map<String, dynamic>? ?? {};
+      final raw = docSnap.data() ?? {};
 
       // pick canonical user_data if present
       Map<String, dynamic> userData = {};
@@ -277,13 +277,19 @@ class RecruiterProvider2 extends ChangeNotifier {
       List<Map<String, dynamic>> docsNormalized = [];
       if (docsObj is List) {
         for (final e in docsObj) {
-          if (e is Map) docsNormalized.add(Map<String, dynamic>.from(e));
-          else docsNormalized.add({'name': e?.toString() ?? ''});
+          if (e is Map) {
+            docsNormalized.add(Map<String, dynamic>.from(e));
+          } else {
+            docsNormalized.add({'name': e?.toString() ?? ''});
+          }
         }
       } else if (docsObj is Map) {
         for (final v in docsObj.values) {
-          if (v is Map) docsNormalized.add(Map<String, dynamic>.from(v));
-          else docsNormalized.add({'name': v?.toString() ?? ''});
+          if (v is Map) {
+            docsNormalized.add(Map<String, dynamic>.from(v));
+          } else {
+            docsNormalized.add({'name': v?.toString() ?? ''});
+          }
         }
       }
       userData['documents'] = docsNormalized;
@@ -312,13 +318,19 @@ class RecruiterProvider2 extends ChangeNotifier {
     final out = <Map<String, dynamic>>[];
     if (v is List) {
       for (final e in v) {
-        if (e is Map) out.add(Map<String, dynamic>.from(e));
-        else out.add({'text': e?.toString() ?? ''});
+        if (e is Map) {
+          out.add(Map<String, dynamic>.from(e));
+        } else {
+          out.add({'text': e?.toString() ?? ''});
+        }
       }
     } else if (v is Map) {
       for (final val in v.values) {
-        if (val is Map) out.add(Map<String, dynamic>.from(val));
-        else out.add({'text': val?.toString() ?? ''});
+        if (val is Map) {
+          out.add(Map<String, dynamic>.from(val));
+        } else {
+          out.add({'text': val?.toString() ?? ''});
+        }
       }
     } else if (v != null) {
       out.add({'text': v.toString()});
@@ -357,11 +369,15 @@ class RecruiterProvider2 extends ChangeNotifier {
   }
 
   void toggleSelection(String uid, {bool? value}) {
-    if (value == true) selectedUids.add(uid);
-    else if (value == false) selectedUids.remove(uid);
+    if (value == true) {
+      selectedUids.add(uid);
+    } else if (value == false) selectedUids.remove(uid);
     else {
-      if (selectedUids.contains(uid)) selectedUids.remove(uid);
-      else selectedUids.add(uid);
+      if (selectedUids.contains(uid)) {
+        selectedUids.remove(uid);
+      } else {
+        selectedUids.add(uid);
+      }
     }
     debugPrint('✅ selected count: ${selectedUids.length}');
     _safeNotify();

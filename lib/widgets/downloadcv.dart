@@ -288,7 +288,7 @@ Future<void> downloadCvForUser(BuildContext context, String userId, {ApplicantRe
                     ),
                   ),
                 );
-              }).toList()
+              })
             else
               pw.Text(
                 'No professional experience listed',
@@ -372,7 +372,7 @@ Future<void> downloadCvForUser(BuildContext context, String userId, {ApplicantRe
                     ],
                   ),
                 );
-              }).toList()
+              })
             else
               pw.Text(
                 'Education details not provided',
@@ -414,7 +414,7 @@ Future<void> downloadCvForUser(BuildContext context, String userId, {ApplicantRe
                     ],
                   ),
                 );
-              }).toList(),
+              }),
               pw.SizedBox(height: 20),
             ],
 
@@ -447,7 +447,7 @@ Future<void> downloadCvForUser(BuildContext context, String userId, {ApplicantRe
                     ],
                   ),
                 );
-              }).toList(),
+              }),
               pw.SizedBox(height: 20),
             ],
 
@@ -468,7 +468,7 @@ Future<void> downloadCvForUser(BuildContext context, String userId, {ApplicantRe
                     style: pw.TextStyle(font: ttfRegular, fontSize: 9, height: 1.4),
                   ),
                 );
-              }).toList(),
+              }),
               pw.SizedBox(height: 20),
             ],
 
@@ -500,7 +500,7 @@ Future<void> downloadCvForUser(BuildContext context, String userId, {ApplicantRe
                     ],
                   ),
                 );
-              }).toList()
+              })
             else
               pw.Text(
                 'Available upon request',

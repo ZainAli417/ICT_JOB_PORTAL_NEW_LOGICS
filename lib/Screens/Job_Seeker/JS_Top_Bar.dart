@@ -1,5 +1,4 @@
 // Modern Glassmorphic Top Navigation - Responsive & Sticky
-import 'dart:math' as math;
 import 'dart:ui';
 
 import 'package:firebase_auth/firebase_auth.dart';

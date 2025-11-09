@@ -1,6 +1,6 @@
+/*
 // lib/Screens/Job_Seeker/sign_up_elegant.dart
 import 'dart:async';
-import 'dart:html' as html;
 
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
@@ -255,7 +255,7 @@ class _SignUp_Screen_OLDState extends State<SignUp_Screen_OLD> with TickerProvid
       ),
     );
   }
-
+/*
   Future<void> _pickImageWeb() async {
     if (!kIsWeb) {
       _showSnack("Image upload is only available on web", isError: true);
@@ -284,6 +284,10 @@ class _SignUp_Screen_OLDState extends State<SignUp_Screen_OLD> with TickerProvid
       _imageBytes = file.size;
     });
   }
+ */
+
+ */
+
 
   void _generatePsid() {
     final now = DateTime.now().millisecondsSinceEpoch;
@@ -329,7 +333,7 @@ class _SignUp_Screen_OLDState extends State<SignUp_Screen_OLD> with TickerProvid
       onDobChanged: (date) => setState(() => _dob = date),
       onObscurePasswordToggle: () => setState(() => _obscurePassword = !_obscurePassword),
       onObscureConfirmToggle: () => setState(() => _obscureConfirm = !_obscureConfirm),
-      onPickImage: _pickImageWeb,
+    //  onPickImage: _pickImageWeb,
       onAddEducation: () => SignUpDialogs.addEducationDialog(context, primaryColor, (edu) {
         setState(() => _educations.add(edu));
       }),
@@ -364,7 +368,7 @@ class _SignUp_Screen_OLDState extends State<SignUp_Screen_OLD> with TickerProvid
         'Reference (Name, Contact)',
         primaryColor,
             (item) => setState(() => _refs.add(item)),
-      ),
+      ), onPickImage: () {  },
     );
 
     if (role == 'Recruiter') {
@@ -474,3 +478,5 @@ class _SignUp_Screen_OLDState extends State<SignUp_Screen_OLD> with TickerProvid
     );
   }
 }
+
+ */

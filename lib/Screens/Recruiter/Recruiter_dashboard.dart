@@ -697,7 +697,7 @@ class _RecruiterDashboardState extends State<RecruiterDashboard>
         color: const Color(0xFFF8FAFC),
       ),
       child: DropdownButtonFormField<String>(
-        value: prov.selectedNationality == null ||
+        initialValue: prov.selectedNationality == null ||
             (prov.selectedNationality?.isEmpty ?? true)
             ? 'All'
             : prov.selectedNationality,
@@ -752,7 +752,7 @@ class _RecruiterDashboardState extends State<RecruiterDashboard>
         color: const Color(0xFFF8FAFC),
       ),
       child: DropdownButtonFormField<String>(
-        value: prov.sortOption,
+        initialValue: prov.sortOption,
         items: sortOptions
             .map((s) => DropdownMenuItem(
           value: s,
@@ -2229,7 +2229,7 @@ class CandidateDetailsDialog extends StatelessWidget {
     );
   }
 
-  Widget _buildContactBadge(IconData icon, String text, {Color? color}) {
+  Widget _buildContactBadge(IconData icon, String text) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(color: Colors.white.withOpacity(0.12), borderRadius: BorderRadius.circular(8)),
@@ -2257,8 +2257,11 @@ class CandidateDetailsDialog extends StatelessWidget {
       if (v is Map) {
         final out = <Map<String, dynamic>>[];
         for (final val in v.values) {
-          if (val is Map) out.add(Map<String, dynamic>.from(val));
-          else out.add({'text': val?.toString() ?? ''});
+          if (val is Map) {
+            out.add(Map<String, dynamic>.from(val));
+          } else {
+            out.add({'text': val?.toString() ?? ''});
+          }
         }
         return out;
       }
@@ -2287,8 +2290,11 @@ class CandidateDetailsDialog extends StatelessWidget {
         }).toList();
       } else if (v is Map) {
         for (final val in v.values) {
-          if (val is Map) toList.add(Map<String, dynamic>.from(val));
-          else toList.add({'name': val?.toString() ?? '', 'url': ''});
+          if (val is Map) {
+            toList.add(Map<String, dynamic>.from(val));
+          } else {
+            toList.add({'name': val?.toString() ?? '', 'url': ''});
+          }
         }
       } else if (v is String && v.isNotEmpty) {
         toList = [
@@ -2341,7 +2347,9 @@ class CandidateDetailsDialog extends StatelessWidget {
     final socialRaw = (personal['socialLinks'] ?? personal['social'] ?? personal['social_links']);
     final socialList = <String>[];
     if (socialRaw is List) {
-      for (final s in socialRaw) if (s != null) socialList.add(s.toString());
+      for (final s in socialRaw) {
+        if (s != null) socialList.add(s.toString());
+      }
     } else if (socialRaw is String && socialRaw.isNotEmpty) {
       socialList.addAll(socialRaw.split(RegExp(r'[,;\n]')).map((e) => e.trim()).where((e) => e.isNotEmpty));
     }
@@ -2411,7 +2419,7 @@ class CandidateDetailsDialog extends StatelessWidget {
                   // Educational Profile
                   _sectionHeader('Educational Profile', Icons.school_outlined),
                   if (educationList.isNotEmpty)
-                    ...educationList.map((e) => _educationCard(e)).toList()
+                    ...educationList.map((e) => _educationCard(e))
                   else
                     Text('No education information available', style: GoogleFonts.poppins(fontSize: 13, color: const Color(0xFF64748B), fontWeight: FontWeight.w600)),
 
@@ -2432,7 +2440,7 @@ class CandidateDetailsDialog extends StatelessWidget {
                   // Professional Experience
                   _sectionHeader('Professional Experience', Icons.work_outline),
                   if (experienceList.isNotEmpty)
-                    ...experienceList.map((e) => _experienceCard(e)).toList()
+                    ...experienceList.map((e) => _experienceCard(e))
                   else
                     Text('No experience information available', style: GoogleFonts.poppins(fontSize: 13, color: const Color(0xFF64748B), fontWeight: FontWeight.w600)),
 
