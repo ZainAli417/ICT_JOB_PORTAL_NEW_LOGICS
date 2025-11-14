@@ -21,7 +21,8 @@ class SignUp_Screen2 extends StatefulWidget {
   State<SignUp_Screen2> createState() => _SignUp_Screen2State();
 }
 
-class _SignUp_Screen2State extends State<SignUp_Screen2> with TickerProviderStateMixin {
+class _SignUp_Screen2State extends State<SignUp_Screen2>
+    with TickerProviderStateMixin {
   final _formKeyAccount = GlobalKey<FormState>();
   final _personalFormKey = GlobalKey<FormState>();
   final _educationFormKey = GlobalKey<FormState>();
@@ -71,6 +72,7 @@ class _SignUp_Screen2State extends State<SignUp_Screen2> with TickerProviderStat
       p.clearAll();
     });
   }
+
   @override
   void dispose() {
     _fadeController.dispose();
@@ -81,12 +83,14 @@ class _SignUp_Screen2State extends State<SignUp_Screen2> with TickerProviderStat
     _editMarks.dispose();
     super.dispose();
   }
+
   void _animateStepChange() {
     _fadeController.reset();
     _slideController.reset();
     _fadeController.forward();
     _slideController.forward();
   }
+
   Future<void> onPickImage() async {
     final p = Provider.of<SignupProvider>(context, listen: false);
     p.generalError = null;
@@ -163,7 +167,9 @@ class _SignUp_Screen2State extends State<SignUp_Screen2> with TickerProviderStat
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Icon(
-                isError ? Icons.error_outline_rounded : Icons.check_circle_outline_rounded,
+                isError
+                    ? Icons.error_outline_rounded
+                    : Icons.check_circle_outline_rounded,
                 color: Colors.white,
                 size: 22,
               ),
@@ -191,7 +197,6 @@ class _SignUp_Screen2State extends State<SignUp_Screen2> with TickerProviderStat
       ),
     );
   }
-
 
   Widget leftPanel(BuildContext context) {
     final screenHeight = MediaQuery.of(context).size.height;
@@ -785,6 +790,7 @@ class _SignUp_Screen2State extends State<SignUp_Screen2> with TickerProviderStat
       ),
     );
   }
+
   // Enhanced stat card with color-coded icons
   Widget _buildEnhancedStatCardSmall({
     required IconData icon,
@@ -915,6 +921,7 @@ class _SignUp_Screen2State extends State<SignUp_Screen2> with TickerProviderStat
       ),
     );
   }
+
   Widget _buildFeatureRow({
     required IconData icon,
     required String text,
@@ -968,6 +975,7 @@ class _SignUp_Screen2State extends State<SignUp_Screen2> with TickerProviderStat
       ),
     );
   }
+
   // Enhanced animated blobs with more variety
   Widget _buildAnimatedBlobs() {
     return Stack(
@@ -1047,6 +1055,7 @@ class _SignUp_Screen2State extends State<SignUp_Screen2> with TickerProviderStat
       ],
     );
   }
+
   // Enhanced floating particles with more variety
   Widget _buildEnhancedFloatingParticles() {
     return Positioned.fill(
@@ -1090,11 +1099,6 @@ class _SignUp_Screen2State extends State<SignUp_Screen2> with TickerProviderStat
       ),
     );
   }
-
-
-
-
-
 
   // ========== ACCOUNT PANEL ==========
 
@@ -1260,10 +1264,7 @@ class _SignUp_Screen2State extends State<SignUp_Screen2> with TickerProviderStat
                 width: 280,
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
-                    colors: [
-                      const Color(0xFF6366F1),
-                      const Color(0xFF8B5CF6),
-                    ],
+                    colors: [const Color(0xFF6366F1), const Color(0xFF8B5CF6)],
                   ),
                   borderRadius: BorderRadius.circular(14),
                   boxShadow: [
@@ -1277,10 +1278,13 @@ class _SignUp_Screen2State extends State<SignUp_Screen2> with TickerProviderStat
                 child: ElevatedButton.icon(
                   onPressed: () async {
                     // Validate form
-                    final okForm = _formKeyAccount.currentState?.validate() ?? false;
+                    final okForm =
+                        _formKeyAccount.currentState?.validate() ?? false;
                     final okEmail = provider.validateEmail();
                     final okPass = provider.validatePasswords();
-                    final okName = provider.nameController.text.trim().isNotEmpty;
+                    final okName = provider.nameController.text
+                        .trim()
+                        .isNotEmpty;
 
                     if (!okForm || !okEmail || !okPass || !okName) {
                       _showSnackBar(
@@ -1302,7 +1306,8 @@ class _SignUp_Screen2State extends State<SignUp_Screen2> with TickerProviderStat
                       final success = await provider.registerRecruiter();
 
                       // Close loading dialog
-                      if (mounted && Navigator.of(context, rootNavigator: true).canPop()) {
+                      if (mounted &&
+                          Navigator.of(context, rootNavigator: true).canPop()) {
                         Navigator.of(context, rootNavigator: true).pop();
                       }
 
@@ -1325,14 +1330,12 @@ class _SignUp_Screen2State extends State<SignUp_Screen2> with TickerProviderStat
                       }
                     } catch (e) {
                       // Close loading dialog on error
-                      if (mounted && Navigator.of(context, rootNavigator: true).canPop()) {
+                      if (mounted &&
+                          Navigator.of(context, rootNavigator: true).canPop()) {
                         Navigator.of(context, rootNavigator: true).pop();
                       }
 
-                      _showSnackBar(
-                        'Error: ${e.toString()}',
-                        isError: true,
-                      );
+                      _showSnackBar('Error: ${e.toString()}', isError: true);
                     }
                   },
                   icon: const Icon(Icons.person_add_rounded, size: 20),
@@ -1355,9 +1358,8 @@ class _SignUp_Screen2State extends State<SignUp_Screen2> with TickerProviderStat
                 ),
               ),
             ),
-            SizedBox(height: 20,)
+            SizedBox(height: 20),
           ]
-
           // JOB SEEKER FLOW
           else ...[
             _buildEnhancedTextField(
@@ -1512,7 +1514,9 @@ class _SignUp_Screen2State extends State<SignUp_Screen2> with TickerProviderStat
                           icon: Icons.arrow_forward_rounded,
                           isPrimary: true,
                           onPressed: () {
-                            final okForm = _formKeyAccount.currentState?.validate() ?? false;
+                            final okForm =
+                                _formKeyAccount.currentState?.validate() ??
+                                false;
                             final okEmail = p.validateEmail();
                             final okPass = p.validatePasswords();
 
@@ -1536,7 +1540,8 @@ class _SignUp_Screen2State extends State<SignUp_Screen2> with TickerProviderStat
                   // CV Upload Section
                   Consumer<SignupProvider>(
                     builder: (_, provider, __) {
-                      if (!provider.showCvUploadSection) return const SizedBox.shrink();
+                      if (!provider.showCvUploadSection)
+                        return const SizedBox.shrink();
 
                       return Container(
                         key: _cvSectionKey,
@@ -1574,9 +1579,7 @@ class _SignUp_Screen2State extends State<SignUp_Screen2> with TickerProviderStat
 
   Widget _buildLoadingDialog() {
     return Dialog(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       backgroundColor: Colors.white,
       elevation: 16,
       child: Padding(
@@ -1671,21 +1674,18 @@ class _SignUp_Screen2State extends State<SignUp_Screen2> with TickerProviderStat
       decoration: BoxDecoration(
         gradient: isSelected
             ? LinearGradient(
-          colors: [
-            const Color(0xFF6366F1),
-            const Color(0xFF8B5CF6),
-          ],
-        )
+                colors: [const Color(0xFF6366F1), const Color(0xFF8B5CF6)],
+              )
             : null,
         borderRadius: BorderRadius.circular(12),
         boxShadow: isSelected
             ? [
-          BoxShadow(
-            color: const Color(0xFF6366F1).withOpacity(0.3),
-            blurRadius: 8,
-            offset: const Offset(0, 4),
-          ),
-        ]
+                BoxShadow(
+                  color: const Color(0xFF6366F1).withOpacity(0.3),
+                  blurRadius: 8,
+                  offset: const Offset(0, 4),
+                ),
+              ]
             : null,
       ),
       child: Material(
@@ -1806,14 +1806,6 @@ class _SignUp_Screen2State extends State<SignUp_Screen2> with TickerProviderStat
     );
   }
 
-
-
-
-
-
-
-
-
   // ========== PERSONAL PANEL ==========
   Widget personalPanel(BuildContext context, SignupProvider p) {
     final progress = p.computeProgress();
@@ -1905,10 +1897,7 @@ class _SignUp_Screen2State extends State<SignUp_Screen2> with TickerProviderStat
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: Colors.indigo.shade100,
-                      width: 1,
-                    ),
+                    border: Border.all(color: Colors.indigo.shade100, width: 1),
                   ),
                   child: Row(
                     children: [
@@ -1961,7 +1950,9 @@ class _SignUp_Screen2State extends State<SignUp_Screen2> with TickerProviderStat
                                       borderRadius: BorderRadius.circular(8),
                                       boxShadow: [
                                         BoxShadow(
-                                          color: const Color(0xFF6366F1).withOpacity(0.4),
+                                          color: const Color(
+                                            0xFF6366F1,
+                                          ).withOpacity(0.4),
                                           blurRadius: 8,
                                           offset: const Offset(0, 2),
                                         ),
@@ -1988,130 +1979,146 @@ class _SignUp_Screen2State extends State<SignUp_Screen2> with TickerProviderStat
             builder: (context, constraints) {
               final isNarrow = constraints.maxWidth < 720;
 
-              return Column(
-                children: [
-                  // Row 1: Name | Contact | Nationality
-                  _buildFieldRow(
-                    isNarrow: isNarrow,
-                    children: [
-                      if (p.personalVisibleIndex >= 0)
-                        _buildFieldWrapper(
-                          flex: 3,
-                          child: _buildEnhancedTextField(
-                            controller: p.nameController,
-                            label: 'Full Name',
-                            hint: 'Enter your full name',
-                            icon: Icons.person_outline_rounded,
-                            onChanged: (v) => p.onFieldTypedAutoReveal(0, v),
-                            validator: (v) => (v == null || v.trim().isEmpty)
-                                ? 'Name required'
-                                : null,
-                          ),
-                        ),
-                      if (p.personalVisibleIndex >= 1)
-                        _buildFieldWrapper(
-                          flex: 2,
-                          child: _buildEnhancedTextField(
-                            controller: p.contactNumberController,
-                            label: 'Contact Number',
-                            hint: '+92 300 1234567',
-                            icon: Icons.phone_outlined,
-                            keyboardType: TextInputType.phone,
-                            onChanged: (v) => p.onFieldTypedAutoReveal(1, v),
-                            validator: (v) {
-                              if (v == null || v.trim().isEmpty) {
-                                return 'Contact required';
-                              }
-                              final phoneRegex = RegExp(r'^[\d\+\-\s]{5,20}$');
-                              if (!phoneRegex.hasMatch(v.trim())) {
-                                return 'Enter valid number';
-                              }
-                              return null;
-                            },
-                          ),
-                        ),
-                      if (p.personalVisibleIndex >= 2)
-                        _buildFieldWrapper(
-                          flex: 2,
-                          child: _buildEnhancedTextField(
-                            controller: p.nationalityController,
-                            label: 'Nationality',
-                            hint: 'e.g., Pakistani',
-                            icon: Icons.flag_outlined,
-                            onChanged: (v) => p.onFieldTypedAutoReveal(2, v),
-                            validator: (v) => (v == null || v.trim().isEmpty)
-                                ? 'Nationality required'
-                                : null,
-                          ),
-                        ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 16),
-
-                  // Row 2: Summary
-                  if (p.personalVisibleIndex >= 3)
-                    _buildEnhancedTextField(
-                      controller: p.summaryController,
-                      label: 'Professional Summary',
-                      hint: 'Brief description of your professional background and expertise',
-                      icon: Icons.article_outlined,
-                      maxLines: 3,
-                      onChanged: (v) => p.onFieldTypedAutoReveal(3, v),
-                      validator: (v) =>
-                      (v == null || v.trim().isEmpty) ? 'Summary required' : null,
-                    ),
-
-                  const SizedBox(height: 16),
-
-                  // Row 3: Avatar | Skills
-                  if (p.personalVisibleIndex >= 4)
+              return SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
                     _buildFieldRow(
                       isNarrow: isNarrow,
                       children: [
-                        _buildFieldWrapper(
-                          flex: 3,
-                          child: _buildAvatarCompact(p),
-                        ),
-                        _buildFieldWrapper(
-                          flex: 4,
-                          child: _buildSkillsCompact(p),
-                        ),
-                      ],
-                    ),
-
-                  const SizedBox(height: 16),
-
-                  // Row 4: Objectives | DOB
-                  if (p.personalVisibleIndex >= 6)
-                    _buildFieldRow(
-                      isNarrow: isNarrow,
-                      children: [
-                        _buildFieldWrapper(
-                          flex: 6,
-                          child: _buildEnhancedTextField(
-                            controller: p.objectivesController,
-                            label: 'Career Objectives',
-                            hint: 'What are your career goals and aspirations?',
-                            icon: Icons.flag_circle_rounded,
-                            maxLines: 3,
-                            onChanged: (v) => p.onFieldTypedAutoReveal(6, v),
-                            validator: (v) => (v == null || v.trim().isEmpty)
-                                ? 'Objectives required'
-                                : null,
+                        if (p.personalVisibleIndex >= 0)
+                          _buildFieldWrapper(
+                            flex: 2,
+                            child: _buildEnhancedTextField(
+                              controller: p.nameController,
+                              label: 'Full Name',
+                              hint: 'Enter your full name',
+                              icon: Icons.person_outline_rounded,
+                              onChanged: (v) =>
+                                  p.onFieldTypedAutoReveal(0, v), // Index 0
+                              validator: (v) => (v == null || v.trim().isEmpty)
+                                  ? 'Name required'
+                                  : null,
+                            ),
                           ),
-                        ),
-                        _buildFieldWrapper(
-                          flex: 2,
-                          child: _buildDobCompact(p),
-                        ),
+
+                        if (p.personalVisibleIndex >= 1)
+                          _buildFieldWrapper(
+                            flex: 2,
+                            child: _buildEnhancedTextField(
+                              controller: p.contactNumberController,
+                              label: 'Contact Number',
+                              hint: '+92 300 1234567',
+                              icon: Icons.phone_outlined,
+                              keyboardType: TextInputType.phone,
+                              onChanged: (v) =>
+                                  p.onFieldTypedAutoReveal(1, v), // Index 1
+                              validator: (v) {
+                                if (v == null || v.trim().isEmpty)
+                                  return 'Contact required';
+                                final phoneRegex = RegExp(
+                                  r'^[\d\+\-\s]{5,20}$',
+                                );
+                                if (!phoneRegex.hasMatch(v.trim()))
+                                  return 'Enter valid number';
+                                return null;
+                              },
+                            ),
+                          ),
+
+                        if (p.personalVisibleIndex >= 2)
+                          _buildFieldWrapper(
+                            flex: 2,
+                            child: _buildEnhancedTextField(
+                              controller: p.nationalityController,
+                              label: 'Nationality',
+                              hint: 'e.g., Pakistani',
+                              icon: Icons.flag_outlined,
+                              onChanged: (v) =>
+                                  p.onFieldTypedAutoReveal(2, v), // Index 2
+                              validator: (v) => (v == null || v.trim().isEmpty)
+                                  ? 'Nationality required'
+                                  : null,
+                            ),
+                          ),
                       ],
                     ),
-                ],
+
+                    const SizedBox(height: 16),
+
+                    if (p.personalVisibleIndex >= 3)
+                      _buildEnhancedTextField(
+                        controller: p.summaryController,
+                        label: 'Professional Summary',
+                        hint:
+                            'Brief description of your background and expertise',
+                        icon: Icons.article_outlined,
+                        maxLines: 3,
+                        onChanged: (v) => p.onFieldTypedAutoReveal(
+                          3,
+                          v,
+                        ), // FIXED: Index 3 (was 4)
+                        validator: (v) => (v == null || v.trim().isEmpty)
+                            ? 'Summary required'
+                            : null,
+                      ),
+
+                    const SizedBox(height: 16),
+
+                    if (p.personalVisibleIndex >= 4)
+                      _buildFieldRow(
+                        isNarrow: isNarrow,
+                        children: [
+                          _buildFieldWrapper(
+                            flex: 3,
+                            child: _buildAvatarCompact(p),
+                          ),
+                          _buildFieldWrapper(
+                            flex: 4,
+                            child: _buildSkillsCompact(
+                              p,
+                            ), // Make sure this triggers index 4 when skills are added
+                          ),
+                        ],
+                      ),
+
+                    const SizedBox(height: 16),
+
+                    if (p.personalVisibleIndex >= 5)
+                      _buildFieldRow(
+                        isNarrow: isNarrow,
+                        children: [
+                          _buildFieldWrapper(
+                            flex: 6,
+                            child: _buildEnhancedTextField(
+                              controller: p.objectivesController,
+                              label: 'Career Objectives',
+                              hint: 'What are your career goals?',
+                              icon: Icons.flag_circle_rounded,
+                              maxLines: 3,
+                              onChanged: (v) => p.onFieldTypedAutoReveal(
+                                5,
+                                v,
+                              ), // FIXED: Index 5 (was 6)
+                              validator: (v) => (v == null || v.trim().isEmpty)
+                                  ? 'Objectives required'
+                                  : null,
+                            ),
+                          ),
+                          _buildFieldWrapper(
+                            flex: 2,
+                            child: _buildDobCompact(
+                              p,
+                            ), // DOB should auto-reveal index 6 when selected
+                          ),
+                        ],
+                      ),
+                  ],
+                ),
               );
             },
           ),
-
           const SizedBox(height: 32),
 
           // Navigation Buttons
@@ -2162,8 +2169,20 @@ class _SignUp_Screen2State extends State<SignUp_Screen2> with TickerProviderStat
                     ],
                   ),
                   child: ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 18),
+                      foregroundColor:
+                          Colors.white, // <-- THIS MAKES THE TEXT WHITE
+                      backgroundColor:
+                          Colors.indigo, // optional (your brand color)
+                      shadowColor: Colors.transparent,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                    ),
                     onPressed: () {
-                      final okForm = _personalFormKey.currentState?.validate() ?? false;
+                      final okForm =
+                          _personalFormKey.currentState?.validate() ?? false;
 
                       if (!okForm) {
                         _showSnackBar(
@@ -2198,14 +2217,6 @@ class _SignUp_Screen2State extends State<SignUp_Screen2> with TickerProviderStat
                       style: GoogleFonts.poppins(
                         fontWeight: FontWeight.w600,
                         fontSize: 15,
-                      ),
-                    ),
-                    style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 18),
-                      backgroundColor: Colors.transparent,
-                      shadowColor: Colors.transparent,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14),
                       ),
                     ),
                   ),
@@ -2275,6 +2286,7 @@ class _SignUp_Screen2State extends State<SignUp_Screen2> with TickerProviderStat
           ),
         );
       }
+
       if (p.imageDataUrl != null) {
         try {
           final bytes = base64Decode(p.imageDataUrl!.split(',').last);
@@ -2295,16 +2307,17 @@ class _SignUp_Screen2State extends State<SignUp_Screen2> with TickerProviderStat
               backgroundImage: MemoryImage(bytes),
             ),
           );
-        } catch (_) {}
+        } catch (_) {
+          // fallthrough to placeholder if decode fails
+        }
       }
+
+      // placeholder avatar
       return Container(
         decoration: BoxDecoration(
           shape: BoxShape.circle,
           gradient: LinearGradient(
-            colors: [
-              Colors.indigo.shade50,
-              Colors.indigo.shade50,
-            ],
+            colors: [Colors.indigo.shade50, Colors.indigo.shade50],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
@@ -2343,6 +2356,7 @@ class _SignUp_Screen2State extends State<SignUp_Screen2> with TickerProviderStat
         ],
       ),
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
           avatarPreview(),
           const SizedBox(height: 16),
@@ -2354,10 +2368,13 @@ class _SignUp_Screen2State extends State<SignUp_Screen2> with TickerProviderStat
               color: const Color(0xFF1E293B),
             ),
           ),
-          const SizedBox(height: 16),
-          Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.center,
+          const SizedBox(height: 12),
+
+          // Action buttons: responsive horizontal layout with spacing
+          Wrap(
+            spacing: 12, // horizontal gap between buttons
+            runSpacing: 8, // vertical gap if wrapped to next line
+            alignment: WrapAlignment.center,
             children: [
               _buildActionButton(
                 label: p.profilePicBytes == null && p.imageDataUrl == null
@@ -2367,18 +2384,18 @@ class _SignUp_Screen2State extends State<SignUp_Screen2> with TickerProviderStat
                 isPrimary: true,
                 onPressed: () async {
                   await p.pickProfilePicture();
+                  // reveal next personal field when user uploads on the avatar/skills step
                   if (p.personalVisibleIndex == 4) p.revealNextPersonalField();
                 },
               ),
-              if (p.profilePicBytes != null || p.imageDataUrl != null) ...[
-                const SizedBox(width: 8),
+
+              if (p.profilePicBytes != null || p.imageDataUrl != null)
                 _buildActionButton(
                   label: 'Remove',
                   icon: Icons.delete_outline_rounded,
                   isPrimary: false,
                   onPressed: () => p.removeProfilePicture(),
                 ),
-              ],
             ],
           ),
         ],
@@ -2410,10 +2427,7 @@ class _SignUp_Screen2State extends State<SignUp_Screen2> with TickerProviderStat
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
-                    colors: [
-                      Colors.indigo.shade400,
-                      Colors.indigo.shade600,
-                    ],
+                    colors: [Colors.indigo.shade400, Colors.indigo.shade600],
                   ),
                   borderRadius: BorderRadius.circular(10),
                 ),
@@ -2434,7 +2448,10 @@ class _SignUp_Screen2State extends State<SignUp_Screen2> with TickerProviderStat
               ),
               const Spacer(),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
                 decoration: BoxDecoration(
                   color: Colors.indigo.shade50,
                   borderRadius: BorderRadius.circular(20),
@@ -2457,7 +2474,10 @@ class _SignUp_Screen2State extends State<SignUp_Screen2> with TickerProviderStat
               runSpacing: 8,
               children: p.skills.asMap().entries.map((e) {
                 return Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 8,
+                  ),
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       colors: [
@@ -2466,10 +2486,7 @@ class _SignUp_Screen2State extends State<SignUp_Screen2> with TickerProviderStat
                       ],
                     ),
                     borderRadius: BorderRadius.circular(10),
-                    border: Border.all(
-                      color: Colors.indigo.shade200,
-                      width: 1,
-                    ),
+                    border: Border.all(color: Colors.indigo.shade200, width: 1),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
@@ -2540,7 +2557,7 @@ class _SignUp_Screen2State extends State<SignUp_Screen2> with TickerProviderStat
 
   Widget _buildDobCompact(SignupProvider p) {
     return Container(
-      height: 100,
+      height: 150,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(16),
@@ -2563,10 +2580,7 @@ class _SignUp_Screen2State extends State<SignUp_Screen2> with TickerProviderStat
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
-                    colors: [
-                      Colors.orange.shade400,
-                      Colors.orange.shade600,
-                    ],
+                    colors: [Colors.orange.shade400, Colors.orange.shade600],
                   ),
                   borderRadius: BorderRadius.circular(10),
                 ),
@@ -2595,7 +2609,9 @@ class _SignUp_Screen2State extends State<SignUp_Screen2> with TickerProviderStat
             style: GoogleFonts.poppins(
               fontSize: 14,
               fontWeight: FontWeight.w600,
-              color: p.dob == null ? Colors.grey.shade500 : const Color(0xFF1E293B),
+              color: p.dob == null
+                  ? Colors.grey.shade500
+                  : const Color(0xFF1E293B),
             ),
           ),
           const SizedBox(height: 8),
@@ -2640,7 +2656,10 @@ class _SignUp_Screen2State extends State<SignUp_Screen2> with TickerProviderStat
                 ),
               ),
               style: TextButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
                 backgroundColor: Colors.orange.shade50,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(10),
@@ -2663,10 +2682,7 @@ class _SignUp_Screen2State extends State<SignUp_Screen2> with TickerProviderStat
       return Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
-            colors: [
-              const Color(0xFF6366F1),
-              const Color(0xFF8B5CF6),
-            ],
+            colors: [const Color(0xFF6366F1), const Color(0xFF8B5CF6)],
           ),
           borderRadius: BorderRadius.circular(10),
           boxShadow: [
@@ -2700,29 +2716,22 @@ class _SignUp_Screen2State extends State<SignUp_Screen2> with TickerProviderStat
         ),
       );
     }
-
+    SizedBox(height: 10);
     return OutlinedButton.icon(
       onPressed: onPressed,
       icon: Icon(icon, size: 18),
       label: Text(
         label,
-        style: GoogleFonts.poppins(
-          fontSize: 14,
-          fontWeight: FontWeight.w600,
-        ),
+        style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w600),
       ),
       style: OutlinedButton.styleFrom(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
         side: BorderSide(color: Colors.grey.shade400, width: 1.5),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         foregroundColor: Colors.grey.shade700,
       ),
     );
   }
-
-
 
   // ========== EDUCATION PANEL ==========
   Widget educationPanel(BuildContext context, SignupProvider p) {
@@ -2913,9 +2922,10 @@ class _SignUp_Screen2State extends State<SignUp_Screen2> with TickerProviderStat
 
         Row(
           children: [
-            Padding(
-              padding: EdgeInsetsGeometry.all(10),
-              child: Expanded(
+            Expanded(
+              flex: 1,
+              child: Padding(
+                padding: const EdgeInsets.all(8.0),
                 child: OutlinedButton.icon(
                   onPressed: () {
                     p.goToStep(1);
@@ -2936,23 +2946,28 @@ class _SignUp_Screen2State extends State<SignUp_Screen2> with TickerProviderStat
                 ),
               ),
             ),
+
             const SizedBox(width: 12),
+
             Expanded(
-              flex: 2,
-              child: _buildGradientButton(
-                label: 'Review & Submit',
-                icon: Icons.arrow_forward_rounded,
-                onPressed: () {
-                  if (!p.educationSectionIsComplete()) {
-                    _showSnackBar(
-                      'Please add at least one education entry',
-                      isError: true,
-                    );
-                    return;
-                  }
-                  p.goToStep(3);
-                  _animateStepChange();
-                },
+              flex: 2, // slightly larger than Back but balanced
+              child: Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: _buildGradientButton(
+                  label: 'Review & Submit',
+                  icon: Icons.arrow_forward_rounded,
+                  onPressed: () {
+                    if (!p.educationSectionIsComplete()) {
+                      _showSnackBar(
+                        'Please add at least one education entry',
+                        isError: true,
+                      );
+                      return;
+                    }
+                    p.goToStep(3);
+                    _animateStepChange();
+                  },
+                ),
               ),
             ),
           ],
@@ -3206,9 +3221,6 @@ class _SignUp_Screen2State extends State<SignUp_Screen2> with TickerProviderStat
       ),
     );
   }
-
-
-
 
   // ========== REVIEW PANEL ==========
   Widget reviewPanel(BuildContext context, SignupProvider p) {
@@ -3864,10 +3876,6 @@ class _SignUp_Screen2State extends State<SignUp_Screen2> with TickerProviderStat
     );
   }
 
-
-
-
-
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
@@ -3940,27 +3948,36 @@ class _SignUp_Screen2Inner extends StatelessWidget {
                                 child: SlideTransition(
                                   position: state._slideAnimation,
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
                                     children: [
                                       // Keep the compact header inside the right column
                                       // (shown only when narrow, because HeaderNav is full-width)
                                       if (!isWide)
                                         Row(
-                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.spaceBetween,
                                           children: [
                                             Row(
                                               children: [
                                                 Container(
-                                                  padding: const EdgeInsets.all(12),
+                                                  padding: const EdgeInsets.all(
+                                                    12,
+                                                  ),
                                                   decoration: BoxDecoration(
-                                                    gradient: const LinearGradient(
-                                                      colors: [
-                                                        Color(0xFF6366F1),
-                                                        Color(0xFF3949AB),
-                                                      ],
-                                                    ),
-                                                    borderRadius: BorderRadius.circular(12),
+                                                    gradient:
+                                                        const LinearGradient(
+                                                          colors: [
+                                                            Color(0xFF6366F1),
+                                                            Color(0xFF3949AB),
+                                                          ],
+                                                        ),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                          12,
+                                                        ),
                                                   ),
                                                   child: const Icon(
                                                     Icons.work_outline_rounded,
@@ -3974,14 +3991,20 @@ class _SignUp_Screen2Inner extends StatelessWidget {
                                                   style: GoogleFonts.poppins(
                                                     fontSize: 24,
                                                     fontWeight: FontWeight.w700,
-                                                    color: const Color(0xFF6366F1),
+                                                    color: const Color(
+                                                      0xFF6366F1,
+                                                    ),
                                                   ),
                                                 ),
                                               ],
                                             ),
 
                                             Container(
-                                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                    horizontal: 16,
+                                                    vertical: 8,
+                                                  ),
                                               decoration: BoxDecoration(
                                                 gradient: LinearGradient(
                                                   colors: [
@@ -3989,7 +4012,8 @@ class _SignUp_Screen2Inner extends StatelessWidget {
                                                     Colors.indigo.shade50,
                                                   ],
                                                 ),
-                                                borderRadius: BorderRadius.circular(20),
+                                                borderRadius:
+                                                    BorderRadius.circular(20),
                                                 border: Border.all(
                                                   color: Colors.indigo.shade100,
                                                 ),
@@ -4000,15 +4024,19 @@ class _SignUp_Screen2Inner extends StatelessWidget {
                                                   Icon(
                                                     Icons.info_outline,
                                                     size: 16,
-                                                    color: Colors.indigo.shade700,
+                                                    color:
+                                                        Colors.indigo.shade700,
                                                   ),
                                                   const SizedBox(width: 8),
                                                   Text(
                                                     'Step ${p.currentStep + 1} of 4',
                                                     style: GoogleFonts.poppins(
                                                       fontSize: 12,
-                                                      fontWeight: FontWeight.w600,
-                                                      color: Colors.indigo.shade700,
+                                                      fontWeight:
+                                                          FontWeight.w600,
+                                                      color: Colors
+                                                          .indigo
+                                                          .shade700,
                                                     ),
                                                   ),
                                                 ],
@@ -4022,7 +4050,12 @@ class _SignUp_Screen2Inner extends StatelessWidget {
                                       // Main content card area (scrollable)
                                       Flexible(
                                         child: SingleChildScrollView(
-                                          padding: const EdgeInsets.fromLTRB(30, 5, 30, 5),
+                                          padding: const EdgeInsets.fromLTRB(
+                                            30,
+                                            5,
+                                            30,
+                                            5,
+                                          ),
                                           child: bodyForStep(),
                                         ),
                                       ),
@@ -4031,7 +4064,8 @@ class _SignUp_Screen2Inner extends StatelessWidget {
 
                                       // Footer
                                       Row(
-                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
                                         children: [
                                           Text(
                                             'Already have an account?',
@@ -4041,7 +4075,8 @@ class _SignUp_Screen2Inner extends StatelessWidget {
                                             ),
                                           ),
                                           TextButton(
-                                            onPressed: () => context.go('/login'),
+                                            onPressed: () =>
+                                                context.go('/login'),
                                             child: Text(
                                               'Login',
                                               style: GoogleFonts.poppins(
@@ -4117,6 +4152,7 @@ class _EnhancedBackgroundPatternPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
+
 class _FieldWrapper extends StatelessWidget {
   final int flex;
   final Widget child;

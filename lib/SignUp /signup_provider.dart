@@ -217,24 +217,46 @@ class SignupProvider extends ChangeNotifier {
     return passwordError == null;
   }
 
+  bool _isValidPhone(String s) => s.isNotEmpty && RegExp(r'^[\d\+\-\s]{5,20}$').hasMatch(s);
+
   bool validatePersonalFieldAtIndex(int index) {
+    // Updated to match the UI mapping in your LayoutBuilder:
+    // 0: name, 1: contact, 2: nationality, 3: dob, 4: summary, 5: skills, 6: objectives
     switch (index) {
-      case 0: return nameController.text.trim().isNotEmpty;
-      case 1: return _isValidPhone(contactNumberController.text.trim());
-      case 2: return nationalityController.text.trim().isNotEmpty;
-      case 3: return summaryController.text.trim().isNotEmpty;
-      case 4: return skills.isNotEmpty;
-      case 5: return objectivesController.text.trim().isNotEmpty;
-      case 6: return dob != null;
-      default: return false;
+      case 0:
+        return nameController.text.trim().isNotEmpty;
+      case 1:
+        return _isValidPhone(contactNumberController.text.trim());
+      case 2:
+        return nationalityController.text.trim().isNotEmpty;
+      case 3:
+        return dob != null;
+      case 4:
+        return summaryController.text.trim().isNotEmpty;
+      case 5:
+        return skills.isNotEmpty;
+      case 6:
+        return objectivesController.text.trim().isNotEmpty;
+      default:
+        return false;
     }
   }
 
-  bool _isValidPhone(String s) => s.isNotEmpty && RegExp(r'^[\d\+\-\s]{5,20}$').hasMatch(s);
-
   bool personalSectionIsComplete() {
+    // Reflect same list as above (0..6)
     return [0, 1, 2, 3, 4, 5, 6].every((i) => validatePersonalFieldAtIndex(i));
   }
+
+  bool _isNotEmpty(dynamic value) => (value as String?)?.trim().isNotEmpty ?? false;
+
+  double computeProgress() {
+    // Count how many of the personal slots are valid (0..6) + education presence
+    final personalDone = [0, 1, 2, 3, 4, 5, 6].where((i) => validatePersonalFieldAtIndex(i)).length;
+    final educationDone = educationSectionIsComplete() ? 1 : 0;
+    return (personalDone + educationDone) / 8;
+  }
+
+
 
   bool educationSectionIsComplete() {
     if (educationalProfile.isEmpty) return false;
@@ -246,13 +268,8 @@ class SignupProvider extends ChangeNotifier {
     );
   }
 
-  bool _isNotEmpty(dynamic value) => (value as String?)?.trim().isNotEmpty ?? false;
 
-  double computeProgress() {
-    final personalDone = [0, 1, 2, 3, 4, 5, 6].where((i) => validatePersonalFieldAtIndex(i)).length;
-    final educationDone = educationSectionIsComplete() ? 1 : 0;
-    return (personalDone + educationDone) / 8;
-  }
+
 
   // ========== FIREBASE OPERATIONS ==========
   Future<bool> registerRecruiter() async {
