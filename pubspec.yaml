@@ -70,4 +70,4 @@ flutter:
     - images/recruiter_2.svg
     - images/success.json
     - images/MaterialIcons-Regular.ttf
-    - env/.env
+  #  - env/.env
