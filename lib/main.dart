@@ -136,8 +136,7 @@ class RoleProvider extends ChangeNotifier {
 }
 
 class Env {
-  // Never call dotenv.env directly throughout app — use these getters.
-  static String get geminiApiKey => dotenv.env['GEMINI_API_KEY'] ?? '';
+  static String get geminiApiKey => '';
 
   // Optional helper to check presence
   static bool get hasGeminiKey => geminiApiKey.isNotEmpty;

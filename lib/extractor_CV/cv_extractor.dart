@@ -88,12 +88,12 @@ class CvExtractionResult {
 
 class CvExtractor {
   final String geminiApiKey;
-  final String geminiModel; // e.g. 'gemini-2.0-flash'
+  final String geminiModel; // e.g. 'gemini-2.5-flash'
   final Duration timeout;
 
   CvExtractor({
     required this.geminiApiKey,
-    this.geminiModel = 'gemini-2.0-flash',
+    this.geminiModel = 'gemini-2.5-flash',
     this.timeout = const Duration(seconds: 90),
   });
 
@@ -184,7 +184,6 @@ class CvExtractor {
         "temperature": 0.4,
         "topK": 40,
         "topP": 1,
-        "maxOutputTokens": 8192
       }
     };
 
@@ -212,7 +211,6 @@ class CvExtractor {
         "temperature": 0.4,
         "topK": 40,
         "topP": 1,
-        "maxOutputTokens": 8192
       }
     };
 
@@ -242,7 +240,6 @@ class CvExtractor {
         "temperature": 0.4,
         "topK": 40,
         "topP": 1,
-        "maxOutputTokens": 8192
       }
     };
 

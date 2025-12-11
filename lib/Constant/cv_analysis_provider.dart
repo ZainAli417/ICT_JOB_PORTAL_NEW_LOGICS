@@ -46,7 +46,7 @@ class CVAnalyzerBackendProvider extends ChangeNotifier {
   CVAnalyzerBackendProvider({
     this.useDirectGemini = true,
     String? geminiApiKey, // accept nullable
-    this.geminiModel = 'gemini-2.0-flash',
+    this.geminiModel = 'gemini-2.5-flash',
  // }) : geminiApiKey = geminiApiKey ?? ''; // init list sets final field
   }) : geminiApiKey = geminiApiKey ?? Env.geminiApiKey; // init list sets final field
 
@@ -315,7 +315,6 @@ class CVAnalyzerBackendProvider extends ChangeNotifier {
         'temperature': 0.6,
         'topK': 40,
         'topP': 0.95,
-        'maxOutputTokens': 4096,
         'responseMimeType': 'application/json',
       },
       'systemInstruction': {
