@@ -5,6 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import 'CTA_Dynamic.dart';
+
 class SplashScreen extends StatelessWidget {
   const SplashScreen({super.key});
 
@@ -46,7 +48,7 @@ class _LandingPageState extends State<LandingPage> with TickerProviderStateMixin
   static const Color pureWhite = Color(0xFFFFFFFF);
   static Color charcoalGray = Colors.black87;
   // Your existing variables
-  bool isDarkMode = true;
+  bool isDarkMode = false;
   int _activeStage = 0;
 
   // ADD THIS: Animation controller for particles
@@ -108,6 +110,8 @@ class _LandingPageState extends State<LandingPage> with TickerProviderStateMixin
     ),
   ];
 
+  late ScrollController _scrollController;
+
   @override
   void initState() {
     super.initState();
@@ -127,10 +131,10 @@ class _LandingPageState extends State<LandingPage> with TickerProviderStateMixin
       duration: const Duration(seconds: 3),
     )..repeat();
 
-     _contentAnimationController = AnimationController(
-   vsync: this,
-   duration: const Duration(milliseconds: 1500),
- )..forward();
+    _contentAnimationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1500),
+    )..forward();
 
 
 
@@ -158,6 +162,8 @@ class _LandingPageState extends State<LandingPage> with TickerProviderStateMixin
       CurvedAnimation(parent: _fadeController, curve: Curves.easeInOut),
     );
     _fadeController.forward();
+
+    _scrollController = ScrollController();
   }
 
   @override
@@ -170,6 +176,7 @@ class _LandingPageState extends State<LandingPage> with TickerProviderStateMixin
     _rotationController.dispose();
     _particleAnimationController.dispose();
     _contentAnimationController.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 
@@ -179,7 +186,6 @@ class _LandingPageState extends State<LandingPage> with TickerProviderStateMixin
     });
   }
 
-  @override
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -201,17 +207,23 @@ class _LandingPageState extends State<LandingPage> with TickerProviderStateMixin
 
           // Content on top of background
           SingleChildScrollView(
+            controller: _scrollController,
             child: Column(
               children: [
                 _buildTopBar(),
                 _buildHeroSection(),
                 //_buildWorkflowVisualization(),
                 _buildFeaturesSection(),
-                isDarkMode? _buildStatsShowcase() : Container(),
                 _buildFooter(),
 
               ],
             ),
+          ),
+
+          // Floating FAB-like CTA buttons
+          ScrollAwareCTAButtons(
+            isDarkMode: isDarkMode,
+            scrollController: _scrollController,
           ),
         ],
       ),
@@ -241,8 +253,8 @@ class _LandingPageState extends State<LandingPage> with TickerProviderStateMixin
         // --- Replace shimmer container with your logo image
          Image.asset(
             'images/logo.png',
-            width: 180,
-            height: 60,
+            width: 100,
+            height: 100,
             fit: BoxFit.fill,
           ),
 
@@ -594,8 +606,8 @@ class _LandingPageState extends State<LandingPage> with TickerProviderStateMixin
         const SizedBox(height: 40),
 
         // Animated stats (definitely animated)
-        animatedSection(() => _buildAnimatedStats(animationController, isDarkMode)),
-        const SizedBox(height: 32),
+      //  animatedSection(() => _buildAnimatedStats(animationController, isDarkMode)),
+     //   const SizedBox(height: 32),
 
         // Trust indicators (animated or static depending on implementation)
         animatedSection(() => _buildTrustIndicators(animationController, isDarkMode)),
@@ -738,7 +750,7 @@ class _LandingPageState extends State<LandingPage> with TickerProviderStateMixin
                 ),
                 const SizedBox(width: 8),
                 Text(
-                  'Trusted by 500+ companies worldwide',
+                  'Trusted Employment from Pakistan',
                   style: GoogleFonts.poppins(
                     fontSize: 14,
                     color: isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF6B7280),
@@ -963,7 +975,7 @@ class _LandingPageState extends State<LandingPage> with TickerProviderStateMixin
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'End-To-End Hiring Journey',
+                    'Complete Hiring Ecosystem',
                     style: GoogleFonts.poppins(
                       fontSize: 24,
                       fontWeight: FontWeight.w600,
@@ -2026,8 +2038,8 @@ class _LandingPageState extends State<LandingPage> with TickerProviderStateMixin
           FeatureItem('Request Management', 'Submit hiring requests to admin',
               Icons.send_rounded),
           FeatureItem(
-              'Direct Handover', 'Receive trained candidates ready to work',
-              Icons.handshake_rounded),
+              'Request Tracker', 'Realtime Recruitment Request Tracking',
+              Icons.auto_graph),
         ],
       ),
       FeaturePortal(
@@ -2399,6 +2411,8 @@ class _LandingPageState extends State<LandingPage> with TickerProviderStateMixin
       ),
       child: Column(
         children: [
+          _buildStatsShowcase(),
+          SizedBox(height: 10,),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 50),
             child: Column(
@@ -2441,23 +2455,8 @@ class _LandingPageState extends State<LandingPage> with TickerProviderStateMixin
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-                colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)]),
-            borderRadius: BorderRadius.circular(12),
-            boxShadow: [
-              BoxShadow(color: const Color(0xFF6366F1).withOpacity(0.3),
-                  blurRadius: 20),
-            ],
-          ),
-          child: const Icon(
-              Icons.auto_awesome_outlined, color: Colors.white, size: 28),
-        ),
-        const SizedBox(height: 20),
         Text(
-          'Maha Services',
+          'MAHA SERVICES',
           style: GoogleFonts.poppins(
             fontSize: 28,
             fontWeight: FontWeight.w600,
@@ -3494,16 +3493,6 @@ Widget _buildTrustIndicators(AnimationController controller, bool isDarkMode) {
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'Trusted by leading companies',
-          style: GoogleFonts.poppins(
-            fontSize: 13,
-            color: isDarkMode ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
-            fontWeight: FontWeight.w500,
-            letterSpacing: 0.5,
-          ),
-        ),
-        const SizedBox(height: 16),
         Row(
           children: [
             _buildTrustBadge(Icons.security_rounded, 'Secure', isDarkMode),

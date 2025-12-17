@@ -268,8 +268,9 @@ class _HeaderNavState extends State<HeaderNav> with TickerProviderStateMixin {
             borderRadius: BorderRadius.circular(6),
             child: Image.asset(
               'images/logo.jpeg',
-              height: 32,
-              fit: BoxFit.cover,
+              height: 100,
+              width: 100,
+              fit: BoxFit.contain,
             ),
           ),
         ),
@@ -305,9 +306,9 @@ class _HeaderNavState extends State<HeaderNav> with TickerProviderStateMixin {
         // --- Replace shimmer container with your logo image
         Image.asset(
           'images/logo.png',
-          width: 180,
-          height: 60,
-          fit: BoxFit.fill,
+          width: 70,
+          height: 70,
+          fit: BoxFit.contain,
         ),
 
         const SizedBox(width: 14),

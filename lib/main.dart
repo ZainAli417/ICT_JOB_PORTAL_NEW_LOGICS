@@ -32,7 +32,7 @@ import 'login_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await dotenv.load(fileName: 'env/.env'); // loads .env
+ // await dotenv.load(fileName: 'env/.env'); // loads .env
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );

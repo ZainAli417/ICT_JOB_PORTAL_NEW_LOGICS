@@ -2224,6 +2224,7 @@ class _SignUp_Screen2State extends State<SignUp_Screen2>
               ),
             ],
           ),
+
         ],
       ),
     );

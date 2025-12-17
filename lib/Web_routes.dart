@@ -7,6 +7,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 import 'Constant/Forget Password.dart';
 import 'Constant/cv_analysis.dart';
+import 'Constant/onboarding.dart';
 import 'Screens/Admin/admin_dashbaord.dart';
 import 'Screens/Admin/admin_login.dart';
 import 'Screens/Job_Seeker/JS_Profile/JS_Profile.dart';
@@ -334,6 +335,7 @@ final GoRouter router = GoRouter(
       path: '/login',
       pageBuilder: (c, s) => _buildPage(child: const JobSeekerLoginScreen(), context: c, state: s),
     ),
+
     GoRoute(
       path: '/register',
       pageBuilder: (c, s) => _buildPage(child: const SignUp_Screen2(), context: c, state: s),
