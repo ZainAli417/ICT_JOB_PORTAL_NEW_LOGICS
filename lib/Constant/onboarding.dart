@@ -207,7 +207,7 @@ class _RecruiterDialogContentState extends State<RecruiterDialogContent> {
                                   context.go('/login');
                                 },
                                 onManualContinue: () {
-                                  provider?.revealCvUpload(reveal: false);
+                                  provider.revealCvUpload(reveal: false);
                                   provider.revealNextPersonalField();
                                   provider.goToStep(1);
                                   // you may want to close the dialog after continuing:

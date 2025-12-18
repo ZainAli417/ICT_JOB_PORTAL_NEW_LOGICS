@@ -84,7 +84,7 @@ class _CVAnalysisScreenState extends State<CVAnalysisScreen>
   void _showSnackBar(BuildContext ctx, String msg, {bool isError = false}) {
     ScaffoldMessenger.of(ctx).showSnackBar(
       SnackBar(
-        content: Text(msg, style: GoogleFonts.inter(fontWeight: FontWeight.w500)),
+        content: Text(msg, style: GoogleFonts.poppins(fontWeight: FontWeight.w500)),
         backgroundColor: isError ? const Color(0xFFDC2626) : const Color(0xFF10B981),
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
@@ -296,7 +296,7 @@ class _CVHeader extends StatelessWidget {
               children: [
                 Text(
                   'AI CV Analyzer',
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.poppins(
                     fontSize: 24,
                     fontWeight: FontWeight.w600,
                     color: Colors.white,
@@ -305,7 +305,7 @@ class _CVHeader extends StatelessWidget {
                 const SizedBox(height: 4),
                 Text(
                   'Get instant insights and match scores',
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.poppins(
                     fontSize: 14,
                     fontWeight: FontWeight.w400,
                     color: Colors.white.withOpacity(0.9),
@@ -395,7 +395,7 @@ class _InputSection extends StatelessWidget {
                       const SizedBox(width: 8),
                       Text(
                         isLoading ? 'Analyzing...' : 'Analyze CV',
-                        style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w500),
+                        style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.w500),
                       ),
                     ],
                   ),
@@ -425,7 +425,7 @@ class _InputSection extends StatelessWidget {
         const SizedBox(width: 8),
         Text(
           text,
-          style: GoogleFonts.inter(
+          style: GoogleFonts.poppins(
             fontSize: 14,
             fontWeight: FontWeight.w500,
             color: const Color(0xFF374151),
@@ -441,7 +441,7 @@ class _InputSection extends StatelessWidget {
       maxLines: maxLines,
       decoration: InputDecoration(
         hintText: hint,
-        hintStyle: GoogleFonts.inter(color: const Color(0xFF9CA3AF), fontWeight: FontWeight.w400),
+        hintStyle: GoogleFonts.poppins(color: const Color(0xFF9CA3AF), fontWeight: FontWeight.w400),
         filled: true,
         fillColor: const Color(0xFFF9FAFB),
         border: OutlineInputBorder(
@@ -458,7 +458,7 @@ class _InputSection extends StatelessWidget {
         ),
         contentPadding: const EdgeInsets.all(14),
       ),
-      style: GoogleFonts.inter(fontWeight: FontWeight.w400),
+      style: GoogleFonts.poppins(fontWeight: FontWeight.w400),
     );
   }
 }
@@ -494,7 +494,7 @@ class _FileUploadCard extends StatelessWidget {
               const SizedBox(width: 12),
               Text(
                 'Upload CV',
-                style: GoogleFonts.inter(
+                style: GoogleFonts.poppins(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
                   color: const Color(0xFF4338CA),
@@ -518,7 +518,7 @@ class _FileUploadCard extends StatelessWidget {
                   Expanded(
                     child: Text(
                       pickedFile!.name,
-                      style: GoogleFonts.inter(fontWeight: FontWeight.w500, fontSize: 14),
+                      style: GoogleFonts.poppins(fontWeight: FontWeight.w500, fontSize: 14),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -549,7 +549,7 @@ class _FileUploadCard extends StatelessWidget {
                     const SizedBox(width: 8),
                     Text(
                       'Click to browse files (PDF, DOC, DOCX)',
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.poppins(
                         fontWeight: FontWeight.w500,
                         fontSize: 14,
                         color: const Color(0xFF6366F1),
@@ -606,7 +606,7 @@ class _ResultsSection extends StatelessWidget {
               const SizedBox(height: 16),
               Text(
                 'Upload a CV to get Analysis',
-                style: GoogleFonts.inter(
+                style: GoogleFonts.poppins(
                   fontSize: 16,
                   fontWeight: FontWeight.w500,
                   color: const Color(0xFF9CA3AF),
@@ -669,7 +669,7 @@ class _ErrorCard extends StatelessWidget {
               children: [
                 Text(
                   'Analysis Failed',
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.poppins(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
                     color: const Color(0xFFDC2626),
@@ -678,7 +678,7 @@ class _ErrorCard extends StatelessWidget {
                 const SizedBox(height: 4),
                 Text(
                   error,
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.poppins(
                     fontSize: 14,
                     color: const Color(0xFF991B1B),
                   ),
@@ -730,7 +730,7 @@ class _AdvisoryCard extends StatelessWidget {
               const SizedBox(width: 12),
               Text(
                 'AI Insights',
-                style: GoogleFonts.inter(
+                style: GoogleFonts.poppins(
                   fontSize: 18,
                   fontWeight: FontWeight.w600,
                   color: const Color(0xFF111827),
@@ -747,7 +747,7 @@ class _AdvisoryCard extends StatelessWidget {
                 config: MarkdownConfig(
                   configs: [
                     PConfig(
-                      textStyle: GoogleFonts.inter(
+                      textStyle: GoogleFonts.poppins(
                         fontSize: 14,
                         fontWeight: FontWeight.w400,
                         color: const Color(0xFF4B5563),
@@ -811,7 +811,7 @@ class _HighlightsCard extends StatelessWidget {
               const SizedBox(width: 12),
               Text(
                 'Key Highlights',
-                style: GoogleFonts.inter(
+                style: GoogleFonts.poppins(
                   fontSize: 18,
                   fontWeight: FontWeight.w600,
                   color: const Color(0xFF111827),
@@ -826,7 +826,7 @@ class _HighlightsCard extends StatelessWidget {
                 ),
                 child: Text(
                   '${highlights.length}',
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.poppins(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
                     color: const Color(0xFF6366F1),
@@ -877,7 +877,7 @@ class _HighlightItem extends StatelessWidget {
               children: [
                 Text(
                   highlight['text'] ?? '',
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.poppins(
                     fontSize: 14,
                     fontWeight: FontWeight.w500,
                     color: const Color(0xFF111827),
@@ -887,7 +887,7 @@ class _HighlightItem extends StatelessWidget {
                   const SizedBox(height: 4),
                   Text(
                     highlight['detail'],
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.poppins(
                       fontSize: 13,
                       color: const Color(0xFF6B7280),
                     ),
@@ -967,7 +967,7 @@ class _ScoreCard extends StatelessWidget {
               const SizedBox(width: 8),
               Text(
                 'Match Score',
-                style: GoogleFonts.inter(
+                style: GoogleFonts.poppins(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
                   color: const Color(0xFF111827),
@@ -994,7 +994,7 @@ class _ScoreCard extends StatelessWidget {
                   children: [
                     Text(
                       score.toStringAsFixed(0),
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.poppins(
                         fontSize: 36,
                         fontWeight: FontWeight.w700,
                         color: color,
@@ -1002,7 +1002,7 @@ class _ScoreCard extends StatelessWidget {
                     ),
                     Text(
                       'of 100',
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.poppins(
                         fontSize: 14,
                         fontWeight: FontWeight.w400,
                         color: const Color(0xFF9CA3AF),
@@ -1027,7 +1027,7 @@ class _ScoreCard extends StatelessWidget {
                 const SizedBox(width: 6),
                 Text(
                   label,
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.poppins(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
                     color: color,
@@ -1147,7 +1147,7 @@ class _AIProcessingDialog extends StatelessWidget {
                       Text(
                         stageText,
                         textAlign: TextAlign.center,
-                        style: GoogleFonts.inter(
+                        style: GoogleFonts.poppins(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
                           color: const Color(0xFF111827),
@@ -1166,7 +1166,7 @@ class _AIProcessingDialog extends StatelessWidget {
                       const SizedBox(height: 12),
                       Text(
                         '${(progress * 100).toStringAsFixed(0)}% Complete',
-                        style: GoogleFonts.inter(
+                        style: GoogleFonts.poppins(
                           fontSize: 14,
                           fontWeight: FontWeight.w500,
                           color: const Color(0xFF6B7280),

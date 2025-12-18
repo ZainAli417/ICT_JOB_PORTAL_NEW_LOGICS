@@ -159,7 +159,7 @@ class _ProfileScreen_NEWState extends State<ProfileScreen_NEW> with TickerProvid
                 mainAxisAlignment: MainAxisAlignment.end,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Personnel Profile', style: GoogleFonts.inter(fontSize: 22, fontWeight: FontWeight.w700)),
+                  Text('Personnel Profile', style: GoogleFonts.poppins(fontSize: 22, fontWeight: FontWeight.w700)),
                   // quick debug line (remove in production)
                   Consumer<ProfileProvider_NEW>(builder: (context, prov, _) {
                     return Text(prov.debugInfo, style: const TextStyle(fontSize: 10, color: Colors.grey));
@@ -177,7 +177,7 @@ class _ProfileScreen_NEWState extends State<ProfileScreen_NEW> with TickerProvid
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Complete your profile', style: GoogleFonts.inter(color: Colors.grey)),
+        Text('Complete your profile', style: GoogleFonts.poppins(color: Colors.grey)),
         const SizedBox(height: 18),
         _buildTabBar(),
         const SizedBox(height: 18),
@@ -504,7 +504,7 @@ class _ProfileScreen_NEWState extends State<ProfileScreen_NEW> with TickerProvid
           else
             const SizedBox(height: 140, child: Icon(Icons.person, size: 100)),
           const SizedBox(height: 12),
-          Text(prov.name.isNotEmpty ? prov.name : 'Your name', style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
+          Text(prov.name.isNotEmpty ? prov.name : 'Your name', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
           const SizedBox(height: 6),
           Text(prov.personalSummary, maxLines: 4, overflow: TextOverflow.ellipsis),
           const SizedBox(height: 12),
@@ -514,13 +514,13 @@ class _ProfileScreen_NEWState extends State<ProfileScreen_NEW> with TickerProvid
     );
   }
 
-  Widget _label(String s) => Padding(padding: const EdgeInsets.only(bottom: 8), child: Text(s, style: GoogleFonts.inter(fontWeight: FontWeight.w600)));
+  Widget _label(String s) => Padding(padding: const EdgeInsets.only(bottom: 8), child: Text(s, style: GoogleFonts.poppins(fontWeight: FontWeight.w600)));
 
   InputDecoration _dec(String hint) => InputDecoration(hintText: hint, border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)));
 
   Widget _fieldInline(String label, TextEditingController ctrl, {Function(String)? onChanged}) {
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Text(label, style: GoogleFonts.inter(fontSize: 12)),
+      Text(label, style: GoogleFonts.poppins(fontSize: 12)),
       const SizedBox(height: 6),
       TextFormField(controller: ctrl, decoration: _dec(''), onChanged: onChanged)
     ]);

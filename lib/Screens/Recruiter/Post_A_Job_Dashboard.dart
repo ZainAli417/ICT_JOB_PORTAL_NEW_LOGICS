@@ -188,7 +188,7 @@ class _JobPostingScreenState extends State<JobPostingScreen>
               labelColor: Theme.of(context).primaryColor,
               unselectedLabelColor: Colors.grey,
               indicatorColor: Theme.of(context).primaryColor,
-              labelStyle: GoogleFonts.inter(
+              labelStyle: GoogleFonts.poppins(
                 fontWeight: FontWeight.w600,
                 fontSize: 15,
               ),
@@ -327,7 +327,7 @@ class _JobPostingScreenState extends State<JobPostingScreen>
           const SizedBox(height: 16),
           Text(
             'Loading opportunities...',
-            style: GoogleFonts.inter(
+            style: GoogleFonts.poppins(
               fontSize: 15,
               color: Colors.grey.shade600,
               fontWeight: FontWeight.w500,
@@ -360,7 +360,7 @@ class _JobPostingScreenState extends State<JobPostingScreen>
             const SizedBox(height: 16),
             Text(
               'Oops! Something went wrong',
-              style: GoogleFonts.inter(
+              style: GoogleFonts.poppins(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
                 color: Colors.red.shade700,
@@ -370,7 +370,7 @@ class _JobPostingScreenState extends State<JobPostingScreen>
             Text(
               error,
               textAlign: TextAlign.center,
-              style: GoogleFonts.inter(
+              style: GoogleFonts.poppins(
                 fontSize: 14,
                 color: Colors.red.shade600,
               ),
@@ -429,7 +429,7 @@ class _JobPostingScreenState extends State<JobPostingScreen>
             const SizedBox(height: 24),
             Text(
               'No Positions Available',
-              style: GoogleFonts.inter(
+              style: GoogleFonts.poppins(
                 fontSize: 20,
                 fontWeight: FontWeight.w700,
                 color: Colors.grey.shade700,
@@ -439,7 +439,7 @@ class _JobPostingScreenState extends State<JobPostingScreen>
             Text(
               'There are currently no job postings.\nCheck back soon for new opportunities!',
               textAlign: TextAlign.center,
-              style: GoogleFonts.inter(
+              style: GoogleFonts.poppins(
                 fontSize: 14,
                 color: Colors.grey.shade600,
                 height: 1.5,

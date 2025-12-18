@@ -136,9 +136,9 @@ class SidebarProfile extends StatelessWidget {
                           children: [
                             Text(_displayName(), style: GoogleFonts.montserrat(fontWeight: FontWeight.w700, fontSize: 16)),
                             const SizedBox(height: 4),
-                            Text(provider.email.isNotEmpty ? provider.email : 'No email', style: GoogleFonts.inter(fontSize: 12, color: Colors.grey)),
+                            Text(provider.email.isNotEmpty ? provider.email : 'No email', style: GoogleFonts.poppins(fontSize: 12, color: Colors.grey)),
                             const SizedBox(height: 4),
-                            Text(provider.contactNumber.isNotEmpty ? provider.contactNumber : 'No contact', style: GoogleFonts.inter(fontSize: 12, color: Colors.grey)),
+                            Text(provider.contactNumber.isNotEmpty ? provider.contactNumber : 'No contact', style: GoogleFonts.poppins(fontSize: 12, color: Colors.grey)),
                           ],
                         ),
                       ),
@@ -172,9 +172,9 @@ class SidebarProfile extends StatelessWidget {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Text('$totalScore%', style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
+                              Text('$totalScore%', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
                               Text(totalScore >= 70 ? 'Good' : (totalScore >= 40 ? 'Partial' : 'Needs work'),
-                                  style: GoogleFonts.inter(color: Colors.grey.shade700, fontSize: 12))
+                                  style: GoogleFonts.poppins(color: Colors.grey.shade700, fontSize: 12))
                             ],
                           ),
                           const SizedBox(height: 10),
@@ -271,7 +271,7 @@ class SidebarProfile extends StatelessWidget {
                           _detailRow('DOB', provider.dob.isNotEmpty ? provider.dob : '—'),
                           if (provider.personalSummary.isNotEmpty) ...[
                             const SizedBox(height: 8),
-                            Text('Summary', style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
+                            Text('Summary', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
                             const SizedBox(height: 6),
                             Text(provider.personalSummary, maxLines: 4, overflow: TextOverflow.ellipsis),
                           ]
@@ -346,14 +346,14 @@ class SidebarProfile extends StatelessWidget {
       padding: const EdgeInsets.only(top: 6, bottom: 6),
       child: Row(
         children: [
-          Expanded(child: Text(label, style: GoogleFonts.inter(fontSize: 13))),
+          Expanded(child: Text(label, style: GoogleFonts.poppins(fontSize: 13))),
           const SizedBox(width: 8),
           SizedBox(
             width: 110,
             child: LinearProgressIndicator(value: pct, minHeight: 6, backgroundColor: Colors.grey.shade200),
           ),
           const SizedBox(width: 8),
-          Text('$got/$max', style: GoogleFonts.inter(fontSize: 12, color: Colors.grey.shade700)),
+          Text('$got/$max', style: GoogleFonts.poppins(fontSize: 12, color: Colors.grey.shade700)),
         ],
       ),
     );
@@ -364,7 +364,7 @@ class SidebarProfile extends StatelessWidget {
       labelPadding: const EdgeInsets.symmetric(horizontal: 8),
       backgroundColor: Colors.grey.shade50,
       avatar: Icon(icon, size: 16, color: Colors.grey.shade700),
-      label: Text('$label: $value', style: GoogleFonts.inter(fontSize: 12)),
+      label: Text('$label: $value', style: GoogleFonts.poppins(fontSize: 12)),
     );
   }
 
@@ -376,7 +376,7 @@ class SidebarProfile extends StatelessWidget {
         children: [
           Icon(Icons.check_circle_outline, size: 16, color: Colors.grey.shade700),
           const SizedBox(width: 8),
-          Expanded(child: Text(text, style: GoogleFonts.inter(fontSize: 12, color: Colors.grey.shade700))),
+          Expanded(child: Text(text, style: GoogleFonts.poppins(fontSize: 12, color: Colors.grey.shade700))),
         ],
       ),
     );
@@ -386,9 +386,9 @@ class SidebarProfile extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(bottom: 6),
       child: Row(children: [
-        Expanded(child: Text(label, style: GoogleFonts.inter(fontSize: 12, color: Colors.grey.shade600))),
+        Expanded(child: Text(label, style: GoogleFonts.poppins(fontSize: 12, color: Colors.grey.shade600))),
         const SizedBox(width: 8),
-        Flexible(child: Text(value, textAlign: TextAlign.right, style: GoogleFonts.inter(fontSize: 12))),
+        Flexible(child: Text(value, textAlign: TextAlign.right, style: GoogleFonts.poppins(fontSize: 12))),
       ]),
     );
   }

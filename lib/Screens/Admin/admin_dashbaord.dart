@@ -2,6 +2,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:job_portal/Web_routes.dart';
 import 'package:provider/provider.dart';
@@ -198,9 +199,28 @@ class _AdminDashboardBodyState extends State<_AdminDashboardBody> {
 
                       _ModernHeaderButton(
                         onPressed: () async {
-                          await FirebaseAuth.instance.signOut();
-                          if (context.mounted) {
-                            router.pushReplacement('/');
+                          try {
+                            // Clear all caches before logout
+                            RoleService.clearCache();
+                            ProfileCheckService.clearCache();
+                            // Sign out from Firebase
+                            await FirebaseAuth.instance.signOut();
+
+                            // Navigate to home
+                            if (context.mounted) {
+                              context.go('/'); // Use context.go instead of router.pushReplacement
+                            }
+                          } catch (e) {
+                            debugPrint('Logout error: $e');
+                            // Optionally show error to user
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Error signing out. Please try again.'),
+                                  backgroundColor: Colors.red,
+                                ),
+                              );
+                            }
                           }
                         },
                         icon: Icons.logout_rounded,

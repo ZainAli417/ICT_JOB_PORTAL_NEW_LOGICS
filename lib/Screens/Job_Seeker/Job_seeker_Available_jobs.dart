@@ -291,7 +291,7 @@ class _LiveJobsForSeekerState extends State<LiveJobsForSeeker>
                 const Icon(Icons.filter_list, color: Colors.white, size: 20),
                 const SizedBox(height: 4),
                 Text('$_activeFiltersCount',
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.poppins(
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
                         color: Colors.white)),
@@ -317,7 +317,7 @@ class _LiveJobsForSeekerState extends State<LiveJobsForSeeker>
               Icon(Icons.tune, size: 24, color: const Color(0xFF374151)),
               const SizedBox(width: 12),
               Text('Filters & Search',
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.poppins(
                       fontSize: 18,
                       fontWeight: FontWeight.w700,
                       color: const Color(0xFF374151))),
@@ -331,7 +331,7 @@ class _LiveJobsForSeekerState extends State<LiveJobsForSeeker>
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text('$_activeFiltersCount',
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.poppins(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
                           color: Colors.white)),
@@ -452,7 +452,7 @@ class _LiveJobsForSeekerState extends State<LiveJobsForSeeker>
           // Results count
           Text(
             '${_filteredJobs.length} job${_filteredJobs.length == 1 ? '' : 's'} found',
-            style: GoogleFonts.inter(
+            style: GoogleFonts.poppins(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
                 color: const Color(0xFF374151)),
@@ -482,7 +482,7 @@ class _LiveJobsForSeekerState extends State<LiveJobsForSeeker>
                 ),
                 const SizedBox(width: 8),
                 Text('${_filteredJobs.length} Active',
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.poppins(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
                         color: const Color(0xFF10B981))),
@@ -508,7 +508,7 @@ class _LiveJobsForSeekerState extends State<LiveJobsForSeeker>
                 DropdownButton<String>(
                   value: _selectedSortOption,
                   underline: const SizedBox(),
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.poppins(
                       fontSize: 14, color: const Color(0xFF64748B)),
                   items: const [
                     DropdownMenuItem(
@@ -541,7 +541,7 @@ class _LiveJobsForSeekerState extends State<LiveJobsForSeeker>
             const SizedBox(height: 16),
             Text(
               'No jobs found',
-              style: GoogleFonts.inter(
+              style: GoogleFonts.poppins(
                   fontSize: 20,
                   fontWeight: FontWeight.w600,
                   color: Colors.grey[600]),
@@ -549,7 +549,7 @@ class _LiveJobsForSeekerState extends State<LiveJobsForSeeker>
             const SizedBox(height: 8),
             Text(
               'Try adjusting your filters or search terms',
-              style: GoogleFonts.inter(fontSize: 14, color: Colors.grey[500]),
+              style: GoogleFonts.poppins(fontSize: 14, color: Colors.grey[500]),
             ),
           ],
         ),
@@ -573,7 +573,7 @@ class _LiveJobsForSeekerState extends State<LiveJobsForSeeker>
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text('Search Jobs',
-            style: GoogleFonts.inter(
+            style: GoogleFonts.poppins(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
                 color: const Color(0xFF374151))),
@@ -587,10 +587,10 @@ class _LiveJobsForSeekerState extends State<LiveJobsForSeeker>
           child: TextField(
             controller: _searchController,
             focusNode: _searchFocusNode,
-            style: GoogleFonts.inter(fontSize: 14),
+            style: GoogleFonts.poppins(fontSize: 14),
             decoration: InputDecoration(
               hintText: 'Search jobs, companies, skills...',
-              hintStyle: GoogleFonts.inter(
+              hintStyle: GoogleFonts.poppins(
                   fontSize: 14, color: const Color(0xFF64748B)),
               prefixIcon:
                   const Icon(Icons.search, size: 20, color: Color(0xFF64748B)),
@@ -619,7 +619,7 @@ class _LiveJobsForSeekerState extends State<LiveJobsForSeeker>
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(title,
-            style: GoogleFonts.inter(
+            style: GoogleFonts.poppins(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
                 color: const Color(0xFF374151))),
@@ -634,7 +634,7 @@ class _LiveJobsForSeekerState extends State<LiveJobsForSeeker>
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text('Salary Range',
-            style: GoogleFonts.inter(
+            style: GoogleFonts.poppins(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
                 color: const Color(0xFF374151))),
@@ -652,12 +652,12 @@ class _LiveJobsForSeekerState extends State<LiveJobsForSeeker>
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text('\$${(_salaryRange.start / 1000).round()}k',
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.poppins(
                           fontSize: 14,
                           fontWeight: FontWeight.w500,
                           color: const Color(0xFF374151))),
                   Text('\$${(_salaryRange.end / 1000).round()}k',
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.poppins(
                           fontSize: 14,
                           fontWeight: FontWeight.w500,
                           color: const Color(0xFF374151))),
@@ -700,7 +700,7 @@ class _LiveJobsForSeekerState extends State<LiveJobsForSeeker>
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text('Benefits',
-            style: GoogleFonts.inter(
+            style: GoogleFonts.poppins(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
                 color: const Color(0xFF374151))),
@@ -734,7 +734,7 @@ class _LiveJobsForSeekerState extends State<LiveJobsForSeeker>
                     benefit.length > 15
                         ? '${benefit.substring(0, 15)}...'
                         : benefit,
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.poppins(
                         fontSize: 12,
                         fontWeight: FontWeight.w500,
                         color: isSelected
@@ -756,7 +756,7 @@ class _LiveJobsForSeekerState extends State<LiveJobsForSeeker>
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(label,
-            style: GoogleFonts.inter(
+            style: GoogleFonts.poppins(
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
                 color: const Color(0xFF374151))),
@@ -772,17 +772,17 @@ class _LiveJobsForSeekerState extends State<LiveJobsForSeeker>
           child: DropdownButton<String>(
             value: value,
             hint: Text('All ${label}s',
-                style: GoogleFonts.inter(
+                style: GoogleFonts.poppins(
                     fontSize: 14, color: const Color(0xFF9CA3AF))),
             isExpanded: true,
             underline: const SizedBox(),
             style:
-                GoogleFonts.inter(fontSize: 14, color: const Color(0xFF374151)),
+                GoogleFonts.poppins(fontSize: 14, color: const Color(0xFF374151)),
             items: [
               DropdownMenuItem<String>(
                 value: null,
                 child: Text('All ${label}s',
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.poppins(
                         fontSize: 14, color: const Color(0xFF9CA3AF))),
               ),
               ...items.map(
@@ -1362,7 +1362,7 @@ class _ModernChip extends StatelessWidget {
       ),
       child: Text(
         text,
-        style: GoogleFonts.inter(
+        style: GoogleFonts.poppins(
           fontSize: 12,
           fontWeight: FontWeight.w500,
           color: color,

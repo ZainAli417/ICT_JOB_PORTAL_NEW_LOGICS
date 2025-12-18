@@ -188,7 +188,7 @@ class _JobListView_NewState extends State<JobListView_New> {
                       children: [
                         Icon(Icons.card_giftcard, color: _primary, size: 24),
                         const SizedBox(width: 12),
-                        Text('Select Benefits', style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w600, color: _textPrimary)),
+                        Text('Select Benefits', style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.w600, color: _textPrimary)),
                         const Spacer(),
                         IconButton(
                           icon: const Icon(Icons.close, size: 20),
@@ -208,7 +208,7 @@ class _JobListView_NewState extends State<JobListView_New> {
                           final isSelected = tempSelected.contains(benefit);
                           return CheckboxListTile(
                             value: isSelected,
-                            title: Text(benefit, style: GoogleFonts.inter(fontSize: 14, color: _textPrimary)),
+                            title: Text(benefit, style: GoogleFonts.poppins(fontSize: 14, color: _textPrimary)),
                             activeColor: _primary,
                             controlAffinity: ListTileControlAffinity.leading,
                             contentPadding: EdgeInsets.zero,
@@ -239,7 +239,7 @@ class _JobListView_NewState extends State<JobListView_New> {
                               padding: const EdgeInsets.symmetric(vertical: 12),
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                             ),
-                            child: Text('Clear', style: GoogleFonts.inter(color: _textSecondary, fontWeight: FontWeight.w500)),
+                            child: Text('Clear', style: GoogleFonts.poppins(color: _textSecondary, fontWeight: FontWeight.w500)),
                           ),
                         ),
                         const SizedBox(width: 12),
@@ -259,7 +259,7 @@ class _JobListView_NewState extends State<JobListView_New> {
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                               elevation: 0,
                             ),
-                            child: Text('Apply', style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.w600)),
+                            child: Text('Apply', style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.w600)),
                           ),
                         ),
                       ],
@@ -1085,7 +1085,7 @@ class _JobCardState extends State<JobCard> {
                                     const SizedBox(width: 8),
                                     Text(
                                       'View Details',
-                                      style: GoogleFonts.inter(
+                                      style: GoogleFonts.poppins(
                                         fontSize: 14,
                                         fontWeight: FontWeight.w600,
                                         color: Colors.white,

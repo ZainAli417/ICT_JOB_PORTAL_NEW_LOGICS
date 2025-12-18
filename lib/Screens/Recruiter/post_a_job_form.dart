@@ -108,7 +108,7 @@ class _PostJobDialogState extends State<PostJobDialog> {
                             children: [
                               Text(
                                 'Create Air Force Job Posting',
-                                style: GoogleFonts.inter(
+                                style: GoogleFonts.poppins(
                                   fontSize: 20,
                                   fontWeight: FontWeight.w700,
                                   color: Colors.black87,
@@ -116,7 +116,7 @@ class _PostJobDialogState extends State<PostJobDialog> {
                               ),
                               Text(
                                 'Post aviation and support positions for Air Force personnel',
-                                style: GoogleFonts.inter(
+                                style: GoogleFonts.poppins(
                                   fontSize: 13,
                                   color: Colors.grey.shade600,
                                 ),
@@ -667,7 +667,7 @@ class _PostJobDialogState extends State<PostJobDialog> {
                                     const SizedBox(width: 8),
                                     Text(
                                       'Post Position Now',
-                                      style: GoogleFonts.inter(
+                                      style: GoogleFonts.poppins(
                                         fontSize: 16,
                                         fontWeight: FontWeight.w600,
                                       ),
@@ -712,7 +712,7 @@ class _PostJobDialogState extends State<PostJobDialog> {
       children: [
         Text(
           title,
-          style: GoogleFonts.inter(
+          style: GoogleFonts.poppins(
             fontSize: 14,
             fontWeight: FontWeight.w600,
             color: Colors.black87,
@@ -751,7 +751,7 @@ class _PostJobDialogState extends State<PostJobDialog> {
                         const SizedBox(width: 4),
                       Text(
                         item,
-                        style: GoogleFonts.inter(
+                        style: GoogleFonts.poppins(
                           fontSize: 12,
                           fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
                           color: isSelected ? color : Colors.grey.shade700,
@@ -791,7 +791,7 @@ class _PostJobDialogState extends State<PostJobDialog> {
               const SizedBox(width: 8),
               Text(
                 title,
-                style: GoogleFonts.inter(
+                style: GoogleFonts.poppins(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
                   color: Colors.black87,
@@ -811,7 +811,7 @@ class _PostJobDialogState extends State<PostJobDialog> {
       children: [
         Text(
           'Unit Emblem',
-          style: GoogleFonts.inter(
+          style: GoogleFonts.poppins(
             fontSize: 12,
             fontWeight: FontWeight.w500,
             color: Colors.grey.shade600,
@@ -863,7 +863,7 @@ class _PostJobDialogState extends State<PostJobDialog> {
                 const SizedBox(height: 4),
                 Text(
                   'Upload',
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.poppins(
                     fontSize: 11,
                     color: primary,
                     fontWeight: FontWeight.w500,
@@ -891,7 +891,7 @@ class _PostJobDialogState extends State<PostJobDialog> {
       maxLines: maxLines,
       onChanged: onChanged,
       validator: validator,
-      style: GoogleFonts.inter(
+      style: GoogleFonts.poppins(
         fontSize: 15,
         color: Colors.black87,
         fontWeight: FontWeight.w600,
@@ -919,12 +919,12 @@ class _PostJobDialogState extends State<PostJobDialog> {
           borderRadius: BorderRadius.circular(12),
           borderSide: const BorderSide(color: Colors.red),
         ),
-        labelStyle: GoogleFonts.inter(
+        labelStyle: GoogleFonts.poppins(
           color: Colors.grey.shade500,
           fontSize: 13,
           fontWeight: FontWeight.w500,
         ),
-        hintStyle: GoogleFonts.inter(
+        hintStyle: GoogleFonts.poppins(
           color: Colors.grey.shade600,
           fontWeight: FontWeight.w600,
           fontSize: 12,
@@ -948,7 +948,7 @@ class _PostJobDialogState extends State<PostJobDialog> {
           .map((item) => DropdownMenuItem(value: item, child: Text(item)))
           .toList(),
       onChanged: onChanged,
-      style: GoogleFonts.inter(fontSize: 14, color: Colors.black87),
+      style: GoogleFonts.poppins(fontSize: 14, color: Colors.black87),
       decoration: InputDecoration(
         labelText: label,
         prefixIcon: icon != null ? Icon(icon, color: primary, size: 20) : null,
@@ -967,7 +967,7 @@ class _PostJobDialogState extends State<PostJobDialog> {
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide(color: primary, width: 2),
         ),
-        labelStyle: GoogleFonts.inter(color: Colors.grey.shade600, fontSize: 13),
+        labelStyle: GoogleFonts.poppins(color: Colors.grey.shade600, fontSize: 13),
       ),
     );
   }

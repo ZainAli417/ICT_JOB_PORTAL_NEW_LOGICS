@@ -1,4 +1,4 @@
-// lib/providers/signup_provider.dart
+// lib/SignUp/signup_provider.dart - UPDATED WITH RELAXED VALIDATION
 import 'dart:async';
 import 'dart:convert';
 import 'dart:js_interop';
@@ -220,8 +220,6 @@ class SignupProvider extends ChangeNotifier {
   bool _isValidPhone(String s) => s.isNotEmpty && RegExp(r'^[\d\+\-\s]{5,20}$').hasMatch(s);
 
   bool validatePersonalFieldAtIndex(int index) {
-    // Updated to match the UI mapping in your LayoutBuilder:
-    // 0: name, 1: contact, 2: nationality, 3: dob, 4: summary, 5: skills, 6: objectives
     switch (index) {
       case 0:
         return nameController.text.trim().isNotEmpty;
@@ -243,20 +241,16 @@ class SignupProvider extends ChangeNotifier {
   }
 
   bool personalSectionIsComplete() {
-    // Reflect same list as above (0..6)
     return [0, 1, 2, 3, 4, 5, 6].every((i) => validatePersonalFieldAtIndex(i));
   }
 
   bool _isNotEmpty(dynamic value) => (value as String?)?.trim().isNotEmpty ?? false;
 
   double computeProgress() {
-    // Count how many of the personal slots are valid (0..6) + education presence
     final personalDone = [0, 1, 2, 3, 4, 5, 6].where((i) => validatePersonalFieldAtIndex(i)).length;
     final educationDone = educationSectionIsComplete() ? 1 : 0;
     return (personalDone + educationDone) / 8;
   }
-
-
 
   bool educationSectionIsComplete() {
     if (educationalProfile.isEmpty) return false;
@@ -264,15 +258,26 @@ class SignupProvider extends ChangeNotifier {
     _isNotEmpty(e['institutionName']) &&
         _isNotEmpty(e['duration']) &&
         _isNotEmpty(e['majorSubjects']) &&
-        _isNotEmpty(e['marksOrCgpa'])
-    );
+        _isNotEmpty(e['marksOrCgpa']));
   }
 
-
-
-
   // ========== FIREBASE OPERATIONS ==========
+
+  /// 1. RECRUITER: Single-step registration (creates auth + saves full data)
   Future<bool> registerRecruiter() async {
+    // Validate required fields for recruiter
+    if (!validateEmail() || !validatePasswords()) {
+      generalError = emailError ?? passwordError;
+      notifyListeners();
+      return false;
+    }
+
+    if (nameController.text.trim().isEmpty) {
+      generalError = 'Name is required';
+      notifyListeners();
+      return false;
+    }
+
     return _executeWithLoading(() async {
       final cred = await FirebaseAuth.instance.createUserWithEmailAndPassword(
         email: emailController.text.trim(),
@@ -287,8 +292,14 @@ class SignupProvider extends ChangeNotifier {
     });
   }
 
-  Future<bool> submitAllAndCreateAccount() async {
-    if (!_validateBeforeSubmit()) return false;
+  /// 2. JOB SEEKER: Create Firebase Auth account only (NO validation of profile fields)
+  Future<bool> createJobSeekerAccount() async {
+    // Only validate email and password for account creation
+    if (!validateEmail() || !validatePasswords()) {
+      generalError = emailError ?? passwordError;
+      notifyListeners();
+      return false;
+    }
 
     return _executeWithLoading(() async {
       final uc = await FirebaseAuth.instance.createUserWithEmailAndPassword(
@@ -299,45 +310,75 @@ class SignupProvider extends ChangeNotifier {
       final uid = uc.user?.uid;
       if (uid == null) throw Exception('Unable to obtain user id');
 
-      profilePicUrl = await _uploadProfilePic(uid);
-      await _saveUserData(uid, _buildManualUserData(uid));
-      return true;
-    });
-  }
-
-  Future<bool> submitExtractedCvAndCreateAccount(
-      CvExtractionResult result, {
-        String? overrideEmail,
-        String? overridePassword,
-      }) async {
-    return _executeWithLoading(() async {
-      _populateFromCvResult(result);
-
-      final authEmail = _determineAuthEmail(overrideEmail);
-      final authPass = _determineAuthPassword(overridePassword);
-
-      if (authEmail.isEmpty || authPass.isEmpty) {
-        throw Exception('Email and password required to create account');
+      // Upload profile picture if it was selected during account creation
+      if (profilePicBytes != null) {
+        profilePicUrl = await _uploadProfilePic(uid);
       }
 
-      _updateControllersWithOverrides(overrideEmail, overridePassword);
+      // Write to Firestore: /users/{uid}
+      await FirebaseFirestore.instance.collection('users').add({
+        'role': role,  // 'job_seeker'
+        'email': emailController.text.trim(),
+        'uid': uid,  // Store the auth UID as a field
+        'createdAt': FieldValue.serverTimestamp(),
+      });
 
-      final uc = await FirebaseAuth.instance.createUserWithEmailAndPassword(
-        email: authEmail,
-        password: authPass,
-      );
+      return true;
+    });
+  }
+  /// 3. JOB SEEKER: Save full profile data (RELAXED validation - allows partial data)
+  Future<bool> createJobSeekerProfile() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      generalError = 'No authenticated user found';
+      notifyListeners();
+      return false;
+    }
 
-      final uid = uc.user?.uid;
-      if (uid == null) throw Exception('Unable to obtain user id');
+    // RELAXED VALIDATION: Don't block if fields are missing
+    // User can save partial profile and complete it later
 
-      await _handleCvProfilePic(result.personalProfile);
-      profilePicUrl = await _uploadProfilePic(uid);
+    return _executeWithLoading(() async {
+      // Upload profile picture if not already uploaded
+      if (profilePicBytes != null && profilePicUrl == null) {
+        profilePicUrl = await _uploadProfilePic(user.uid);
+      }
 
-      await _saveUserData(uid, _buildCvUserData(uid, result, authEmail));
+      await _saveUserData(user.uid, _buildManualUserData(user.uid));
       return true;
     });
   }
 
+  /// 4. CV UPLOAD: Single-step registration (creates auth + saves all extracted data)
+  // Only saves the extracted CV profile data to Firestore
+// Assumes the user is already authenticated and logged in
+  Future<bool> submitExtractedCvAndCreateAccount(CvExtractionResult result) async {
+    final user = FirebaseAuth.instance.currentUser;
+
+    if (user == null) {
+      generalError = 'No authenticated user found. Please log in first.';
+      notifyListeners();
+      return false;
+    }
+
+    final uid = user.uid;
+
+    return _executeWithLoading(() async {
+      // 1. Populate provider from CV result
+      _populateFromCvResult(result);
+
+      // 2. Handle profile picture if present in CV
+      await _handleCvProfilePic(result.personalProfile);
+
+      // 3. Upload profile picture (if any) and get URL
+      profilePicUrl = await _uploadProfilePic(uid);
+
+      // 4. Save full profile data using the existing authenticated user
+      await _saveUserData(uid, _buildCvUserData(uid, result, user.email ?? ''));
+
+      return true;
+    });
+  }
   // ========== PRIVATE HELPERS ==========
   Future<bool> _executeWithLoading(Future<bool> Function() operation) async {
     generalError = null;
@@ -358,45 +399,17 @@ class SignupProvider extends ChangeNotifier {
     }
   }
 
-  bool _validateBeforeSubmit() {
-    if (!validateEmail()) {
-      generalError = emailError;
-      notifyListeners();
-      return false;
-    }
-    if (!validatePasswords()) {
-      generalError = passwordError;
-      notifyListeners();
-      return false;
-    }
-    if (!personalSectionIsComplete()) {
-      generalError = 'Please complete all required personal fields.';
-      notifyListeners();
-      return false;
-    }
-    if (!educationSectionIsComplete()) {
-      generalError = 'Please add at least one education entry and fill all its fields.';
-      notifyListeners();
-      return false;
-    }
-    return true;
-  }
-
   Future<void> _saveUserData(String uid, Map<String, dynamic> userData) async {
     final firestore = FirebaseFirestore.instance;
 
-    // Save to role-based collection: {role}/{uid}/user_data
     await firestore.collection(role).doc(uid).set(
       {'user_data': userData},
       SetOptions(merge: true),
     );
 
-    // Shadow copy to users collection
     try {
       await firestore.collection('users').add(_buildShadowData(uid, userData));
-    } catch (_) {
-      // Non-fatal: shadow copy is optional
-    }
+    } catch (_) {}
   }
 
   Map<String, dynamic> _buildRecruiterData(String uid) => {
@@ -407,22 +420,25 @@ class SignupProvider extends ChangeNotifier {
     'createdAt': FieldValue.serverTimestamp(),
   };
 
-  Map<String, dynamic> _buildManualUserData(String uid) => {
-    'personalProfile': {
-      'fullName': nameController.text.trim(),
-      'email': emailController.text.trim(),
-      'contactNumber': contactNumberController.text.trim(),
-      'nationality': nationalityController.text.trim(),
-      'summary': summaryController.text.trim(),
-      'profilePicUrl': profilePicUrl,
-      'skills': skills,
-      'objectives': objectivesController.text.trim(),
-      'socialLinks': socialLinks,
-      'dob': dob != null ? DateFormat('yyyy-MM-dd').format(dob!) : null,
-      'createdAt': FieldValue.serverTimestamp(),
-    },
-    'educationalProfile': educationalProfile,
-  };
+  Map<String, dynamic> _buildManualUserData(String uid) {
+    // Build profile data with what's available (RELAXED - allows empty fields)
+    return {
+      'personalProfile': {
+        'fullName': nameController.text.trim().isNotEmpty ? nameController.text.trim() : null,
+        'email': emailController.text.trim(),
+        'contactNumber': contactNumberController.text.trim().isNotEmpty ? contactNumberController.text.trim() : null,
+        'nationality': nationalityController.text.trim().isNotEmpty ? nationalityController.text.trim() : null,
+        'summary': summaryController.text.trim().isNotEmpty ? summaryController.text.trim() : null,
+        'profilePicUrl': profilePicUrl,
+        'skills': skills.isNotEmpty ? skills : null,
+        'objectives': objectivesController.text.trim().isNotEmpty ? objectivesController.text.trim() : null,
+        'socialLinks': socialLinks.isNotEmpty ? socialLinks : null,
+        'dob': dob != null ? DateFormat('yyyy-MM-dd').format(dob!) : null,
+        'createdAt': FieldValue.serverTimestamp(),
+      },
+      'educationalProfile': educationalProfile.isNotEmpty ? educationalProfile : null,
+    };
+  }
 
   Map<String, dynamic> _buildCvUserData(String uid, CvExtractionResult result, String authEmail) => {
     'personalProfile': {
@@ -491,9 +507,7 @@ class SignupProvider extends ChangeNotifier {
     if (source is List) {
       target.addAll(source.map((e) => e.toString()));
     } else if (source is String && source.isNotEmpty) {
-      target.addAll(
-          source.split(RegExp(r'[,;\n]')).map((s) => s.trim()).where((s) => s.isNotEmpty)
-      );
+      target.addAll(source.split(RegExp(r'[,;\n]')).map((s) => s.trim()).where((s) => s.isNotEmpty));
     }
   }
 
@@ -543,28 +557,25 @@ class SignupProvider extends ChangeNotifier {
       uploadInput.type = 'file';
       uploadInput.accept = 'image/*';
       uploadInput.multiple = false;
-      // Hide and attach to DOM so some browsers behave consistently.
       uploadInput.style.display = 'none';
       document.body?.appendChild(uploadInput);
 
-      // Create a completer to wait for file selection
       final completer = Completer<void>();
 
-      // Listen for change event
-      uploadInput.addEventListener('change', (Event e) {
-        completer.complete();
-      }.toJS);
+      uploadInput.addEventListener(
+          'change',
+              (Event e) {
+            completer.complete();
+          }.toJS);
 
-      // Trigger the file picker (user gesture because this runs from a button tap).
       uploadInput.click();
 
-      // Wait for user selection (or cancel)
       await completer.future;
 
       final files = uploadInput.files;
       if (files == null || files.length == 0) {
         uploadInput.remove();
-        return null; // user cancelled
+        return null;
       }
 
       final file = files.item(0);
@@ -573,44 +584,48 @@ class SignupProvider extends ChangeNotifier {
         return null;
       }
 
-      // Size validation
       if (file.size > maxBytes) {
         uploadInput.remove();
         final maxMb = (maxBytes / (1024 * 1024)).toStringAsFixed(1);
         return {'error': 'Selected image exceeds $maxMb MB'};
       }
 
-      // Read as Data URL (for preview)
       final dataUrlCompleter = Completer<String?>();
       final readerDataUrl = FileReader();
 
-      readerDataUrl.addEventListener('load', (Event e) {
-        dataUrlCompleter.complete(readerDataUrl.result as String?);
-      }.toJS);
+      readerDataUrl.addEventListener(
+          'load',
+              (Event e) {
+            dataUrlCompleter.complete(readerDataUrl.result as String?);
+          }.toJS);
 
-      readerDataUrl.addEventListener('error', (Event e) {
-        dataUrlCompleter.completeError('Error reading file as DataURL');
-      }.toJS);
+      readerDataUrl.addEventListener(
+          'error',
+              (Event e) {
+            dataUrlCompleter.completeError('Error reading file as DataURL');
+          }.toJS);
 
       readerDataUrl.readAsDataURL(file);
       final dataUrl = await dataUrlCompleter.future;
 
-      // Read as ArrayBuffer (for bytes)
       final bytesCompleter = Completer<dynamic>();
       final readerBinary = FileReader();
 
-      readerBinary.addEventListener('load', (Event e) {
-        bytesCompleter.complete(readerBinary.result);
-      }.toJS);
+      readerBinary.addEventListener(
+          'load',
+              (Event e) {
+            bytesCompleter.complete(readerBinary.result);
+          }.toJS);
 
-      readerBinary.addEventListener('error', (Event e) {
-        bytesCompleter.completeError('Error reading file as ArrayBuffer');
-      }.toJS);
+      readerBinary.addEventListener(
+          'error',
+              (Event e) {
+            bytesCompleter.completeError('Error reading file as ArrayBuffer');
+          }.toJS);
 
       readerBinary.readAsArrayBuffer(file);
       final resultBuffer = await bytesCompleter.future;
 
-      // Convert result to Uint8List
       Uint8List bytes;
       if (resultBuffer is ByteBuffer) {
         bytes = resultBuffer.asUint8List();
@@ -619,7 +634,6 @@ class SignupProvider extends ChangeNotifier {
         return {'error': 'Unable to read file bytes (unsupported result type)'};
       }
 
-      // Clean up the DOM element
       uploadInput.remove();
 
       return {
@@ -635,9 +649,18 @@ class SignupProvider extends ChangeNotifier {
 
   // ========== CLEANUP ==========
   void clearAll() {
-    for (var c in [emailController, passwordController, confirmPasswordController, nameController,
-      contactNumberController, nationalityController, summaryController, objectivesController,
-      skillInputController, socialInputController]) {
+    for (var c in [
+      emailController,
+      passwordController,
+      confirmPasswordController,
+      nameController,
+      contactNumberController,
+      nationalityController,
+      summaryController,
+      objectivesController,
+      skillInputController,
+      socialInputController
+    ]) {
       c.clear();
     }
 
@@ -661,9 +684,18 @@ class SignupProvider extends ChangeNotifier {
 
   @override
   void dispose() {
-    for (var c in [emailController, passwordController, confirmPasswordController, nameController,
-      contactNumberController, nationalityController, summaryController, objectivesController,
-      skillInputController, socialInputController]) {
+    for (var c in [
+      emailController,
+      passwordController,
+      confirmPasswordController,
+      nameController,
+      contactNumberController,
+      nationalityController,
+      summaryController,
+      objectivesController,
+      skillInputController,
+      socialInputController
+    ]) {
       c.dispose();
     }
     super.dispose();

@@ -311,7 +311,7 @@ class _job_hubState extends State<job_hub>
       children: [
         Text(
           'Welcome to Job Hub !',
-          style: GoogleFonts.inter(
+          style: GoogleFonts.poppins(
             fontSize: 28,
             fontWeight: FontWeight.w700,
             color: const Color(0xFF1A1A1A),
@@ -321,7 +321,7 @@ class _job_hubState extends State<job_hub>
         const SizedBox(height: 8),
         Text(
           'Explore Jobs and Be a part of your Dream Company',
-          style: GoogleFonts.inter(
+          style: GoogleFonts.poppins(
             fontSize: 16,
             fontWeight: FontWeight.w500,
             color: const Color(0xFF6B7280),
@@ -460,7 +460,7 @@ class _EnhancedStatCardState extends State<_EnhancedStatCard>
   Widget _buildStatValue() {
     return Text(
       widget.value,
-      style: GoogleFonts.inter(
+      style: GoogleFonts.poppins(
         fontSize: 18,
         fontWeight: FontWeight.w700,
         color: const Color(0xFF1A1A1A),
@@ -472,7 +472,7 @@ class _EnhancedStatCardState extends State<_EnhancedStatCard>
   Widget _buildStatLabel() {
     return Text(
       widget.label,
-      style: GoogleFonts.inter(
+      style: GoogleFonts.poppins(
         fontSize: 12,
         fontWeight: FontWeight.w500,
         color: const Color(0xFF6B7280),
@@ -630,7 +630,7 @@ class _EnhancedAIAssistantState extends State<_EnhancedAIAssistant>
                 children: [
                   Text(
                     'AI Career Assistant',
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.poppins(
                       fontSize: 18,
                       fontWeight: FontWeight.w800,
                       color: jetBlack,
@@ -659,7 +659,7 @@ class _EnhancedAIAssistantState extends State<_EnhancedAIAssistant>
                       const SizedBox(width: 8),
                       Text(
                         'Online & Ready',
-                        style: GoogleFonts.inter(
+                        style: GoogleFonts.poppins(
                           fontSize: 11,
                           fontWeight: FontWeight.w600,
                           color: successGreen,
@@ -695,7 +695,7 @@ class _EnhancedAIAssistantState extends State<_EnhancedAIAssistant>
               Expanded(
                 child: Text(
                   'Ask me about your profile, career goals, or job search strategy.',
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.poppins(
                     fontSize: 13,
                     fontWeight: FontWeight.w500,
                     color: Colors.grey.shade700,
@@ -762,7 +762,7 @@ class _EnhancedAIAssistantState extends State<_EnhancedAIAssistant>
                   // focusNode: widget.messageFocusNode,
                   maxLines: null,
                   textCapitalization: TextCapitalization.sentences,
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.poppins(
                     fontSize: 14,
                     fontWeight: FontWeight.w500,
                     color: jetBlack,
@@ -771,7 +771,7 @@ class _EnhancedAIAssistantState extends State<_EnhancedAIAssistant>
                   decoration: InputDecoration(
                     hintText: 'Type your message ...',
                     filled: false,
-                    hintStyle: GoogleFonts.inter(
+                    hintStyle: GoogleFonts.poppins(
                       fontSize: 13,
                       fontWeight: FontWeight.w400,
                       color: Colors.grey.shade600,
@@ -869,7 +869,7 @@ class _EnhancedAIAssistantState extends State<_EnhancedAIAssistant>
       children: [
         Text(
           'Quick Actions',
-          style: GoogleFonts.inter(
+          style: GoogleFonts.poppins(
             fontSize: 14,
             fontWeight: FontWeight.w700,
             color: jetBlack,
@@ -908,7 +908,7 @@ class _EnhancedAIAssistantState extends State<_EnhancedAIAssistant>
         children: [
           Icon(icon, size: 20, color: Colors.grey.shade800),
           const SizedBox(height: 8),
-          Text(label, style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600)),
+          Text(label, style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w600)),
         ],
       ),
     );
@@ -950,7 +950,7 @@ class _EnhancedAIAssistantState extends State<_EnhancedAIAssistant>
                 children: [
                   Text(
                     'Profile Analysis',
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.poppins(
                       fontSize: 16,
                       fontWeight: FontWeight.w800,
                       color: const Color(0xFF0F172A),
@@ -960,7 +960,7 @@ class _EnhancedAIAssistantState extends State<_EnhancedAIAssistant>
                   ),
                   Text(
                     'AI-powered insights & recommendations',
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.poppins(
                       fontSize: 12,
                       fontWeight: FontWeight.w500,
                       color: Colors.grey.shade600,
@@ -1007,10 +1007,10 @@ class _EnhancedAIAssistantState extends State<_EnhancedAIAssistant>
                     child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation(Colors.white)),
                   ),
                   const SizedBox(width: 10),
-                  Text('Analyzing...', style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
+                  Text('Analyzing...', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
                 ],
               )
-                  : Text('Analyze My Profile', style: GoogleFonts.inter(fontWeight: FontWeight.w700)),
+                  : Text('Analyze My Profile', style: GoogleFonts.poppins(fontWeight: FontWeight.w700)),
             ),
           ),
         );

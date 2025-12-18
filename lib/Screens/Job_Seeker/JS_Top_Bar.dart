@@ -8,6 +8,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:job_portal/Screens/Job_Seeker/JS_Initials_provider.dart';
 import 'package:provider/provider.dart';
 
+import '../../Web_routes.dart';
+
 class MainLayout extends StatefulWidget {
   final Widget child;
   final int activeIndex;
@@ -377,8 +379,8 @@ class _MainLayoutState extends State<MainLayout>
       children: [
         Image.asset(
           'images/logo.png',
-          width: compact ? 120 : 180,
-          height: compact ? 40 : 60,
+          width: compact ? 50 : 80,
+          height: compact ? 50 : 80,
           fit: BoxFit.fill,
         ),
         const SizedBox(width: 14),
@@ -709,6 +711,9 @@ class _MainLayoutState extends State<MainLayout>
                   Expanded(
                     child: ElevatedButton(
                       onPressed: () async {
+                        RoleService.clearCache();
+                        ProfileCheckService.clearCache();
+
                         await FirebaseAuth.instance.signOut();
                         context.pushReplacement('/');
                       },

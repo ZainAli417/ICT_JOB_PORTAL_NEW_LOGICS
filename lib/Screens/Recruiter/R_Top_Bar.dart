@@ -9,6 +9,8 @@ import 'package:job_portal/Screens/Recruiter/R_Initials_provider.dart';
 import 'package:job_portal/Screens/Recruiter/post_a_job_form.dart';
 import 'package:provider/provider.dart';
 
+import '../../Web_routes.dart';
+
 class Recruiter_MainLayout extends StatefulWidget {
   final Widget child;
   final int activeIndex;
@@ -768,6 +770,9 @@ class _Recruiter_MainLayoutState extends State<Recruiter_MainLayout>
                   Expanded(
                     child: ElevatedButton(
                       onPressed: () async {
+                        RoleService.clearCache();
+                        ProfileCheckService.clearCache();
+
                         await FirebaseAuth.instance.signOut();
                         context.pushReplacement('/');
                       },

@@ -45,7 +45,7 @@ void main() async {
   WidgetsBinding.instance.addPostFrameCallback((_) {
     // Precache a dummy inter text so it’s ready immediately
     TextPainter(
-      text: TextSpan(text: " ", style: GoogleFonts.inter()),
+      text: TextSpan(text: " ", style: GoogleFonts.poppins()),
       textDirection: TextDirection.ltr,
     ).layout();
   });
@@ -102,7 +102,7 @@ class JobPortalApp extends StatelessWidget {
           primary: const Color(0xFF6366F1),
           secondary: const Color(0xFF6366F1),
         ),
-        fontFamily: GoogleFonts.inter().fontFamily,
+        fontFamily: GoogleFonts.poppins().fontFamily,
         textTheme: GoogleFonts.interTextTheme(),
         inputDecorationTheme: InputDecorationTheme(
           filled: true,

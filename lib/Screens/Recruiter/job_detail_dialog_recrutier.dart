@@ -605,7 +605,7 @@ class _JobDetailModal_recruiterState extends State<JobDetailModal_recruiter>
                     },
                     icon: const Icon(Icons.delete_outline, size: 20),
                     label: Text('Delete',
-                        style: GoogleFonts.inter(
+                        style: GoogleFonts.poppins(
                             fontSize: 16, fontWeight: FontWeight.w600)),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.redAccent,
@@ -625,7 +625,7 @@ class _JobDetailModal_recruiterState extends State<JobDetailModal_recruiter>
                     children: [
                       Text(
                         status == 'active' ? 'Active' : 'Paused',
-                        style: GoogleFonts.inter(
+                        style: GoogleFonts.poppins(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
                         ),

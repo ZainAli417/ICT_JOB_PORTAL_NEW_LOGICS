@@ -146,10 +146,7 @@ class _CvUploadSectionState extends State<CvUploadSection> with SingleTickerProv
     if (_result == null) return;
 
     final p = widget.provider;
-    if (p.emailController.text.isEmpty || p.passwordController.text.isEmpty) {
-      _showError('Please complete email and password first');
-      return;
-    }
+
 
     setState(() => _isProcessing = true);
 

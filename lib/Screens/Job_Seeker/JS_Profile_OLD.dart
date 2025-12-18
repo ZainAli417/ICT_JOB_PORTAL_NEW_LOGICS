@@ -244,7 +244,7 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
           const SizedBox(height: 16),
           Text(
             'Loading your profile...',
-            style: GoogleFonts.inter(
+            style: GoogleFonts.poppins(
               fontSize: 16,
               color: Colors.grey.shade600,
               fontWeight: FontWeight.w500,
@@ -261,7 +261,7 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
       children: [
         Text(
           'Personnel Profile',
-          style: GoogleFonts.inter(
+          style: GoogleFonts.poppins(
             fontSize: 32,
             fontWeight: FontWeight.w700,
             color: Colors.grey.shade900,
@@ -271,7 +271,7 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
         const SizedBox(height: 8),
         Text(
           'Complete your service information and records',
-          style: GoogleFonts.inter(
+          style: GoogleFonts.poppins(
             fontSize: 16,
             color: Colors.grey.shade600,
             fontWeight: FontWeight.w400,
@@ -292,8 +292,8 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
         indicatorWeight: 2,
         labelColor: const Color(0xFF024095),
         unselectedLabelColor: Colors.grey.shade600,
-        labelStyle: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600),
-        unselectedLabelStyle: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w500),
+        labelStyle: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w600),
+        unselectedLabelStyle: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w500),
         dividerColor: Colors.transparent,
         tabAlignment: TabAlignment.start,
         tabs: const [
@@ -508,7 +508,7 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
             child: TextButton.icon(
               onPressed: () => prov.addEducationEntry(context),
               icon: const Icon(Icons.add, size: 16),
-              label: Text('Add Service Record', style: GoogleFonts.inter(fontWeight: FontWeight.w500, color: Colors.black87)),
+              label: Text('Add Service Record', style: GoogleFonts.poppins(fontWeight: FontWeight.w500, color: Colors.black87)),
               style: TextButton.styleFrom(foregroundColor: const Color(0xFF003366).withOpacity(0.5), padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8)),
             ),
           ),
@@ -606,7 +606,7 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
           child: TextButton.icon(
             onPressed: () => prov.addExperienceEntry(context),
             icon: const Icon(Icons.add, size: 16),
-            label: Text('Add Flight Record', style: GoogleFonts.inter(fontWeight: FontWeight.w500, color: Colors.black87)),
+            label: Text('Add Flight Record', style: GoogleFonts.poppins(fontWeight: FontWeight.w500, color: Colors.black87)),
             style: TextButton.styleFrom(foregroundColor: const Color(0xFF003366).withOpacity(0.5), padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8)),
           ),
         ),
@@ -681,7 +681,7 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
           child: TextButton.icon(
             onPressed: () => prov.addCertificationEntry(context),
             icon: const Icon(Icons.add, size: 16),
-            label: Text('Add Training Record', style: GoogleFonts.inter(fontWeight: FontWeight.w500, color: Colors.black87)),
+            label: Text('Add Training Record', style: GoogleFonts.poppins(fontWeight: FontWeight.w500, color: Colors.black87)),
             style: TextButton.styleFrom(foregroundColor: const Color(0xFF003366).withOpacity(0.5), padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8)),
           ),
         ),
@@ -729,7 +729,7 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
           child: TextButton.icon(
             onPressed: () => prov.addSkillEntry(context),
             icon: const Icon(Icons.add, size: 16),
-            label: Text('Add Specialty', style: GoogleFonts.inter(fontWeight: FontWeight.w500, color: Colors.black87)),
+            label: Text('Add Specialty', style: GoogleFonts.poppins(fontWeight: FontWeight.w500, color: Colors.black87)),
             style: TextButton.styleFrom(foregroundColor: const Color(0xFF003366).withOpacity(0.5), padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8)),
           ),
         ),
@@ -742,7 +742,7 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: BorderRadius.circular(6), border: Border.all(color: Colors.grey.shade300)),
               child: Row(mainAxisSize: MainAxisSize.min, children: [
-                Text(skill, style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w500)),
+                Text(skill, style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w500)),
                 const SizedBox(width: 8),
                 GestureDetector(onTap: () { prov.skillsList.remove(skill); prov.notifyListeners(); }, child: Icon(Icons.close, size: 14, color: Colors.grey.shade600)),
               ]),
@@ -776,9 +776,9 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
 
   Widget _buildDocsTab() {
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Text('Upload Military Documents', style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w600, color: Colors.grey.shade900)),
+      Text('Upload Military Documents', style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.w600, color: Colors.grey.shade900)),
       const SizedBox(height: 8),
-      Text('Upload relevant military documents such as service records, commendations, or certifications.', style: GoogleFonts.inter(fontSize: 14, color: Colors.grey.shade600)),
+      Text('Upload relevant military documents such as service records, commendations, or certifications.', style: GoogleFonts.poppins(fontSize: 14, color: Colors.grey.shade600)),
       const SizedBox(height: 32),
       Container(
         width: double.infinity,
@@ -787,14 +787,14 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
         child: Column(children: [
           const Icon(Icons.upload_file, size: 48, color: Color(0xFF003366)),
           const SizedBox(height: 16),
-          Text('Drag and drop files here, or click to browse', style: GoogleFonts.inter(fontSize: 16, color: Colors.grey.shade700)),
+          Text('Drag and drop files here, or click to browse', style: GoogleFonts.poppins(fontSize: 16, color: Colors.grey.shade700)),
           const SizedBox(height: 8),
-          Text('Supported formats: PDF, DOC, DOCX, JPG, PNG', style: GoogleFonts.inter(fontSize: 12, color: Colors.grey.shade500)),
+          Text('Supported formats: PDF, DOC, DOCX, JPG, PNG', style: GoogleFonts.poppins(fontSize: 12, color: Colors.grey.shade500)),
           const SizedBox(height: 24),
           ElevatedButton(
             onPressed: () {},
             style: ElevatedButton.styleFrom(backgroundColor: Colors.white, foregroundColor: const Color(0xFF003366), elevation: 0, side: const BorderSide(color: Color(0xFF003366)), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)), padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12)),
-            child: Text('Choose Files', style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600)),
+            child: Text('Choose Files', style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w600)),
           ),
         ]),
       ),
@@ -803,7 +803,7 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
 
   Widget _buildField(String label, Widget child) {
     return Padding(padding: const EdgeInsets.only(bottom: 24), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Text(label, style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.grey.shade900)),
+      Text(label, style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.grey.shade900)),
       const SizedBox(height: 8),
       child,
     ]));
@@ -816,7 +816,7 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
   InputDecoration _fieldDecoration(String hint) {
     return InputDecoration(
       hintText: hint,
-      hintStyle: GoogleFonts.inter(color: Colors.grey.shade500, fontSize: 14),
+      hintStyle: GoogleFonts.poppins(color: Colors.grey.shade500, fontSize: 14),
       filled: true,
       fillColor: Colors.white,
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
