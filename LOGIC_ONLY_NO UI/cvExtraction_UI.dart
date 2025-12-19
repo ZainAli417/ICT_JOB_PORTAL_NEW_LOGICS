@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:job_portal/SignUp%20/signup_provider.dart';
 import 'package:job_portal/extractor_CV/cv_extractor.dart';
 import 'package:google_fonts/google_fonts.dart';
-
 import 'dart:async';
 
 class CvUploadSection extends StatefulWidget {
@@ -25,7 +24,8 @@ class CvUploadSection extends StatefulWidget {
   State<CvUploadSection> createState() => _CvUploadSectionState();
 }
 
-class _CvUploadSectionState extends State<CvUploadSection> {
+class _CvUploadSectionState extends State<CvUploadSection>
+    with TickerProviderStateMixin {
   Uint8List? _pickedBytes;
   String? _pickedFilename;
   bool _isExtracting = false;
@@ -33,79 +33,117 @@ class _CvUploadSectionState extends State<CvUploadSection> {
   CvExtractionResult? _result;
   final Map<String, TextEditingController> _fields = {};
   bool _showForm = false;
+  bool _isDragging = false;
+
+  late AnimationController _fadeController;
+  late AnimationController _pulseController;
+  late Animation<double> _fadeAnimation;
+  late Animation<double> _scaleAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _fadeController = AnimationController(
+      duration: const Duration(milliseconds: 600),
+      vsync: this,
+    );
+    _pulseController = AnimationController(
+      duration: const Duration(milliseconds: 1500),
+      vsync: this,
+    )..repeat(reverse: true);
+
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _fadeController, curve: Curves.easeOut),
+    );
+    _scaleAnimation = Tween<double>(begin: 0.95, end: 1.0).animate(
+      CurvedAnimation(parent: _fadeController, curve: Curves.elasticOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _fadeController.dispose();
+    _pulseController.dispose();
+    for (final c in _fields.values) c.dispose();
+    super.dispose();
+  }
 
   Future<void> _pickFile() async {
     setState(() {
       _lastError = null;
       _showForm = false;
+      _result = null;
+      _fields.clear();
     });
+
     try {
       final res = await FilePicker.platform.pickFiles(
-          type: FileType.custom,
-          allowedExtensions: ['pdf', 'txt', 'doc', 'docx'],
-          withData: true
+        type: FileType.custom,
+        allowedExtensions: ['pdf', 'doc', 'docx', 'txt'],
+        withData: true,
       );
+
       if (res == null || res.files.isEmpty) return;
-      final f = res.files.first;
-      if (f.size > 10 * 1024 * 1024) {
-        setState(() { _lastError = 'File too large (max 10MB)'; });
+      final file = res.files.first;
+
+      if (file.size > 10 * 1024 * 1024) {
+        setState(() => _lastError = 'File too large (max 10MB)');
         return;
       }
+
       setState(() {
-        _pickedBytes = f.bytes;
-        _pickedFilename = f.name;
-        _result = null;
-        _fields.clear();
-        _showForm = false;
+        _pickedBytes = file.bytes;
+        _pickedFilename = file.name;
       });
+
+      _fadeController.forward(from: 0);
     } catch (e) {
-      setState(() { _lastError = 'File pick failed: $e'; });
+      setState(() => _lastError = 'Failed to pick file: $e');
     }
   }
 
   Future<void> _runExtraction() async {
-    if (_pickedBytes == null || _pickedFilename == null) {
-      setState(() { _lastError = 'Please pick a file first'; });
+    if (_pickedBytes == null) {
+      setState(() => _lastError = 'Please select a CV file first');
       return;
     }
 
     setState(() {
       _isExtracting = true;
       _lastError = null;
-      _result = null;
-      _showForm = false;
     });
 
     try {
-      final r = await widget.extractor.extractFromFileBytes(
-          _pickedBytes!,
-          filename: _pickedFilename!
+      final result = await widget.extractor.extractFromFileBytes(
+        _pickedBytes!,
+        filename: _pickedFilename!,
       );
+
       setState(() {
-        _result = r;
-        _populateControllers(r);
+        _result = result;
+        _populateControllers(result);
         _showForm = true;
       });
+
+      _fadeController.forward(from: 0);
     } catch (e) {
-      setState(() {
-        _lastError = 'Extraction failed: $e';
-      });
+      setState(() => _lastError = 'Extraction failed: $e');
     } finally {
-      setState(() { _isExtracting = false; });
+      setState(() => _isExtracting = false);
     }
   }
 
   void _populateControllers(CvExtractionResult r) {
-    void ensure(String k, String v) {
-      _fields.putIfAbsent(k, () => TextEditingController(text: v));
+    void ensure(String key, String value) {
+      _fields.putIfAbsent(key, () => TextEditingController(text: value));
     }
 
     final p = r.personalProfile;
-    ensure('name', (p['name'] ?? '').toString());
-    ensure('email', (p['email'] ?? '').toString());
-    ensure('contactNumber', (p['contactNumber'] ?? '').toString());
-    ensure('nationality', (p['nationality'] ?? '').toString());
-    ensure('summary', (p['summary'] ?? r.professionalSummary ?? '').toString());
+    ensure('name', p['name']?.toString() ?? '');
+    ensure('email', p['email']?.toString() ?? '');
+    ensure('contactNumber', p['contactNumber']?.toString() ?? '');
+    ensure('nationality', p['nationality']?.toString() ?? '');
+    ensure('summary', p['summary']?.toString() ?? r.professionalSummary ?? '');
     ensure('skills', (p['skills'] is List)
         ? (p['skills'] as List).join(', ')
         : (p['skills'] ?? '').toString());
@@ -114,11 +152,11 @@ class _CvUploadSectionState extends State<CvUploadSection> {
         : (p['socialLinks'] ?? '').toString());
 
     for (var i = 0; i < r.educationalProfile.length; i++) {
-      final e = r.educationalProfile[i];
-      ensure('edu_institution_$i', e['institutionName'] ?? '');
-      ensure('edu_duration_$i', e['duration'] ?? '');
-      ensure('edu_major_$i', e['majorSubjects'] ?? '');
-      ensure('edu_marks_$i', e['marksOrCgpa'] ?? '');
+      final edu = r.educationalProfile[i];
+      ensure('edu_institution_$i', edu['institutionName'] ?? '');
+      ensure('edu_duration_$i', edu['duration'] ?? '');
+      ensure('edu_major_$i', edu['majorSubjects'] ?? '');
+      ensure('edu_marks_$i', edu['marksOrCgpa'] ?? '');
     }
 
     ensure('experiences', r.experiences.map((e) => e['text'] ?? '').join('\n\n'));
@@ -129,40 +167,39 @@ class _CvUploadSectionState extends State<CvUploadSection> {
   }
 
   Future<void> _acceptAndFill() async {
-    if (_result == null) return;
-
-    // Validate that account step is complete
-    final p = widget.provider;
-    if (p.emailController.text.isEmpty || p.passwordController.text.isEmpty) {
+    // Validation
+    if (widget.provider.emailController.text.isEmpty ||
+        widget.provider.passwordController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Please complete email and password in Account section first'),
-          backgroundColor: Colors.orange,
+          content: Text('Please complete email & password first'),
+          backgroundColor: Colors.orangeAccent,
         ),
       );
       return;
     }
 
     // Build final result from edited fields
-    final finalPersonal = <String, dynamic>{};
-    finalPersonal['name'] = _fields['name']?.text ?? '';
-    finalPersonal['email'] = _fields['email']?.text ?? '';
-    finalPersonal['contactNumber'] = _fields['contactNumber']?.text ?? '';
-    finalPersonal['nationality'] = _fields['nationality']?.text ?? '';
-    finalPersonal['summary'] = _fields['summary']?.text ?? '';
-    finalPersonal['skills'] = (_fields['skills']?.text ?? '')
-        .split(',')
-        .map((s) => s.trim())
-        .where((s) => s.isNotEmpty)
-        .toList();
-    finalPersonal['socialLinks'] = (_fields['socialLinks']?.text ?? '')
-        .split('\n')
-        .map((s) => s.trim())
-        .where((s) => s.isNotEmpty)
-        .toList();
+    final personal = <String, dynamic>{
+      'name': _fields['name']?.text.trim() ?? '',
+      'email': _fields['email']?.text.trim() ?? '',
+      'contactNumber': _fields['contactNumber']?.text.trim() ?? '',
+      'nationality': _fields['nationality']?.text.trim() ?? '',
+      'summary': _fields['summary']?.text.trim() ?? '',
+      'skills': (_fields['skills']?.text ?? '')
+          .split(',')
+          .map((e) => e.trim())
+          .where((e) => e.isNotEmpty)
+          .toList(),
+      'socialLinks': (_fields['socialLinks']?.text ?? '')
+          .split('\n')
+          .map((e) => e.trim())
+          .where((e) => e.isNotEmpty)
+          .toList(),
+    };
 
     final education = <Map<String, String>>[];
-    for (var i = 0; i < _result!.educationalProfile.length; i++) {
+    for (var i = 0; i < (_result?.educationalProfile.length ?? 0); i++) {
       education.add({
         'institutionName': _fields['edu_institution_$i']?.text ?? '',
         'duration': _fields['edu_duration_$i']?.text ?? '',
@@ -173,58 +210,61 @@ class _CvUploadSectionState extends State<CvUploadSection> {
 
     final experiences = (_fields['experiences']?.text ?? '')
         .split('\n\n')
-        .map((s) => {'text': s.trim()})
-        .where((m) => (m['text'] ?? '').toString().isNotEmpty)
-        .toList();
-
-    final certs = (_fields['certifications']?.text ?? '')
-        .split('\n')
-        .map((s) => s.trim())
-        .where((s) => s.isNotEmpty)
-        .toList();
-    final pubs = (_fields['publications']?.text ?? '')
-        .split('\n')
-        .map((s) => s.trim())
-        .where((s) => s.isNotEmpty)
-        .toList();
-    final awards = (_fields['awards']?.text ?? '')
-        .split('\n')
-        .map((s) => s.trim())
-        .where((s) => s.isNotEmpty)
-        .toList();
-    final refs = (_fields['references']?.text ?? '')
-        .split('\n')
-        .map((s) => s.trim())
-        .where((s) => s.isNotEmpty)
+        .map((e) => {'text': e.trim()})
+        .where((m) => m['text'].toString().isNotEmpty)
         .toList();
 
     final finalResult = CvExtractionResult(
       rawText: _result!.rawText,
-      personalProfile: finalPersonal,
+      personalProfile: personal,
       educationalProfile: education,
       professionalSummary: _fields['summary']?.text ?? _result!.professionalSummary,
       experiences: experiences,
-      certifications: certs,
-      publications: pubs,
-      awards: awards,
-      references: refs,
+      certifications: (_fields['certifications']?.text ?? '')
+          .split('\n')
+          .map((e) => e.trim())
+          .where((e) => e.isNotEmpty)
+          .toList(),
+      publications: (_fields['publications']?.text ?? '')
+          .split('\n')
+          .map((e) => e.trim())
+          .where((e) => e.isNotEmpty)
+          .toList(),
+      awards: (_fields['awards']?.text ?? '')
+          .split('\n')
+          .map((e) => e.trim())
+          .where((e) => e.isNotEmpty)
+          .toList(),
+      references: (_fields['references']?.text ?? '')
+          .split('\n')
+          .map((e) => e.trim())
+          .where((e) => e.isNotEmpty)
+          .toList(),
     );
 
-    // Use provider to create account with extracted data
-    final success = await p.submitExtractedCvAndCreateAccount(finalResult);
+    final success = await widget.provider.submitExtractedCvAndCreateAccount(finalResult);
     if (success) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('🎉 Account created successfully with CV data!'),
-          backgroundColor: Colors.green,
+        SnackBar(
+          content: Row(
+            children: [
+              const Icon(Icons.check_circle, color: Colors.white),
+              const SizedBox(width: 12),
+              Text('Account created successfully!', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+            ],
+          ),
+          backgroundColor: Colors.green.shade600,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         ),
       );
       widget.onSuccess();
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(p.generalError ?? 'Failed to create account'),
-          backgroundColor: Colors.red,
+          content: Text(widget.provider.generalError ?? 'Failed to create account'),
+          backgroundColor: Colors.red.shade600,
+          behavior: SnackBarBehavior.floating,
         ),
       );
     }
@@ -241,384 +281,354 @@ class _CvUploadSectionState extends State<CvUploadSection> {
     });
   }
 
-  Widget _buildFileSelection() {
-    return Card(
-      elevation: 2,
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(Icons.upload_file, color: Theme.of(context).primaryColor),
-                const SizedBox(width: 8),
-                Text(
-                  'Upload Your CV',
-                  style: GoogleFonts.poppins(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        // Upload Card with Drag & Drop
+        AnimatedContainer(
+          duration: const Duration(milliseconds: 300),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(20),
+            gradient: LinearGradient(
+              colors: _isDragging
+                  ? [colorScheme.primary.withOpacity(0.15), colorScheme.primary.withOpacity(0.05)]
+                  : [Colors.white, Colors.grey.shade50],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
             ),
-            const SizedBox(height: 12),
-            Text(
-              'Supported formats: PDF, DOC, DOCX, TXT • Max 10MB',
-              style: GoogleFonts.poppins(
-                fontSize: 12,
-                color: Colors.black54,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.08),
+                blurRadius: 20,
+                offset: const Offset(0, 8),
               ),
-            ),
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton.icon(
-                    icon: const Icon(Icons.attach_file),
-                    label: const Text('Choose File'),
-                    onPressed: _pickFile,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: ElevatedButton.icon(
-                    icon: const Icon(Icons.play_arrow),
-                    label: const Text('Extract Data'),
-                    onPressed: _isExtracting ? null : _runExtraction,
-                  ),
-                ),
-              ],
-            ),
-            if (_pickedFilename != null) ...[
-              const SizedBox(height: 12),
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.green[50],
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.green[100]!),
-                ),
-                child: Row(
+            ],
+          ),
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              borderRadius: BorderRadius.circular(20),
+              onTap: _pickFile,
+              child: Padding(
+                padding: const EdgeInsets.all(24.0),
+                child: Column(
                   children: [
-                    Icon(Icons.check_circle, color: Colors.green[600], size: 20),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        _pickedFilename!,
-                        style: GoogleFonts.poppins(
-                          fontWeight: FontWeight.w500,
-                          color: Colors.green[800],
+                    Icon(
+                      _pickedFilename == null ? Icons.cloud_upload_outlined : Icons.description,
+                      size: 64,
+                      color: _pickedFilename == null
+                          ? colorScheme.primary.withOpacity(0.7)
+                          : Colors.green.shade600,
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      _pickedFilename == null
+                          ? 'Upload Your CV to Auto-Fill Profile'
+                          : 'Selected: $_pickedFilename',
+                      style: GoogleFonts.poppins(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                        color: _pickedFilename == null ? Colors.black87 : Colors.green.shade700,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'PDF, DOC, DOCX, TXT • Max 10MB',
+                      style: GoogleFonts.poppins(fontSize: 13, color: Colors.grey.shade600),
+                    ),
+                    const SizedBox(height: 20),
+                    if (_pickedFilename == null)
+                      ElevatedButton.icon(
+                        onPressed: _pickFile,
+                        icon: const Icon(Icons.folder_open),
+                        label: Text('Browse Files', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+                        style: ElevatedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+                        ),
+                      )
+                    else
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          OutlinedButton.icon(
+                            onPressed: _resetSection,
+                            icon: const Icon(Icons.refresh),
+                            label: const Text('Change File'),
+                          ),
+                          const SizedBox(width: 16),
+                          ElevatedButton.icon(
+                            onPressed: _isExtracting ? null : _runExtraction,
+                            icon: _isExtracting
+                                ? SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                            )
+                                : const Icon(Icons.auto_fix_high),
+                            label: Text(_isExtracting ? 'Extracting...' : 'Extract Data'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.deepPurple.shade600,
+                              padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 14),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+                            ),
+                          ),
+                        ],
+                      ),
+                    if (_lastError != null) ...[
+                      const SizedBox(height: 16),
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.red.shade50,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.red.shade200),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(Icons.error_outline, color: Colors.red.shade700),
+                            const SizedBox(width: 12),
+                            Expanded(child: Text(_lastError!, style: TextStyle(color: Colors.red.shade800))),
+                          ],
                         ),
                       ),
-                    ),
-                    IconButton(
-                      icon: Icon(Icons.close, size: 18, color: Colors.green[600]),
-                      onPressed: _resetSection,
-                    ),
+                    ],
                   ],
                 ),
               ),
-            ],
-            if (_isExtracting) ...[
-              const SizedBox(height: 12),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  SizedBox(
-                    width: 18,
-                    height: 18,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Extracting data from CV...',
-                    style: GoogleFonts.poppins(
-                      color: Colors.blue[600],
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ],
-              ),
-            ],
-            if (_lastError != null) ...[
-              const SizedBox(height: 12),
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.red[50],
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.red[100]!),
-                ),
-                child: Row(
-                  children: [
-                    Icon(Icons.error_outline, color: Colors.red[600], size: 20),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        _lastError!,
-                        style: GoogleFonts.poppins(
-                          color: Colors.red[800],
-                          fontSize: 12,
-                        ),
+            ),
+          ),
+        ),
+
+        // Extracted Preview
+        if (_result != null) ...[
+          const SizedBox(height: 24),
+          FadeTransition(
+            opacity: _fadeAnimation,
+            child: ScaleTransition(
+              scale: _scaleAnimation,
+              child: Card(
+                elevation: 8,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                child: Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(Icons.analytics_outlined, color: colorScheme.primary, size: 28),
+                          const SizedBox(width: 12),
+                          Text('Extracted Data Preview', style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.w700)),
+                        ],
                       ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildPreviewCard() {
-    if (_result == null) return const SizedBox.shrink();
-
-    return Card(
-      elevation: 2,
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(Icons.preview, color: Theme.of(context).primaryColor),
-                const SizedBox(width: 8),
-                Text(
-                  'Extracted Preview',
-                  style: GoogleFonts.poppins(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
+                      const SizedBox(height: 16),
+                      Wrap(
+                        spacing: 12,
+                        runSpacing: 12,
+                        children: [
+                          _chip('Name', _result!.personalProfile['name'] ?? '—'),
+                          _chip('Email', _result!.personalProfile['email'] ?? '—'),
+                          _chip('Phone', _result!.personalProfile['contactNumber'] ?? '—'),
+                          _chip('Education', '${_result!.educationalProfile.length} entries'),
+                          _chip('Experience', '${_result!.experiences.length} roles'),
+                          _chip('Skills', '${( _result!.personalProfile['skills'] as List?)?.length ?? 0} skills'),
+                        ],
+                      ),
+                    ],
                   ),
                 ),
-              ],
+              ),
             ),
-            const SizedBox(height: 12),
-            Wrap(
-              spacing: 16,
-              runSpacing: 8,
-              children: [
-                _buildPreviewItem('Name', _result!.personalProfile['name'] ?? '-'),
-                _buildPreviewItem('Email', _result!.personalProfile['email'] ?? '-'),
-                _buildPreviewItem('Contact', _result!.personalProfile['contactNumber'] ?? '-'),
-                _buildPreviewItem('Education', '${_result!.educationalProfile.length} entries'),
-              ],
+          ),
+        ],
+
+        // Editable Form
+        if (_showForm && _result != null)
+          FadeTransition(
+            opacity: _fadeAnimation,
+            child: ScaleTransition(
+              scale: _scaleAnimation,
+              child: Padding(
+                padding: const EdgeInsets.only(top: 24),
+                child: Card(
+                  elevation: 10,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                  child: Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(Icons.edit_note, color: colorScheme.primary, size: 28),
+                            const SizedBox(width: 12),
+                            Text('Review & Edit Details', style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.w700)),
+                          ],
+                        ),
+                        const Divider(height: 32),
+                        _buildModernForm(),
+                        const SizedBox(height: 24),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: OutlinedButton(
+                                onPressed: _resetSection,
+                                style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 16)),
+                                child: const Text('Start Over'),
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: ElevatedButton(
+                                onPressed: _acceptAndFill,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.green.shade600,
+                                  padding: const EdgeInsets.symmetric(vertical: 16),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                ),
+                                child: Text('Create Account', style: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 16)),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        Center(
+                          child: TextButton(
+                            onPressed: widget.onManualContinue,
+                            child: Text('Or continue with manual entry', style: GoogleFonts.poppins(color: Colors.grey.shade600)),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
             ),
-          ],
-        ),
-      ),
+          ),
+      ],
     );
   }
 
-  Widget _buildPreviewItem(String label, String value) {
+  Widget _chip(String label, String value) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       decoration: BoxDecoration(
-        color: Colors.grey[50],
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey[300]!),
+        color: Colors.deepPurple.shade50,
+        borderRadius: BorderRadius.circular(30),
+        border: Border.all(color: Colors.deepPurple.shade200),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            label,
-            style: GoogleFonts.poppins(
-              fontSize: 10,
-              color: Colors.grey[600],
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          Text(
-            value,
-            style: GoogleFonts.poppins(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
+          Text(label, style: GoogleFonts.poppins(fontSize: 11, color: Colors.deepPurple.shade700)),
+          const SizedBox(height: 4),
+          Text(value, style: GoogleFonts.poppins(fontWeight: FontWeight.w600, color: Colors.deepPurple.shade900)),
         ],
       ),
     );
   }
 
-  Widget _buildEditableForm() {
-    if (!_showForm || _result == null || _fields.isEmpty) return const SizedBox.shrink();
+  Widget _buildModernForm() {
+    return Column(
+      children: [
+        _sectionTitle('Personal Information'),
+        const SizedBox(height: 12),
+        _modernField('Full Name', _fields['name']),
+        _modernField('Email Address', _fields['email']),
+        _modernField('Contact Number', _fields['contactNumber']),
+        _modernField('Nationality', _fields['nationality']),
+        _modernField('Professional Summary', _fields['summary'], maxLines: 4),
+        _modernField('Skills (comma separated)', _fields['skills']),
 
-    return Card(
-      elevation: 2,
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(Icons.edit_note, color: Theme.of(context).primaryColor),
-                const SizedBox(width: 8),
-                Text(
-                  'Review & Edit Extracted Data',
-                  style: GoogleFonts.poppins(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            _buildFormSection(),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildFormSection() {
-    return SingleChildScrollView(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text('Personal Information', style: GoogleFonts.poppins(fontWeight: FontWeight.w700, fontSize: 14)),
-          const SizedBox(height: 12),
-          _labeledField('Full Name', _fields['name']),
-          const SizedBox(height: 12),
-          _labeledField('Email', _fields['email']),
-          const SizedBox(height: 12),
-          _labeledField('Contact Number', _fields['contactNumber']),
-          const SizedBox(height: 12),
-          _labeledField('Nationality', _fields['nationality']),
-          const SizedBox(height: 12),
-          _labeledField('Professional Summary', _fields['summary'], maxLines: 3),
-          const SizedBox(height: 12),
-          _labeledField('Skills (comma separated)', _fields['skills']),
-
-          if (_result!.educationalProfile.isNotEmpty) ...[
-            const SizedBox(height: 20),
-            Text('Education History', style: GoogleFonts.poppins(fontWeight: FontWeight.w700, fontSize: 14)),
-            const SizedBox(height: 12),
-            ..._result!.educationalProfile.asMap().entries.map((e) {
-              final i = e.key;
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('Education ${i + 1}', style: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 13)),
-                  const SizedBox(height: 8),
-                  _labeledField('Institution', _fields['edu_institution_$i']),
-                  const SizedBox(height: 8),
-                  Row(
+        if (_result!.educationalProfile.isNotEmpty) ...[
+          _sectionTitle('Education'),
+          ..._result!.educationalProfile.asMap().entries.map((entry) {
+            int i = entry.key;
+            return Padding(
+              padding: const EdgeInsets.only(top: 16),
+              child: Card(
+                elevation: 2,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Expanded(child: _labeledField('Duration', _fields['edu_duration_$i'])),
-                      const SizedBox(width: 12),
-                      Expanded(child: _labeledField('Major/Field', _fields['edu_major_$i'])),
+                      Text('Degree ${i + 1}', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+                      const SizedBox(height: 12),
+                      _modernField('Institution', _fields['edu_institution_$i']),
+                      Row(
+                        children: [
+                          Expanded(child: _modernField('Duration', _fields['edu_duration_$i'])),
+                          const SizedBox(width: 12),
+                          Expanded(child: _modernField('Major/Field', _fields['edu_major_$i'])),
+                        ],
+                      ),
+                      _modernField('Grades/CGPA', _fields['edu_marks_$i']),
                     ],
                   ),
-                  const SizedBox(height: 8),
-                  _labeledField('Marks/CGPA', _fields['edu_marks_$i']),
-                  const SizedBox(height: 16),
-                ],
-              );
-            }),
-          ],
-
-          const SizedBox(height: 12),
-          _labeledField('Work Experiences', _fields['experiences'], maxLines: 4),
-          const SizedBox(height: 12),
-          _labeledField('Certifications', _fields['certifications'], maxLines: 3),
-          const SizedBox(height: 12),
-          _labeledField('Publications', _fields['publications'], maxLines: 3),
-          const SizedBox(height: 12),
-          _labeledField('Awards', _fields['awards'], maxLines: 3),
-          const SizedBox(height: 12),
-          _labeledField('References', _fields['references'], maxLines: 3),
-
-          const SizedBox(height: 20),
-          Row(
-            children: [
-              Expanded(
-                child: OutlinedButton(
-                  onPressed: _resetSection,
-                  child: const Text('Start Over'),
                 ),
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: ElevatedButton(
-                  onPressed: _acceptAndFill,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green[600],
-                    foregroundColor: Colors.white,
-                  ),
-                  child: const Text('Create Account with CV Data'),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Align(
-            alignment: Alignment.centerRight,
-            child: TextButton(
-              onPressed: widget.onManualContinue,
-              child: const Text('Continue Manual Registration Instead'),
-            ),
-          ),
+            );
+          }),
         ],
+
+        _sectionTitle('Experience & Achievements'),
+        _modernField('Work Experience (one per paragraph)', _fields['experiences'], maxLines: 6),
+        _modernField('Certifications', _fields['certifications'], maxLines: 4),
+        _modernField('Publications', _fields['publications'], maxLines: 4),
+        _modernField('Awards & Honors', _fields['awards'], maxLines: 4),
+        _modernField('References', _fields['references'], maxLines: 4),
+      ],
+    );
+  }
+
+  Widget _sectionTitle(String title) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 12),
+      child: Text(
+        title,
+        style: GoogleFonts.poppins(
+          fontSize: 16,
+          fontWeight: FontWeight.w700,
+          color: Theme.of(context).colorScheme.primary,
+        ),
       ),
     );
   }
 
-  Widget _labeledField(String label, TextEditingController? controller, {int maxLines = 1}) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: GoogleFonts.poppins(
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
-            color: Colors.grey[700],
+  Widget _modernField(String label, TextEditingController? controller, {int maxLines = 1}) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: TextField(
+        controller: controller,
+        maxLines: maxLines,
+        decoration: InputDecoration(
+          labelText: label,
+          labelStyle: GoogleFonts.poppins(color: Colors.grey.shade700),
+          filled: true,
+          fillColor: Colors.grey.shade50,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: BorderSide(color: Colors.grey.shade300),
           ),
-        ),
-        const SizedBox(height: 4),
-        TextField(
-          controller: controller,
-          maxLines: maxLines,
-          decoration: InputDecoration(
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide(color: Colors.grey[400]!),
-            ),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: BorderSide(color: Colors.grey.shade300),
           ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: BorderSide(color: Theme.of(context).colorScheme.primary, width: 2),
+          ),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
         ),
-      ],
-    );
-  }
-
-  @override
-  void dispose() {
-    for (final c in _fields.values) {
-      c.dispose();
-    }
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        _buildFileSelection(),
-        if (_result != null) ...[
-          const SizedBox(height: 16),
-          _buildPreviewCard(),
-        ],
-        if (_showForm) ...[
-          const SizedBox(height: 16),
-          _buildEditableForm(),
-        ],
-      ],
+      ),
     );
   }
 }

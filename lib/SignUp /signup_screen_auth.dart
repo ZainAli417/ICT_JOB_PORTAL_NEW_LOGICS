@@ -828,6 +828,104 @@ class _SignUp_ScreenState extends State<SignUp_Screen> with TickerProviderStateM
                 return null;
               },
             ),
+            const SizedBox(height: 10),
+
+            Center(
+              child: Container(
+                width: 280,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [const Color(0xFF6366F1), const Color(0xFF8B5CF6)],
+                  ),
+                  borderRadius: BorderRadius.circular(14),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF6366F1).withOpacity(0.3),
+                      blurRadius: 16,
+                      offset: const Offset(0, 8),
+                    ),
+                  ],
+                ),
+                child: ElevatedButton.icon(
+                  onPressed: () async {
+                    // Validate form
+                    final okForm = _formKeyAccount.currentState?.validate() ?? false;
+                    final okEmail = provider.validateEmail();
+                    final okPass = provider.validatePasswords();
+
+
+                    if (!okForm || !okEmail || !okPass) {
+                      _showSnackBar(
+                        'Please fix all errors before proceeding',
+                        isError: true,
+                      );
+                      return;
+                    }
+
+                    // Show loading dialog
+                    showDialog(
+                      context: context,
+                      barrierDismissible: false,
+                      builder: (dialogCtx) => _buildLoadingDialog(),
+                    );
+
+                    try {
+                      // Register recruiter
+                      final success = await provider.createJobSeekerAccount();
+
+                      // Close loading dialog
+                      if (mounted &&
+                          Navigator.of(context, rootNavigator: true).canPop()) {
+                        Navigator.of(context, rootNavigator: true).pop();
+                      }
+
+                      // Small delay for smooth transition
+                      await Future.delayed(const Duration(milliseconds: 300));
+
+                      if (success) {
+                        _showSnackBar(
+                          '✓ Account Created successfully!',
+                          isError: false,
+                        );
+
+                        // Navigation happens automatically via router
+                        // The router will detect auth state and redirect to dashboard
+                      } else {
+                        _showSnackBar(
+                          provider.generalError ?? 'Failed to create account',
+                          isError: true,
+                        );
+                      }
+                    } catch (e) {
+                      // Close loading dialog on error
+                      if (mounted &&
+                          Navigator.of(context, rootNavigator: true).canPop()) {
+                        Navigator.of(context, rootNavigator: true).pop();
+                      }
+
+                      _showSnackBar('Error: ${e.toString()}', isError: true);
+                    }
+                  },
+                  icon: const Icon(Icons.person_add_rounded, size: 20),
+                  label: Text(
+                    'Create Account',
+                    style: GoogleFonts.poppins(
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                      fontSize: 15,
+                    ),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 18),
+                    backgroundColor: Colors.transparent,
+                    shadowColor: Colors.transparent,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
+                ),
+              ),
+            ),
 
             const SizedBox(height: 28),
           ],
