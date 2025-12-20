@@ -7,10 +7,10 @@ class AdminSidebar extends StatelessWidget {
   final String selectedMenu;
 
   const AdminSidebar({
-    Key? key,
+    super.key,
     required this.onMenuSelected,
     required this.selectedMenu,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -91,7 +91,7 @@ class AdminSidebar extends StatelessWidget {
 // admin_profile.dart
 
 class AdminProfile extends StatelessWidget {
-  const AdminProfile({Key? key}) : super(key: key);
+  const AdminProfile({super.key});
 
   @override
   Widget build(BuildContext context) {

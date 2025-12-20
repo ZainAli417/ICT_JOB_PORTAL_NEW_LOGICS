@@ -4,7 +4,7 @@ import 'package:job_portal/Screens/Admin/sidebar.dart';
 import 'user_management_section.dart';
 
 class AdminDashboardScreen extends StatefulWidget {
-  const AdminDashboardScreen({Key? key}) : super(key: key);
+  const AdminDashboardScreen({super.key});
 
   @override
   _AdminDashboardScreenState createState() => _AdminDashboardScreenState();

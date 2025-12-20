@@ -274,7 +274,7 @@ Return only valid JSON. No trailing commas. No comments.
         detailedAnalysis: data['detailedAnalysis']?.toString() ?? '',
         timestamp: DateTime.now(),
       );
-    } catch (e, s) {
+    } catch (e) {
       debugPrint('FINAL PARSING FAILED: $e');
       debugPrint('OFFENDING TEXT:\n$geminiTextResponse');
       // Return fallback

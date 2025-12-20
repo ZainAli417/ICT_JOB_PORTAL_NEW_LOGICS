@@ -1,6 +1,5 @@
 // lib/screens/profile_builder_screen.dart
 import 'dart:convert';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:job_portal/SignUp%20/signup_provider.dart';
@@ -8,8 +7,6 @@ import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 
-import '../Constant/Header_Nav.dart';
-import '../Web_routes.dart';
 import '../extractor_CV/cv_extraction_UI.dart';
 import '../extractor_CV/cv_extractor.dart';
 import '../main.dart';
@@ -508,13 +505,15 @@ class _ProfileBuilderScreenState extends State<ProfileBuilderScreen>
                               onChanged: (v) =>
                                   p.onFieldTypedAutoReveal(1, v), // Index 1
                               validator: (v) {
-                                if (v == null || v.trim().isEmpty)
+                                if (v == null || v.trim().isEmpty) {
                                   return 'Contact required';
+                                }
                                 final phoneRegex = RegExp(
                                   r'^[\d\+\-\s]{5,20}$',
                                 );
-                                if (!phoneRegex.hasMatch(v.trim()))
+                                if (!phoneRegex.hasMatch(v.trim())) {
                                   return 'Enter valid number';
+                                }
                                 return null;
                               },
                             ),

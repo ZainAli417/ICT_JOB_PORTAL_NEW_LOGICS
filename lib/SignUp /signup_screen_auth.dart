@@ -1,5 +1,4 @@
 // lib/screens/signup_screen_auth.dart - SIMPLIFIED VERSION (ACCOUNT CREATION ONLY)
-import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -8,7 +7,6 @@ import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../Constant/Header_Nav.dart';
-import '../Constant/pricing.dart';
 
 class SignUp_Screen extends StatefulWidget {
   const SignUp_Screen({super.key});

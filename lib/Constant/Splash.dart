@@ -1,12 +1,9 @@
-import 'dart:async';
 import 'dart:math' as math;
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:job_portal/Constant/pricing.dart';
 
 import 'CTA_Dynamic.dart';
 import 'hero.dart';
@@ -55,7 +52,7 @@ class _LandingPageState extends State<LandingPage>
   static const Color charcoalGray = Colors.black87;
 
   bool isDarkMode = false;
-  int _activeStage = 0;
+  final int _activeStage = 0;
 
   // Cached text styles to avoid recreation
   late TextStyle _logoTextStyle;

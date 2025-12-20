@@ -10,7 +10,7 @@ import '../extractor_CV/cv_extraction_UI.dart';
 
 /// Dialog content extracted into a widget so it can manage its own keys/state.
 class RecruiterDialogContent extends StatefulWidget {
-  const RecruiterDialogContent({Key? key}) : super(key: key);
+  const RecruiterDialogContent({super.key});
 
   @override
   State<RecruiterDialogContent> createState() => _RecruiterDialogContentState();

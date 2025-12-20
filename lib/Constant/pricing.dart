@@ -4,7 +4,7 @@ import 'dart:math' as math;
 import 'Header_Nav.dart';
 
 class PremiumPricingPage extends StatefulWidget {
-  const PremiumPricingPage({Key? key}) : super(key: key);
+  const PremiumPricingPage({super.key});
 
   @override
   State<PremiumPricingPage> createState() => _PremiumPricingPageState();

@@ -33,7 +33,7 @@ class _CvUploadSectionState extends State<CvUploadSection>
   CvExtractionResult? _result;
   final Map<String, TextEditingController> _fields = {};
   bool _showForm = false;
-  bool _isDragging = false;
+  final bool _isDragging = false;
 
   late AnimationController _fadeController;
   late AnimationController _pulseController;
@@ -64,7 +64,9 @@ class _CvUploadSectionState extends State<CvUploadSection>
   void dispose() {
     _fadeController.dispose();
     _pulseController.dispose();
-    for (final c in _fields.values) c.dispose();
+    for (final c in _fields.values) {
+      c.dispose();
+    }
     super.dispose();
   }
 

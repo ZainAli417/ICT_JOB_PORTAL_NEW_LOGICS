@@ -6,7 +6,7 @@ import 'package:provider/provider.dart';
 import 'admin_provider.dart';
 
 class UserManagementSection extends StatelessWidget {
-  const UserManagementSection({Key? key}) : super(key: key);
+  const UserManagementSection({super.key});
 
   @override
   Widget build(BuildContext context) {

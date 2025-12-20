@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart';
 
 class AdminProvider extends ChangeNotifier {
   final _formKey = GlobalKey<FormState>();
@@ -150,7 +149,7 @@ class AdminProvider extends ChangeNotifier {
   /// Optional realtime subscription
   StreamSubscription<QuerySnapshot>? _requestsSub;
 
-  UserManagementProvider() {
+  void UserManagementProvider() {
     fetchAllRequests();
   }
 

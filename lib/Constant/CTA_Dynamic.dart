@@ -10,10 +10,10 @@ class ScrollAwareCTAButtons extends StatefulWidget {
   final ScrollController? scrollController;
 
   const ScrollAwareCTAButtons({
-    Key? key,
+    super.key,
     required this.isDarkMode,
     this.scrollController,
-  }) : super(key: key);
+  });
 
   @override
   State<ScrollAwareCTAButtons> createState() => _ScrollAwareCTAButtonsState();
@@ -191,14 +191,13 @@ class _FloatingCTA extends StatefulWidget {
   final double entranceProgress; // 0.0 .. 1.0
 
   const _FloatingCTA({
-    Key? key,
     required this.label,
     required this.icon,
     required this.isPrimary,
     required this.isDarkMode,
     required this.onPressed,
     required this.entranceProgress,
-  }) : super(key: key);
+  });
 
   @override
   State<_FloatingCTA> createState() => _FloatingCTAState();

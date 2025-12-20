@@ -4,10 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:job_portal/Constant/OLD_SPLASH.dart';
 
 import 'Constant/Forget Password.dart';
 import 'Constant/cv_analysis.dart';
-import 'Constant/onboarding.dart';
 import 'Constant/pricing.dart';
 import 'Screens/Admin/admin_dashbaord.dart';
 import 'Screens/Admin/admin_dashbaord2.dart';
@@ -22,7 +22,6 @@ import 'Screens/Recruiter/Post_A_Job_Dashboard.dart';
 import 'Screens/Recruiter/Recruiter_dashboard.dart';
 import 'SignUp /profile_builder.dart';
 import 'SignUp /signup_screen_auth.dart';
-import 'SignUp /test.dart';
 
 // ========== OPTIMIZED ROLE SERVICE ==========
 class RoleService {
@@ -396,6 +395,13 @@ final GoRouter router = GoRouter(
 
   routes: [
     // ========== PUBLIC ROUTES ==========
+   /* GoRoute(
+      path: '/',
+      pageBuilder: (c, s) => _buildPage(child: const SplashScreen2(), context: c, state: s),
+    ),
+
+    */
+
     GoRoute(
       path: '/',
       pageBuilder: (c, s) => _buildPage(child: const SplashScreen(), context: c, state: s),
@@ -446,8 +452,8 @@ final GoRouter router = GoRouter(
         // But the cleanest way: use a singleton cache + direct check
         return _JobSeekerShell(
           uid: uid,
-          child: child,
           currentPath: state.uri.path,
+          child: child,
         );
       },
       routes: [

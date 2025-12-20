@@ -2,7 +2,6 @@
 // lib/screens/signup_screen_auth.dart
 import 'dart:async';
 import 'dart:convert';
-import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:job_portal/SignUp%20/signup_provider.dart';
