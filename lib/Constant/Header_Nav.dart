@@ -142,55 +142,7 @@ class _HeaderNavState extends State<HeaderNav> with TickerProviderStateMixin {
         const Spacer(),
 
         // Recruiter CTA with gradient (kept visual interest but no header shadow)
-        _AnimatedButton(
-          onPressed: () => context.go('/register'),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  const Color(0xFFF59E0B).withOpacity(0.12),
-                  const Color(0xFFEC4899).withOpacity(0.12),
-                ],
-              ),
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(
-                color: const Color(0xFFF59E0B).withOpacity(0.3),
-                width: 1.5,
-              ),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(6),
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFFF59E0B), Color(0xFFEC4899)],
-                    ),
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: const Icon(
-                    Icons.business_center_rounded,
-                    size: 16,
-                    color: Colors.white,
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Text(
-                  "For Recruiters",
-                  style: GoogleFonts.poppins(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 14,
-                    color: const Color(0xFF1F2937),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
 
-        const SizedBox(width: 16),
 
         // Login button (flat, no extra header shadow)
         _AnimatedButton(

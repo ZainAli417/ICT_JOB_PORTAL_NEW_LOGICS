@@ -1,10 +1,12 @@
 import 'dart:async';
 import 'dart:math' as math;
-import 'dart:math';
+import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:job_portal/Constant/pricing.dart';
 
 import 'CTA_Dynamic.dart';
 import 'hero.dart';
@@ -46,73 +48,31 @@ class _LandingPageState extends State<LandingPage>
   late AnimationController _rotationController;
   late Animation<double> _rotationAnimation;
   late AnimationController _controller;
-
   late AnimationController _contentAnimationController;
+  late AnimationController _particleAnimationController;
+
   static const Color pureWhite = Color(0xFFFFFFFF);
-  static Color charcoalGray = Colors.black87;
-  // Your existing variables
+  static const Color charcoalGray = Colors.black87;
+
   bool isDarkMode = false;
   int _activeStage = 0;
 
-  // ADD THIS: Animation controller for particles
-  late AnimationController _particleAnimationController;
+  // Cached text styles to avoid recreation
+  late TextStyle _logoTextStyle;
+  late TextStyle _navItemStyle;
+  late TextStyle _buttonTextStyle;
 
-  // Workflow stages data - centralized
-  final List<WorkflowStage> _stages = [
-    WorkflowStage(
-      step: 'Step 1',
-      title: 'Candidate Register',
-      subtitle: 'Create profile and showcase skills',
-      icon: Icons.person_add_rounded,
-      color: const Color(0xFF6366F1),
-      details: [
-        'Profile Registration',
-        'Documents Upload',
-        'CV Generation',
-        'CV Analysis',
-      ],
-    ),
-
-    WorkflowStage(
-      step: 'Step 2',
-      title: 'Recruiter Panel',
-      subtitle: 'Shortlist and submit request',
-      icon: Icons.how_to_reg_rounded,
-      color: const Color(0xFFF59E0B),
-      details: ['Candidates Section', 'Request Submission', 'Track Requests'],
-    ),
-    WorkflowStage(
-      step: 'Step 3',
-      title: 'Admin Processes',
-      subtitle: 'Review, train & evaluate',
-      icon: Icons.admin_panel_settings_rounded,
-      color: const Color(0xFFEC4899),
-      details: [
-        'Interview Scheduling',
-        'Candidate Evaluation',
-        'Skill Testing & Panel Review',
-      ],
-    ),
-    WorkflowStage(
-      step: 'Step 4',
-      title: 'Handover to Recruiter',
-      subtitle: 'Deliver trained candidates',
-      icon: Icons.verified_rounded,
-      color: const Color(0xFF8B5CF6),
-      details: [
-        'Candidate Training',
-        'Skill Development',
-        'Final Preparation',
-        'Handover to Recruiter',
-      ],
-    ),
-  ];
 
   late ScrollController _scrollController;
 
   @override
   void initState() {
     super.initState();
+
+    // Initialize text styles
+    _initializeTextStyles();
+
+    // Reduced duration for smoother animation on web
     _controller = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 30),
@@ -122,10 +82,12 @@ class _LandingPageState extends State<LandingPage>
       duration: const Duration(seconds: 30),
       vsync: this,
     )..repeat();
+
     _rotationAnimation = Tween<double>(
       begin: 0,
       end: 2 * math.pi,
     ).animate(_rotationController);
+
     _particleAnimationController = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 3),
@@ -140,17 +102,18 @@ class _LandingPageState extends State<LandingPage>
       duration: const Duration(milliseconds: 1500),
       vsync: this,
     );
+
     _workflowAnimation = CurvedAnimation(
       parent: _workflowController,
       curve: Curves.easeInOut,
     );
     _workflowController.forward();
 
-
     _fadeController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1500),
     );
+
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(parent: _fadeController, curve: Curves.easeInOut),
     );
@@ -158,10 +121,26 @@ class _LandingPageState extends State<LandingPage>
 
     _scrollController = ScrollController();
   }
+
+  void _initializeTextStyles() {
+    _logoTextStyle = GoogleFonts.poppins(
+      fontWeight: FontWeight.w600,
+      fontSize: 14,
+    );
+    _navItemStyle = GoogleFonts.poppins(
+      fontSize: 15,
+      fontWeight: FontWeight.w500,
+    );
+    _buttonTextStyle = GoogleFonts.poppins(
+      fontWeight: FontWeight.w700,
+      fontSize: 14,
+      color: Colors.white,
+    );
+  }
+
   @override
   void dispose() {
     _controller.dispose();
-
     _workflowController.dispose();
     _fadeController.dispose();
     _rotationController.dispose();
@@ -170,39 +149,46 @@ class _LandingPageState extends State<LandingPage>
     _scrollController.dispose();
     super.dispose();
   }
+
   void toggleTheme() {
     setState(() {
       isDarkMode = !isDarkMode;
+      _initializeTextStyles(); // Refresh text styles
     });
   }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: isDarkMode
-          ? const Color(0xFF0F172A)
-          : Colors.transparent,
+      backgroundColor: isDarkMode ? const Color(0xFF0F172A) : Colors.transparent,
       body: Stack(
         children: [
-          // Animated grid pattern background
+          // Optimized animated grid with RepaintBoundary
           Positioned.fill(
-            child: AnimatedBuilder(
-              animation: _controller,
-              builder: (context, child) {
-                return CustomPaint(
-                  painter: _GridPainter(_controller.value),
-                  size: Size.infinite,
-                );
-              },
+            child: RepaintBoundary(
+              child: AnimatedBuilder(
+                animation: _controller,
+                builder: (context, child) {
+                  return CustomPaint(
+                    painter: _OptimizedGridPainter(_controller.value),
+                    size: Size.infinite,
+                    willChange: true, // Web optimization hint
+                  );
+                },
+              ),
             ),
           ),
 
-          // Content on top of background
-          SingleChildScrollView(
+          // Content with ListView.builder for better performance
+          CustomScrollView(
             controller: _scrollController,
-            child: Column(
-              children: [
-                Padding(
-                  padding: EdgeInsetsGeometry.fromLTRB(50, 0, 50, 0),
+            physics: const BouncingScrollPhysics(),
+            slivers: [
+
+              /// ───────── Top Bar + Hero ─────────
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(50, 0, 50, 0),
                   child: Column(
                     children: [
                       _buildTopBar(),
@@ -210,12 +196,21 @@ class _LandingPageState extends State<LandingPage>
                     ],
                   ),
                 ),
-                _buildFeaturesSection(),
-                _buildFooter(),
-              ],
-            ),
+              ),
+
+              /// ───────── FEATURES ─────────
+              SliverToBoxAdapter(
+                child: _buildFeaturesSection(),
+              ),
+
+              /// ───────── FOOTER ─────────
+              SliverToBoxAdapter(
+                child: _buildFooter(),
+              ),
+            ],
           ),
-          // Floating FAB-like CTA buttons
+
+          // Floating CTA buttons
           ScrollAwareCTAButtons(
             isDarkMode: isDarkMode,
             scrollController: _scrollController,
@@ -224,36 +219,38 @@ class _LandingPageState extends State<LandingPage>
       ),
     );
   }
-  // ==================== TOP BAR ====================
+
   Widget _buildTopBar() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 65, vertical: 10),
-      decoration: BoxDecoration(
-        color: isDarkMode ? const Color(0x00f9fafb) : Colors.transparent,
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [_buildEnhancedLogo(), _buildNavigation()],
+    return RepaintBoundary(
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 65, vertical: 10),
+        decoration: BoxDecoration(
+          color: isDarkMode ? const Color(0x00f9fafb) : Colors.transparent,
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [_buildEnhancedLogo(), _buildNavigation()],
+        ),
       ),
     );
   }
+
   Widget _buildEnhancedLogo() {
     return Row(
       children: [
-        // --- Replace shimmer container with your logo image
         Image.asset(
           'images/logo.png',
           width: 100,
           height: 100,
           fit: BoxFit.fill,
+          cacheWidth: 200, // Web optimization
+          cacheHeight: 200,
         ),
-
         const SizedBox(width: 14),
-
-        // --- Brand title and subtitle
       ],
     );
   }
+
   Widget _buildNavigation() {
     return Row(
       children: [
@@ -261,10 +258,8 @@ class _LandingPageState extends State<LandingPage>
         const SizedBox(width: 32),
         _buildNavItem('Workflow', Icons.account_tree_rounded),
         const SizedBox(width: 32),
-        _buildNavItem('Pricing', Icons.payments_rounded),
+        _buildNavItem('Pricing', Icons.payments_rounded, ),
         const SizedBox(width: 40),
-
-        // Login button (flat, no extra header shadow)
         _AnimatedButton(
           onPressed: () => context.go('/login'),
           child: Container(
@@ -274,14 +269,7 @@ class _LandingPageState extends State<LandingPage>
               borderRadius: BorderRadius.circular(10),
               border: Border.all(color: const Color(0xFF6366F1), width: 2),
             ),
-            child: Text(
-              "Login",
-              style: GoogleFonts.poppins(
-                fontWeight: FontWeight.w600,
-                fontSize: 14,
-                color: const Color(0xFF6366F1),
-              ),
-            ),
+            child: Text("Login", style: _logoTextStyle.copyWith(color: const Color(0xFF6366F1))),
           ),
         ),
         const SizedBox(width: 16),
@@ -298,20 +286,9 @@ class _LandingPageState extends State<LandingPage>
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text(
-                  "Get Started",
-                  style: GoogleFonts.poppins(
-                    fontWeight: FontWeight.w700,
-                    fontSize: 14,
-                    color: Colors.white,
-                  ),
-                ),
+                Text("Get Started", style: _buttonTextStyle),
                 const SizedBox(width: 8),
-                const Icon(
-                  Icons.arrow_forward_rounded,
-                  size: 16,
-                  color: Colors.white,
-                ),
+                const Icon(Icons.arrow_forward_rounded, size: 16, color: Colors.white),
               ],
             ),
           ),
@@ -321,29 +298,26 @@ class _LandingPageState extends State<LandingPage>
       ],
     );
   }
+
   Widget _buildNavItem(String title, IconData icon) {
     return MouseRegion(
       cursor: SystemMouseCursors.click,
       child: GestureDetector(
-        onTap: () {},
+        onTap: () {
+          context.go('/pricing');
+        },
         child: Row(
           children: [
             Icon(
               icon,
               size: 18,
-              color: isDarkMode
-                  ? const Color(0xFF94A3B8)
-                  : const Color(0xFF6B7280),
+              color: isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF6B7280),
             ),
             const SizedBox(width: 6),
             Text(
               title,
-              style: GoogleFonts.poppins(
-                fontSize: 15,
-                fontWeight: FontWeight.w500,
-                color: isDarkMode
-                    ? const Color(0xFF94A3B8)
-                    : const Color(0xFF6B7280),
+              style: _navItemStyle.copyWith(
+                color: isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF6B7280),
               ),
             ),
           ],
@@ -351,6 +325,7 @@ class _LandingPageState extends State<LandingPage>
       ),
     );
   }
+
   Widget _buildThemeToggle() {
     return MouseRegion(
       cursor: SystemMouseCursors.click,
@@ -359,28 +334,22 @@ class _LandingPageState extends State<LandingPage>
         child: Container(
           padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
-            color: isDarkMode
-                ? const Color(0xFF334155)
-                : const Color(0xFFF3F4F6),
+            color: isDarkMode ? const Color(0xFF334155) : const Color(0xFFF3F4F6),
             borderRadius: BorderRadius.circular(10),
             border: Border.all(
-              color: isDarkMode
-                  ? const Color(0xFF475569)
-                  : const Color(0xFFE5E7EB),
+              color: isDarkMode ? const Color(0xFF475569) : const Color(0xFFE5E7EB),
             ),
           ),
           child: Icon(
             isDarkMode ? Icons.light_mode_rounded : Icons.dark_mode_rounded,
-            color: isDarkMode
-                ? const Color(0xFFFBBF24)
-                : const Color(0xFF6366F1),
+            color: isDarkMode ? const Color(0xFFFBBF24) : const Color(0xFF6366F1),
             size: 20,
           ),
         ),
       ),
     );
   }
-  // ==================== FEATURES SECTION ====================
+
   Widget _buildFeaturesSection() {
     final features = [
       FeaturePortal(
@@ -390,26 +359,10 @@ class _LandingPageState extends State<LandingPage>
         color: const Color(0xFF6366F1),
         icon: Icons.person_rounded,
         items: [
-          FeatureItem(
-            'Profile Builder',
-            'Create comprehensive professional profiles',
-            Icons.account_circle_rounded,
-          ),
-          FeatureItem(
-            'CV Generator',
-            'AI-powered resume creation tools',
-            Icons.description_rounded,
-          ),
-          FeatureItem(
-            'Skill Showcase',
-            'Highlight expertise and certifications',
-            Icons.workspace_premium_rounded,
-          ),
-          FeatureItem(
-            'Public Portfolio',
-            'Share your journey with recruiters',
-            Icons.public_rounded,
-          ),
+          FeatureItem('Profile Builder', 'Create comprehensive professional profiles', Icons.account_circle_rounded),
+          FeatureItem('CV Generator', 'AI-powered resume creation tools', Icons.description_rounded),
+          FeatureItem('Skill Showcase', 'Highlight expertise and certifications', Icons.workspace_premium_rounded),
+          FeatureItem('Public Portfolio', 'Share your journey with recruiters', Icons.public_rounded),
         ],
       ),
       FeaturePortal(
@@ -419,26 +372,10 @@ class _LandingPageState extends State<LandingPage>
         color: const Color(0xFF10B981),
         icon: Icons.business_rounded,
         items: [
-          FeatureItem(
-            'Candidate Search',
-            'Browse qualified talent pool',
-            Icons.search_rounded,
-          ),
-          FeatureItem(
-            'Bulk Selection',
-            'Select multiple candidates at once',
-            Icons.checklist_rounded,
-          ),
-          FeatureItem(
-            'Request Management',
-            'Submit hiring requests to admin',
-            Icons.send_rounded,
-          ),
-          FeatureItem(
-            'Request Tracker',
-            'Realtime Recruitment Request Tracking',
-            Icons.auto_graph,
-          ),
+          FeatureItem('Candidate Search', 'Browse qualified talent pool', Icons.search_rounded),
+          FeatureItem('Bulk Selection', 'Select multiple candidates at once', Icons.checklist_rounded),
+          FeatureItem('Request Management', 'Submit hiring requests to admin', Icons.send_rounded),
+          FeatureItem('Request Tracker', 'Realtime Recruitment Request Tracking', Icons.auto_graph),
         ],
       ),
       FeaturePortal(
@@ -448,80 +385,59 @@ class _LandingPageState extends State<LandingPage>
         color: const Color(0xFFF59E0B),
         icon: Icons.admin_panel_settings_rounded,
         items: [
-          FeatureItem(
-            'Request Review',
-            'Evaluate recruiter requests',
-            Icons.rate_review_rounded,
-          ),
-          FeatureItem(
-            'Interview Scheduling',
-            'Organize and conduct interviews',
-            Icons.event_rounded,
-          ),
-          FeatureItem(
-            'Candidate Training',
-            'Skill development and preparation',
-            Icons.school_rounded,
-          ),
-          FeatureItem(
-            'Final Selection',
-            'Complete hiring and onboarding',
-            Icons.how_to_reg_rounded,
-          ),
+          FeatureItem('Request Review', 'Evaluate recruiter requests', Icons.rate_review_rounded),
+          FeatureItem('Interview Scheduling', 'Organize and conduct interviews', Icons.event_rounded),
+          FeatureItem('Candidate Training', 'Skill development and preparation', Icons.school_rounded),
+          FeatureItem('Final Selection', 'Complete hiring and onboarding', Icons.how_to_reg_rounded),
         ],
       ),
     ];
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 80, vertical:0),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: isDarkMode
-              ? [const Color(0x00f9fafb), const Color(0x00f9fafb)]
-              : [
-                  const Color(0x00f9fafb),
-                  const Color(0x00f9fafb),
-                  const Color(0x00f9fafb),
-                ],
+    return RepaintBoundary(
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 80, vertical: 0),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: isDarkMode
+                ? [const Color(0x00f9fafb), const Color(0x00f9fafb)]
+                : [const Color(0x00f9fafb), const Color(0x00f9fafb), const Color(0x00f9fafb)],
+          ),
         ),
-      ),
-      child: Column(
-        children: [
-          _buildSectionHeader(
-            'COMPLETE ECOSYSTEM',
-            'Complete Hiring Ecosystem',
-            'Three powerful portals, one seamless journey',
-            Icons.apps_rounded,
-          ),
-
-          const SizedBox(height: 40),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              for (int i = 0; i < features.length; i++) ...[
-                Expanded(child: _buildFeatureCard(features[i])),
-                if (i < features.length - 1)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 100),
-                    child: Icon(
-                      Icons.arrow_forward,
-                      color: isDarkMode
-                          ? const Color(0xFF475569)
-                          : const Color(0xFFD1D5DB),
-                      size: 40,
+        child: Column(
+          children: [
+            _buildSectionHeader(
+              'COMPLETE ECOSYSTEM',
+              'Complete Hiring Ecosystem',
+              'Three powerful portals, one seamless journey',
+              Icons.apps_rounded,
+            ),
+            const SizedBox(height: 40),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                for (int i = 0; i < features.length; i++) ...[
+                  Expanded(child: RepaintBoundary(child: _buildFeatureCard(features[i]))),
+                  if (i < features.length - 1)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 100),
+                      child: Icon(
+                        Icons.arrow_forward,
+                        color: isDarkMode ? const Color(0xFF475569) : const Color(0xFFD1D5DB),
+                        size: 40,
+                      ),
                     ),
-                  ),
+                ],
               ],
-            ],
-          ),
-          const SizedBox(height: 40),
-
-        ],
+            ),
+            const SizedBox(height: 40),
+          ],
+        ),
       ),
     );
   }
+
   Widget _buildFeatureCard(FeaturePortal portal) {
     return Container(
       padding: const EdgeInsets.all(32),
@@ -544,10 +460,7 @@ class _LandingPageState extends State<LandingPage>
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 8,
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: [portal.color, portal.color.withOpacity(0.7)],
@@ -592,9 +505,7 @@ class _LandingPageState extends State<LandingPage>
             portal.subtitle,
             style: GoogleFonts.poppins(
               fontSize: 14,
-              color: isDarkMode
-                  ? const Color(0xFF94A3B8)
-                  : const Color(0xFF6B7280),
+              color: isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF6B7280),
               fontWeight: FontWeight.w500,
               height: 1.5,
             ),
@@ -604,9 +515,7 @@ class _LandingPageState extends State<LandingPage>
             final i = entry.key;
             final item = entry.value;
             return Padding(
-              padding: EdgeInsets.only(
-                bottom: i < portal.items.length - 1 ? 16 : 0,
-              ),
+              padding: EdgeInsets.only(bottom: i < portal.items.length - 1 ? 16 : 0),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -629,9 +538,7 @@ class _LandingPageState extends State<LandingPage>
                           style: GoogleFonts.poppins(
                             fontSize: 15,
                             fontWeight: FontWeight.w600,
-                            color: isDarkMode
-                                ? Colors.white
-                                : const Color(0xFF1F2937),
+                            color: isDarkMode ? Colors.white : const Color(0xFF1F2937),
                           ),
                         ),
                         const SizedBox(height: 2),
@@ -639,9 +546,7 @@ class _LandingPageState extends State<LandingPage>
                           item.description,
                           style: GoogleFonts.poppins(
                             fontSize: 13,
-                            color: isDarkMode
-                                ? const Color(0xFF64748B)
-                                : const Color(0xFF9CA3AF),
+                            color: isDarkMode ? const Color(0xFF64748B) : const Color(0xFF9CA3AF),
                             height: 1.4,
                           ),
                         ),
@@ -656,66 +561,69 @@ class _LandingPageState extends State<LandingPage>
       ),
     );
   }
-   // ==================== FOOTER ====================
+
   Widget _buildFooter() {
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: isDarkMode
-              ? [const Color(0xFF111827), const Color(0xFF000000)]
-              : [const Color(0xFF1F2937), const Color(0xFF111827)],
-        ),
-      ),
-      child: Column(
-        children: [
-          _buildStatsShowcase(),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 10),
-            child: Column(
-              children: [
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(flex: 2, child: _buildFooterBrand()),
-                    const SizedBox(width: 80),
-                    Expanded(
-                      child: _buildFooterColumn('For Candidates', [
-                        'Create Profile',
-                        'Build CV',
-                        'Browse Jobs',
-                        'Career Resources',
-                      ]),
-                    ),
-                    const SizedBox(width: 60),
-                    Expanded(
-                      child: _buildFooterColumn('For Recruiters', [
-                        'Find Talent',
-                        'Submit Requests',
-                        'Pricing Plans',
-                        'Success Stories',
-                      ]),
-                    ),
-                    const SizedBox(width: 60),
-                    Expanded(
-                      child: _buildFooterColumn('Company', [
-                        'About Us',
-                        'Contact',
-                        'Careers',
-                        'Privacy Policy',
-                      ]),
-                    ),
-                  ],
-                ),
-              ],
-            ),
+    return RepaintBoundary(
+      child: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: isDarkMode
+                ? [const Color(0xFF111827), const Color(0xFF000000)]
+                : [const Color(0xFF1F2937), const Color(0xFF111827)],
           ),
-          _buildFooterBottom(),
-        ],
+        ),
+        child: Column(
+          children: [
+            _buildStatsShowcase(),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 10),
+              child: Column(
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(flex: 2, child: _buildFooterBrand()),
+                      const SizedBox(width: 80),
+                      Expanded(
+                        child: _buildFooterColumn('For Candidates', [
+                          'Create Profile',
+                          'Build CV',
+                          'Browse Jobs',
+                          'Career Resources',
+                        ]),
+                      ),
+                      const SizedBox(width: 60),
+                      Expanded(
+                        child: _buildFooterColumn('For Recruiters', [
+                          'Find Talent',
+                          'Submit Requests',
+                          'Pricing Plans',
+                          'Success Stories',
+                        ]),
+                      ),
+                      const SizedBox(width: 60),
+                      Expanded(
+                        child: _buildFooterColumn('Company', [
+                          'About Us',
+                          'Contact',
+                          'Careers',
+                          'Privacy Policy',
+                        ]),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            _buildFooterBottom(),
+          ],
+        ),
       ),
     );
   }
+
   Widget _buildFooterBrand() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -750,6 +658,7 @@ class _LandingPageState extends State<LandingPage>
       ],
     );
   }
+
   Widget _buildSocialIcon(IconData icon, Color color) {
     return MouseRegion(
       cursor: SystemMouseCursors.click,
@@ -764,6 +673,7 @@ class _LandingPageState extends State<LandingPage>
       ),
     );
   }
+
   Widget _buildFooterColumn(String title, List<String> items) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -778,17 +688,13 @@ class _LandingPageState extends State<LandingPage>
         ),
         const SizedBox(height: 20),
         ...items.map(
-          (item) => Padding(
+              (item) => Padding(
             padding: const EdgeInsets.only(bottom: 14),
             child: MouseRegion(
               cursor: SystemMouseCursors.click,
               child: Row(
                 children: [
-                  const Icon(
-                    Icons.arrow_forward_ios_rounded,
-                    color: Color(0xFF6366F1),
-                    size: 12,
-                  ),
+                  const Icon(Icons.arrow_forward_ios_rounded, color: Color(0xFF6366F1), size: 12),
                   const SizedBox(width: 8),
                   Text(
                     item,
@@ -806,6 +712,7 @@ class _LandingPageState extends State<LandingPage>
       ],
     );
   }
+
   Widget _buildFooterBottom() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 80, vertical: 30),
@@ -817,27 +724,18 @@ class _LandingPageState extends State<LandingPage>
         children: [
           Text(
             '© 2025 Maha Services. All rights reserved.',
-            style: GoogleFonts.poppins(
-              color: const Color(0xFF6B7280),
-              fontSize: 13,
-            ),
+            style: GoogleFonts.poppins(color: const Color(0xFF6B7280), fontSize: 13),
           ),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
               color: const Color(0xFF6366F1).withOpacity(0.1),
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                color: const Color(0xFF6366F1).withOpacity(0.3),
-              ),
+              border: Border.all(color: const Color(0xFF6366F1).withOpacity(0.3)),
             ),
             child: Row(
               children: [
-                const Icon(
-                  Icons.psychology_rounded,
-                  color: Color(0xFF6366F1),
-                  size: 16,
-                ),
+                const Icon(Icons.psychology_rounded, color: Color(0xFF6366F1), size: 16),
                 const SizedBox(width: 6),
                 Text(
                   'Powered by AI',
@@ -854,12 +752,8 @@ class _LandingPageState extends State<LandingPage>
       ),
     );
   }
-  Widget _buildSectionHeader(
-    String badge,
-    String title,
-    String subtitle,
-    IconData icon,
-  ) {
+
+  Widget _buildSectionHeader(String badge, String title, String subtitle, IconData icon) {
     return FadeTransition(
       opacity: _workflowAnimation,
       child: Column(
@@ -874,10 +768,7 @@ class _LandingPageState extends State<LandingPage>
                 ],
               ),
               borderRadius: BorderRadius.circular(50),
-              border: Border.all(
-                color: const Color(0xFF6366F1).withOpacity(0.5),
-                width: 1.5,
-              ),
+              border: Border.all(color: const Color(0xFF6366F1).withOpacity(0.5), width: 1.5),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
@@ -911,9 +802,7 @@ class _LandingPageState extends State<LandingPage>
             subtitle,
             style: GoogleFonts.poppins(
               fontSize: 18,
-              color: isDarkMode
-                  ? const Color(0xFF94A3B8)
-                  : const Color(0xFF6B7280),
+              color: isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF6B7280),
               fontWeight: FontWeight.w400,
             ),
           ),
@@ -921,7 +810,7 @@ class _LandingPageState extends State<LandingPage>
       ),
     );
   }
-  // ==================== STATS SHOWCASE ====================
+
   Widget _buildStatsShowcase() {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 50, horizontal: 80),
@@ -930,16 +819,8 @@ class _LandingPageState extends State<LandingPage>
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: isDarkMode
-              ? [
-            const Color(0x00f9fafb),
-            const Color(0x00f9fafb),
-            const Color(0x00f9fafb),
-          ]
-              : [
-            const Color(0x00f9fafb),
-            const Color(0x00f9fafb),
-            const Color(0x00f9fafb),
-          ],
+              ? [const Color(0x00f9fafb), const Color(0x00f9fafb), const Color(0x00f9fafb)]
+              : [const Color(0x00f9fafb), const Color(0x00f9fafb), const Color(0x00f9fafb)],
         ),
       ),
       child: Column(
@@ -964,11 +845,7 @@ class _LandingPageState extends State<LandingPage>
           const SizedBox(height: 20),
           Text(
             'Trusted by Industry Leaders',
-            style: GoogleFonts.poppins(
-              fontSize: 42,
-              fontWeight: FontWeight.w800,
-              color: Colors.white,
-            ),
+            style: GoogleFonts.poppins(fontSize: 42, fontWeight: FontWeight.w800, color: Colors.white),
           ),
           const SizedBox(height: 12),
           Text(
@@ -983,35 +860,20 @@ class _LandingPageState extends State<LandingPage>
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              _buildSuccessMetric(
-                '15K+',
-                'Successfully Hired',
-                Icons.people_rounded,
-              ),
+              _buildSuccessMetric('15K+', 'Successfully Hired', Icons.people_rounded),
               const SizedBox(width: 50),
-              _buildSuccessMetric(
-                '98%',
-                'Success Rate',
-                Icons.trending_up_rounded,
-              ),
+              _buildSuccessMetric('98%', 'Success Rate', Icons.trending_up_rounded),
               const SizedBox(width: 50),
-              _buildSuccessMetric(
-                '24h',
-                'Avg. Response',
-                Icons.schedule_rounded,
-              ),
+              _buildSuccessMetric('24h', 'Avg. Response', Icons.schedule_rounded),
               const SizedBox(width: 50),
-              _buildSuccessMetric(
-                '500+',
-                'Active Recruiters',
-                Icons.business_rounded,
-              ),
+              _buildSuccessMetric('500+', 'Active Recruiters', Icons.business_rounded),
             ],
           ),
         ],
       ),
     );
   }
+
   Widget _buildSuccessMetric(String value, String label, IconData icon) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
@@ -1050,6 +912,7 @@ class _LandingPageState extends State<LandingPage>
     );
   }
 }
+
 class _AnimatedButton extends StatefulWidget {
   final VoidCallback onPressed;
   final Widget child;
@@ -1059,6 +922,7 @@ class _AnimatedButton extends StatefulWidget {
   @override
   State<_AnimatedButton> createState() => _AnimatedButtonState();
 }
+
 class _AnimatedButtonState extends State<_AnimatedButton> {
   bool _isHovered = false;
 
@@ -1080,7 +944,8 @@ class _AnimatedButtonState extends State<_AnimatedButton> {
     );
   }
 }
-// ==================== DATA MODELS ====================
+
+// Data Models
 class WorkflowStage {
   final String step;
   final String title;
@@ -1098,6 +963,7 @@ class WorkflowStage {
     required this.details,
   });
 }
+
 class FeaturePortal {
   final String number;
   final String title;
@@ -1115,6 +981,7 @@ class FeaturePortal {
     required this.items,
   });
 }
+
 class FeatureItem {
   final String title;
   final String description;
@@ -1122,146 +989,123 @@ class FeatureItem {
 
   FeatureItem(this.title, this.description, this.icon);
 }
-// ==================== CUSTOM PAINTERS ====================
-class _GridPainter extends CustomPainter {
+
+// Optimized Grid Painter with reduced complexity
+class _OptimizedGridPainter extends CustomPainter {
   final double animationValue;
 
-  _GridPainter(this.animationValue);
+  // Cache for paint objects
+  static final Paint _baseGridPaint = Paint()
+    ..color = const Color(0xFF4A90E2).withOpacity(0.15)
+    ..strokeWidth = 1.6
+    ..style = PaintingStyle.stroke;
+
+  static final Paint _beamPaint = Paint()
+    ..strokeWidth = 2.0
+    ..style = PaintingStyle.stroke
+    ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6);
+
+  static final Paint _intersectionPaint = Paint()
+    ..color = const Color(0xFFFFFFFF).withOpacity(0.3)
+    ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 15);
+
+  _OptimizedGridPainter(this.animationValue);
 
   @override
   void paint(Canvas canvas, Size size) {
     const double gridSize = 100.0;
     final offset = animationValue * gridSize;
 
-    // Base grid paint (dimmed, more prominent)
-    final baseGridPaint = Paint()
-      ..color = const Color(0xFF4A90E2).withOpacity(0.15)
-      ..strokeWidth = 1.6
-      ..style = PaintingStyle.stroke;
+    // Reduce the number of beam calculations for web performance
+    final beamUpdateInterval = 2; // Only update beams every 2 grid lines
 
-    // Neon beam paint for grid lines
-    final beamPaint = Paint()
-      ..strokeWidth = 2.0
-      ..style = PaintingStyle.stroke
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6);
-
-    // Draw vertical lines with moving beam effect
+    // Draw vertical lines
     int verticalIndex = 0;
-    for (
-      double x = -gridSize + (offset % gridSize);
-      x < size.width + gridSize;
-      x += gridSize
-    ) {
-      // Draw base line
-      canvas.drawLine(Offset(x, 0), Offset(x, size.height), baseGridPaint);
+    for (double x = -gridSize + (offset % gridSize); x < size.width + gridSize; x += gridSize) {
+      canvas.drawLine(Offset(x, 0), Offset(x, size.height), _baseGridPaint);
 
-      // Create moving beam along the line
-      final beamProgress = (animationValue * 2 + verticalIndex * 0.3) % 1.0;
-      final beamStart = beamProgress * size.height;
-      final beamLength = size.height * 0.4; // Beam covers 30% of line
+      if (verticalIndex % beamUpdateInterval == 0) {
+        final beamProgress = (animationValue * 2 + verticalIndex * 0.3) % 1.0;
+        final beamStart = beamProgress * size.height;
+        final beamLength = size.height * 0.4;
 
-      final verticalGradient = LinearGradient(
-        begin: Alignment.topCenter,
-        end: Alignment.bottomCenter,
-        colors: [
-          Colors.transparent,
-          const Color(0xFFF7E6FF).withOpacity(0.4),
-          const Color(0xFFF7E6FF).withOpacity(0.9),
-          const Color(0xFFF7E6FF).withOpacity(0.4),
-          Colors.transparent,
-        ],
-        stops: const [0.0, 0.2, 0.5, 0.8, 1.0],
-      );
+        final verticalGradient = ui.Gradient.linear(
+          Offset(x, beamStart - beamLength / 2),
+          Offset(x, beamStart + beamLength / 2),
+          [
+            Colors.transparent,
+            const Color(0xFFF7E6FF).withOpacity(0.4),
+            const Color(0xFFF7E6FF).withOpacity(0.9),
+            const Color(0xFFF7E6FF).withOpacity(0.4),
+            Colors.transparent,
+          ],
+          [0.0, 0.2, 0.5, 0.8, 1.0],
+        );
 
-      beamPaint.shader = verticalGradient.createShader(
-        Rect.fromLTWH(x - 20, beamStart - beamLength / 2, 40, beamLength),
-      );
-
-      canvas.drawLine(
-        Offset(x, math.max(0, beamStart - beamLength / 2)),
-        Offset(x, math.min(size.height, beamStart + beamLength / 2)),
-        beamPaint,
-      );
-
+        _beamPaint.shader = verticalGradient;
+        canvas.drawLine(
+          Offset(x, math.max(0, beamStart - beamLength / 2)),
+          Offset(x, math.min(size.height, beamStart + beamLength / 2)),
+          _beamPaint,
+        );
+      }
       verticalIndex++;
     }
 
-    // Draw horizontal lines with moving beam effect
+    // Draw horizontal lines
     int horizontalIndex = 0;
-    for (
-      double y = -gridSize + (offset % gridSize);
-      y < size.height + gridSize;
-      y += gridSize
-    ) {
-      // Draw base line
-      canvas.drawLine(Offset(0, y), Offset(size.width, y), baseGridPaint);
+    for (double y = -gridSize + (offset % gridSize); y < size.height + gridSize; y += gridSize) {
+      canvas.drawLine(Offset(0, y), Offset(size.width, y), _baseGridPaint);
 
-      // Create moving beam along the line
-      final beamProgress =
-          (animationValue * 1.5 + horizontalIndex * 0.25) % 1.0;
-      final beamStart = beamProgress * size.width;
-      final beamLength = size.width * 0.6; // Beam covers 30% of line
+      if (horizontalIndex % beamUpdateInterval == 0) {
+        final beamProgress = (animationValue * 1.5 + horizontalIndex * 0.25) % 1.0;
+        final beamStart = beamProgress * size.width;
+        final beamLength = size.width * 0.6;
 
-      final horizontalGradient = LinearGradient(
-        colors: [
-          Colors.transparent,
-          const Color(0xFFE6EFFF).withOpacity(0.4),
-          const Color(0xFFE6EFFF).withOpacity(0.9),
-          const Color(0xFFE6EFFF).withOpacity(0.4),
-          Colors.transparent,
-        ],
-        stops: const [0.0, 0.2, 0.5, 0.8, 1.0],
-      );
+        final horizontalGradient = ui.Gradient.linear(
+          Offset(beamStart - beamLength / 2, y),
+          Offset(beamStart + beamLength / 2, y),
+          [
+            Colors.transparent,
+            const Color(0xFFE6EFFF).withOpacity(0.4),
+            const Color(0xFFE6EFFF).withOpacity(0.9),
+            const Color(0xFFE6EFFF).withOpacity(0.4),
+            Colors.transparent,
+          ],
+          [0.0, 0.2, 0.5, 0.8, 1.0],
+        );
 
-      beamPaint.shader = horizontalGradient.createShader(
-        Rect.fromLTWH(beamStart - beamLength / 2, y - 20, beamLength, 40),
-      );
-
-      canvas.drawLine(
-        Offset(math.max(0, beamStart - beamLength / 2), y),
-        Offset(math.min(size.width, beamStart + beamLength / 2), y),
-        beamPaint,
-      );
-
+        _beamPaint.shader = horizontalGradient;
+        canvas.drawLine(
+          Offset(math.max(0, beamStart - beamLength / 2), y),
+          Offset(math.min(size.width, beamStart + beamLength / 2), y),
+          _beamPaint,
+        );
+      }
       horizontalIndex++;
     }
 
-    // Add extra glow at beam intersections
-    final intersectionPaint = Paint()
-      ..color = const Color(0xFFFFFFFF).withOpacity(0.3)
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 15);
+    // Simplified intersection glow (reduce calculations)
+    if (animationValue % 0.1 < 0.05) { // Only draw every 10th frame
+      verticalIndex = 0;
+      for (double x = -gridSize + (offset % gridSize); x < size.width + gridSize; x += gridSize * 2) {
+        horizontalIndex = 0;
+        for (double y = -gridSize + (offset % gridSize); y < size.height + gridSize; y += gridSize * 2) {
+          final beamProgressV = (animationValue * 2 + verticalIndex * 0.3) % 1.0;
+          final beamProgressH = (animationValue * 1.5 + horizontalIndex * 0.25) % 1.0;
+          final verticalBeamY = beamProgressV * size.height;
+          final horizontalBeamX = beamProgressH * size.width;
 
-    verticalIndex = 0;
-    for (
-      double x = -gridSize + (offset % gridSize);
-      x < size.width + gridSize;
-      x += gridSize
-    ) {
-      horizontalIndex = 0;
-      for (
-        double y = -gridSize + (offset % gridSize);
-        y < size.height + gridSize;
-        y += gridSize
-      ) {
-        final beamProgressV = (animationValue * 2 + verticalIndex * 0.3) % 1.0;
-        final beamProgressH =
-            (animationValue * 1.5 + horizontalIndex * 0.25) % 1.0;
-
-        // Check if beams are near intersection
-        final verticalBeamY = beamProgressV * size.height;
-        final horizontalBeamX = beamProgressH * size.width;
-
-        if ((verticalBeamY - y).abs() < 50 &&
-            (horizontalBeamX - x).abs() < 50) {
-          canvas.drawCircle(Offset(x, y), 8, intersectionPaint);
+          if ((verticalBeamY - y).abs() < 50 && (horizontalBeamX - x).abs() < 50) {
+            canvas.drawCircle(Offset(x, y), 8, _intersectionPaint);
+          }
+          horizontalIndex++;
         }
-
-        horizontalIndex++;
+        verticalIndex++;
       }
-      verticalIndex++;
     }
   }
 
   @override
-  bool shouldRepaint(_GridPainter oldDelegate) => true;
+  bool shouldRepaint(_OptimizedGridPainter oldDelegate) => true;
 }

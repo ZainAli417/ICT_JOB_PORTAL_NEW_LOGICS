@@ -2502,7 +2502,7 @@ class _ProfileBuilderScreenInner extends StatelessWidget {
       body: SafeArea(
         child: Column(
           children: [
-            const HeaderNav(),
+           // const HeaderNav(),
             Expanded(
               child: SingleChildScrollView(
                 padding: EdgeInsets.all(32),

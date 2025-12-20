@@ -28,6 +28,9 @@ class _JobSeekerLoginScreenState extends State<JobSeekerLoginScreen>
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
   late Animation<double> _floatAnimation;
+  late AnimationController _floatingController;
+  late AnimationController _pulseController;
+
 
   @override
   void initState() {
@@ -65,6 +68,16 @@ class _JobSeekerLoginScreenState extends State<JobSeekerLoginScreen>
       _fadeController.forward();
       _slideController.forward();
     });
+    _floatingController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 3),
+    )..repeat(reverse: true);
+
+    _pulseController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 2000),
+    )..repeat();
+
   }
 
   @override
@@ -74,6 +87,9 @@ class _JobSeekerLoginScreenState extends State<JobSeekerLoginScreen>
     _fadeController.dispose();
     _slideController.dispose();
     _floatController.dispose();
+
+    _floatingController.dispose();
+    _pulseController.dispose();
     super.dispose();
   }
 
@@ -135,7 +151,7 @@ class _JobSeekerLoginScreenState extends State<JobSeekerLoginScreen>
             Expanded(
               child: Row(
                 children: [
-                  if (isWide) Expanded(flex: 5, child: _buildLeftPanel()),
+                  if (isWide) Expanded(flex: 5, child: leftPanel(context)),
                   Expanded(
                     flex: isWide ? 5 : 1,
                     child: _buildFormPanel(isWide),
@@ -149,423 +165,374 @@ class _JobSeekerLoginScreenState extends State<JobSeekerLoginScreen>
     );
   }
 
-  Widget _buildLeftPanel() {
-    return SizedBox.expand( // allow full available area (edge-to-edge)
+
+  Widget leftPanel(BuildContext context) {
+    return Container(
+      height: MediaQuery.of(context).size.height,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            const Color(0xFF0F0F23),
+            const Color(0xFF1a1a3e),
+            const Color(0xFF2d1b4e),
+          ],
+        ),
+      ),
       child: Stack(
-
         children: [
-          // Background Image
-          Positioned.fill(
-            child: Image.network(
-              'https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=1200&q=80',
-              fit: BoxFit.cover,
-            ),
-          ),
+          // Animated background orbs
+          _buildAnimatedOrbs(),
 
-          // Lighter Gradient Overlay
+          // Glass noise texture overlay
           Positioned.fill(
-            child: Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    const Color(0xFF6366F1).withOpacity(0.75),
-                    const Color(0xFF8B5CF6).withOpacity(0.65),
-                    const Color(0xFFEC4899).withOpacity(0.70),
-                  ],
-                ),
+            child: Opacity(
+              opacity: 0.03,
+              child: Image.network(
+                'https://grainy-gradients.vercel.app/noise.svg',
+                fit: BoxFit.cover,
               ),
             ),
           ),
 
-          // Animated background circles
-          Positioned(
-            top: -100,
-            right: -100,
-            child: AnimatedBuilder(
-              animation: _floatAnimation,
-              builder: (context, child) {
-                return Transform.translate(
-                  offset: Offset(_floatAnimation.value, _floatAnimation.value),
-                  child: Container(
-                    width: 300,
-                    height: 300,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      gradient: RadialGradient(
-                        colors: [
-                          Colors.white.withOpacity(0.15),
-                          Colors.transparent,
-                        ],
-                      ),
-                    ),
-                  ),
-                );
-              },
-            ),
-          ),
-          Positioned(
-            bottom: -150,
-            left: -150,
-            child: AnimatedBuilder(
-              animation: _floatAnimation,
-              builder: (context, child) {
-                return Transform.translate(
-                  offset: Offset(-_floatAnimation.value, -_floatAnimation.value),
-                  child: Container(
-                    width: 400,
-                    height: 400,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      gradient: RadialGradient(
-                        colors: [
-                          Colors.white.withOpacity(0.1),
-                          Colors.transparent,
-                        ],
-                      ),
-                    ),
-                  ),
-                );
-              },
-            ),
-          ),
-
-          // Scrollable Content
-          FadeTransition(
-            opacity: _fadeAnimation,
-            child: SingleChildScrollView(
-              padding: EdgeInsets.symmetric(
-                horizontal: MediaQuery.of(context).size.width > 1200 ? 80 : 40,
-                vertical: 60,
-              ),
+          // Main content - NO SCROLL
+          SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 32),
               child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const SizedBox(height: 40),
+                  _buildCompactHeader(),
+                  const SizedBox(height: 15,),
+                  _buildLiveMetrics(),
+                  const SizedBox(height: 15,),
+                  _buildCompactStats(),
+                  const SizedBox(height: 15,),
+                  _buildCompactFeatures(),
+                  const SizedBox(height: 15,),
+                  _buildTrustBadges(),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
-                  // Combined row: rocket icon + headline (smaller font 35)
-                  TweenAnimationBuilder<double>(
-                    tween: Tween(begin: 0.0, end: 1.0),
-                    duration: const Duration(milliseconds: 600),
-                    builder: (context, value, child) {
-                      return Opacity(
-                        opacity: value,
-                        child: Transform.translate(
-                          offset: Offset(0, 20 * (1 - value)),
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            children: [
-                              // Rocket icon (keeps the animated scale)
-                              Transform.scale(
-                                scale: value,
-                                child: Container(
-                                  width: 52,
-                                  height: 52,
-                                  decoration: BoxDecoration(
-                                    color: Colors.white,
-                                    borderRadius: BorderRadius.circular(12),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: Colors.black.withOpacity(0.15),
-                                        blurRadius: 16,
-                                        offset: const Offset(0, 6),
-                                      ),
-                                    ],
-                                  ),
-                                  child: const Icon(
-                                    Icons.rocket_launch_rounded,
-                                    color: Color(0xFF6366F1),
-                                    size: 26,
-                                  ),
-                                ),
-                              ),
-
-                              const SizedBox(width: 16),
-
-                              // Headline text (smaller, single-line-like with wrapping)
-                              Expanded(
-                                child: Text(
-                                  'Launch Your Career Journey',
-                                  style: GoogleFonts.poppins(
-                                    fontSize: 35, // requested smaller font
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.w700,
-                                    height: 1.1,
-                                    letterSpacing: -0.6,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      );
-                    },
+  Widget _buildAnimatedOrbs() {
+    return Stack(
+      children: [
+        AnimatedBuilder(
+          animation: _floatingController,
+          builder: (context, child) {
+            return Positioned(
+              top: 100 + (_floatingController.value * 50),
+              left: -100,
+              child: Container(
+                width: 300,
+                height: 300,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: RadialGradient(
+                    colors: [
+                      const Color(0xFF667eea).withOpacity(0.4),
+                      Colors.transparent,
+                    ],
                   ),
-
-                  const SizedBox(height: 24),
-
-                TweenAnimationBuilder<double>(
-                  tween: Tween(begin: 0.0, end: 1.0),
-                  duration: const Duration(milliseconds: 1000),
-                  curve: Curves.easeOut,
-                  builder: (context, value, child) {
-                    return Opacity(
-                      opacity: value,
-                      child: Transform.translate(
-                        offset: Offset(0, 20 * (1 - value)),
-                        child: Text(
-                          'Connect with thousands of opportunities\nand build your dream career today',
-                          style: GoogleFonts.poppins(
-                            color: Colors.white.withOpacity(0.95),
-                            fontSize: 18,
-                            height: 1.6,
-                            fontWeight: FontWeight.w400,
-                          ),
-                        ),
-                      ),
-                    );
-                  },
                 ),
+              ),
+            );
+          },
+        ),
+        AnimatedBuilder(
+          animation: _floatingController,
+          builder: (context, child) {
+            return Positioned(
+              bottom: 50 - (_floatingController.value * 30),
+              right: -80,
+              child: Container(
+                width: 250,
+                height: 250,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: RadialGradient(
+                    colors: [
+                      const Color(0xFFf093fb).withOpacity(0.3),
+                      Colors.transparent,
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
+        ),
+      ],
+    );
+  }
 
-                const SizedBox(height: 40),
-
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Expanded(
-                      child: Padding(
-                        padding: const EdgeInsets.only(right: 12.0),
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(14),
-                          child: BackdropFilter(
-                            filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
-                            child: Container(
-                              height: 72,
-                              padding: const EdgeInsets.symmetric(horizontal: 16),
-                              decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.10),
-                                borderRadius: BorderRadius.circular(14),
-                                border: Border.all(color: Colors.white.withOpacity(0.18), width: 1),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withOpacity(0.08),
-                                    blurRadius: 12,
-                                    offset: const Offset(0, 6),
-                                  ),
-                                ],
-                              ),
-                              child: Row(
-                                children: [
-                                  Container(
-                                    padding: const EdgeInsets.all(10),
-                                    decoration: BoxDecoration(
-                                      color: Colors.white.withOpacity(0.18),
-                                      borderRadius: BorderRadius.circular(10),
-                                    ),
-                                    child: const Icon(Icons.people_rounded, color: Colors.white, size: 20),
-                                  ),
-                                  const SizedBox(width: 12),
-                                  Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text('50K+', style: GoogleFonts.poppins(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w700)),
-                                      Text('Active Users', style: GoogleFonts.poppins(color: Colors.white.withOpacity(0.9), fontSize: 12)),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-
-                    Expanded(
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 6.0),
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(14),
-                          child: BackdropFilter(
-                            filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
-                            child: Container(
-                              height: 72,
-                              padding: const EdgeInsets.symmetric(horizontal: 16),
-                              decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.10),
-                                borderRadius: BorderRadius.circular(14),
-                                border: Border.all(color: Colors.white.withOpacity(0.18), width: 1),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withOpacity(0.08),
-                                    blurRadius: 12,
-                                    offset: const Offset(0, 6),
-                                  ),
-                                ],
-                              ),
-                              child: Row(
-                                children: [
-                                  Container(
-                                    padding: const EdgeInsets.all(10),
-                                    decoration: BoxDecoration(
-                                      color: Colors.white.withOpacity(0.18),
-                                      borderRadius: BorderRadius.circular(10),
-                                    ),
-                                    child: const Icon(Icons.work_rounded, color: Colors.white, size: 20),
-                                  ),
-                                  const SizedBox(width: 12),
-                                  Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text('10K+', style: GoogleFonts.poppins(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w700)),
-                                      Text('Job Listings', style: GoogleFonts.poppins(color: Colors.white.withOpacity(0.9), fontSize: 12)),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-
-                    Expanded(
-                      child: Padding(
-                        padding: const EdgeInsets.only(left: 12.0),
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(14),
-                          child: BackdropFilter(
-                            filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
-                            child: Container(
-                              height: 72,
-                              padding: const EdgeInsets.symmetric(horizontal: 16),
-                              decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.10),
-                                borderRadius: BorderRadius.circular(14),
-                                border: Border.all(color: Colors.white.withOpacity(0.18), width: 1),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withOpacity(0.08),
-                                    blurRadius: 12,
-                                    offset: const Offset(0, 6),
-                                  ),
-                                ],
-                              ),
-                              child: Row(
-                                children: [
-                                  Container(
-                                    padding: const EdgeInsets.all(10),
-                                    decoration: BoxDecoration(
-                                      color: Colors.white.withOpacity(0.18),
-                                      borderRadius: BorderRadius.circular(10),
-                                    ),
-                                    child: const Icon(Icons.business_rounded, color: Colors.white, size: 20),
-                                  ),
-                                  const SizedBox(width: 12),
-                                  Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text('500+', style: GoogleFonts.poppins(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w700)),
-                                      Text('Companies', style: GoogleFonts.poppins(color: Colors.white.withOpacity(0.9), fontSize: 12)),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
+  Widget _buildCompactHeader() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          decoration: BoxDecoration(
+            color: const Color(0xFF667eea).withOpacity(0.15),
+            borderRadius: BorderRadius.circular(100),
+            border: Border.all(
+              color: const Color(0xFF667eea).withOpacity(0.3),
+              width: 1,
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 6,
+                height: 6,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF4ade80),
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF4ade80).withOpacity(0.5),
+                      blurRadius: 6,
+                      spreadRadius: 1,
                     ),
                   ],
                 ),
-
-                const SizedBox(height: 40),
-
-                TweenAnimationBuilder<double>(
-                  tween: Tween(begin: 0.0, end: 1.0),
-                  duration: const Duration(milliseconds: 1200),
-                  curve: Curves.easeOut,
-                  builder: (context, value, child) {
-                    return Opacity(
-                      opacity: value,
-                      child: Transform.translate(
-                        offset: Offset(0, 30 * (1 - value)),
-                        child: Container(
-                          padding: const EdgeInsets.all(20),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.15),
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(
-                              color: Colors.white.withOpacity(0.3),
-                              width: 1,
-                            ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.1),
-                                blurRadius: 20,
-                                offset: const Offset(0, 10),
-                              ),
-                            ],
-                          ),
-                          child: Row(
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.all(12),
-                                decoration: BoxDecoration(
-                                  color: Colors.white.withOpacity(0.25),
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: const Icon(
-                                  Icons.verified_rounded,
-                                  color: Colors.white,
-                                  size: 24,
-                                ),
-                              ),
-                              const SizedBox(width: 16),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      'Trusted Platform',
-                                      style: GoogleFonts.poppins(
-                                        color: Colors.white,
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      'Verified employers and secure hiring',
-                                      style: GoogleFonts.poppins(
-                                        color: Colors.white.withOpacity(0.9),
-                                        fontSize: 14,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    );
-                  },
+              ),
+              const SizedBox(width: 6),
+              Text(
+                'LIVE',
+                style: GoogleFonts.poppins(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white70,
+                  letterSpacing: 1,
                 ),
-
-                const SizedBox(height: 40),
-              ],
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+        ShaderMask(
+          shaderCallback: (bounds) => const LinearGradient(
+            colors: [Colors.white, Color(0xFFb8c5ff)],
+          ).createShader(bounds),
+          child: Text(
+            'Maha Services',
+            style: GoogleFonts.poppins(
+              fontSize: 42,
+              fontWeight: FontWeight.w700,
+              color: Colors.white,
+              height: 1.1,
+              letterSpacing: -1.2,
             ),
           ),
         ),
+        const SizedBox(height: 12),
+        Text(
+          'Next-gen recruitment powered by intelligent automation',
+          style: GoogleFonts.poppins(
+            fontSize: 13,
+            color: Colors.white.withOpacity(0.6),
+            height: 1.5,
+          ),
+        ),
       ],
-    ),
-  );
-}
+    );
+  }
+
+  Widget _buildLiveMetrics() {
+    return AnimatedBuilder(
+      animation: _pulseController,
+      builder: (context, child) {
+        return Container(
+          padding: const EdgeInsets.all(18),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Colors.white.withOpacity(0.08),
+                Colors.white.withOpacity(0.03),
+              ],
+            ),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: Colors.white.withOpacity(0.1),
+              width: 1.5,
+            ),
+
+          ),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF667eea), Color(0xFF8B5CF6)],
+                  ),
+                  borderRadius: BorderRadius.circular(14),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF667eea).withOpacity(0.4),
+                      blurRadius: 16,
+                      offset: const Offset(0, 6),
+                    ),
+                  ],
+                ),
+                child: const Icon(
+                  Icons.bolt_rounded,
+                  color: Colors.white,
+                  size: 22,
+                ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Enterprise Grade',
+                      style: GoogleFonts.poppins(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.white,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      'AES-256 • Hash Algorithm',
+                      style: GoogleFonts.poppins(
+                        fontSize: 11,
+                        color: Colors.white.withOpacity(0.6),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF4ade80),
+                  borderRadius: BorderRadius.circular(100),
+                ),
+                child: Text(
+                  'ACTIVE',
+                  style: GoogleFonts.poppins(
+                    fontSize: 9,
+                    fontWeight: FontWeight.w700,
+                    color: const Color(0xFF0F0F23),
+                    letterSpacing: 0.5,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildCompactStats() {
+    return Row(
+      children: [
+        Expanded(
+          child: _CompactMetric(
+            value: '1.2K',
+            label: 'Jobs',
+            color: const Color(0xFF667eea),
+            icon: Icons.work_outline_rounded,
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: _CompactMetric(
+            value: '342',
+            label: 'Online',
+            color: const Color(0xFF4ade80),
+            icon: Icons.people_outline_rounded,
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: _CompactMetric(
+            value: '5.4K',
+            label: 'Hires',
+            color: const Color(0xFFf093fb),
+            icon: Icons.trending_up_rounded,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCompactFeatures() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'CAPABILITIES',
+          style: GoogleFonts.poppins(
+            fontSize: 10,
+            fontWeight: FontWeight.w700,
+            color: Colors.white.withOpacity(0.4),
+            letterSpacing: 1.3,
+          ),
+        ),
+        const SizedBox(height: 14),
+        _CompactFeature(
+          icon: Icons.auto_awesome_rounded,
+          title: 'AI-Powered Matching',
+        ),
+        const SizedBox(height: 10),
+        _CompactFeature(
+          icon: Icons.speed_rounded,
+          title: 'Seek More Borderless Jobs',
+        ),
+        const SizedBox(height: 10),
+        _CompactFeature(
+          icon: Icons.verified_user_rounded,
+          title: 'Verified Employers across Globe',
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTrustBadges() {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.03),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: Colors.white.withOpacity(0.08),
+        ),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        children: [
+          _TrustBadge(icon: Icons.shield_outlined, label: '256-bit'),
+          Container(
+            width: 1,
+            height: 20,
+            color: Colors.white.withOpacity(0.1),
+          ),
+          _TrustBadge(icon: Icons.verified_outlined, label: 'SOC 2'),
+          Container(
+            width: 1,
+            height: 20,
+            color: Colors.white.withOpacity(0.1),
+          ),
+          _TrustBadge(icon: Icons.security_outlined, label: 'GDPR'),
+        ],
+      ),
+    );
+  }
 
 
   Widget _buildFormPanel(bool isWide) {
@@ -1011,6 +978,132 @@ class _JobSeekerLoginScreenState extends State<JobSeekerLoginScreen>
           ),
         ),
       ),
+    );
+  }
+}
+class _CompactMetric extends StatelessWidget {
+  final String value;
+  final String label;
+  final Color color;
+  final IconData icon;
+
+  const _CompactMetric({
+    required this.value,
+    required this.label,
+    required this.color,
+    required this.icon,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Colors.white.withOpacity(0.08),
+            Colors.white.withOpacity(0.02),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: Colors.white.withOpacity(0.1),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, color: color, size: 20),
+          const SizedBox(height: 12),
+          Text(
+            value,
+            style: GoogleFonts.poppins(
+              fontSize: 24,
+              fontWeight: FontWeight.w700,
+              color: Colors.white,
+              height: 1,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            label,
+            style: GoogleFonts.poppins(
+              fontSize: 11,
+              color: Colors.white.withOpacity(0.6),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CompactFeature extends StatelessWidget {
+  final IconData icon;
+  final String title;
+
+  const _CompactFeature({
+    required this.icon,
+    required this.title,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                Colors.white.withOpacity(0.12),
+                Colors.white.withOpacity(0.04),
+              ],
+            ),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Icon(icon, color: Colors.white.withOpacity(0.9), size: 16),
+        ),
+        const SizedBox(width: 12),
+        Text(
+          title,
+          style: GoogleFonts.poppins(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: Colors.white.withOpacity(0.85),
+          ),
+        ),
+      ],
+    );
+  }
+}
+class _TrustBadge extends StatelessWidget {
+  final IconData icon;
+  final String label;
+
+  const _TrustBadge({
+    required this.icon,
+    required this.label,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, color: Colors.white.withOpacity(0.5), size: 16),
+        const SizedBox(width: 6),
+        Text(
+          label,
+          style: GoogleFonts.poppins(
+            fontSize: 10,
+            color: Colors.white.withOpacity(0.5),
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ],
     );
   }
 }

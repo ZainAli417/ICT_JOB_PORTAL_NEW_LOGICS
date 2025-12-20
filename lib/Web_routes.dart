@@ -8,7 +8,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'Constant/Forget Password.dart';
 import 'Constant/cv_analysis.dart';
 import 'Constant/onboarding.dart';
+import 'Constant/pricing.dart';
 import 'Screens/Admin/admin_dashbaord.dart';
+import 'Screens/Admin/admin_dashbaord2.dart';
 import 'Screens/Admin/admin_login.dart';
 import 'Screens/Job_Seeker/JS_Profile/JS_Profile.dart';
 import 'Login.dart';
@@ -66,7 +68,7 @@ class RoleService {
   static Future<String?> _fetchRole(String uid) async {
     try {
       // Strategy: Check most common first (job_seeker > recruiter > admin)
-      // Single query approach - faster than parallel for web
+      // Single query approach - faster than web
 
       // 1. Check job_seeker collection (most common)
       final jsDoc = await _firestore.collection('job_seeker').doc(uid).get();
@@ -226,6 +228,7 @@ class RouteConfig {
     '/login',
     '/register',
     '/recover-password',
+    '/pricing',
     '/admin',
   };
 
@@ -236,7 +239,7 @@ class RouteConfig {
   };
 
   static const _roleDashboards = {
-    'admin': '/admin_dashboard',
+    'admin': '/admin_dashboard2',
     'recruiter': '/recruiter-dashboard',
     'job_seeker': '/dashboard',
   };
@@ -332,7 +335,7 @@ class ProfileCheckService {
           .collection('job_seeker')
           .doc(uid)
           .get();
-      return doc.exists;
+      return doc.exists && doc.data()?.containsKey('user_data') == true;
     } catch (e) {
       debugPrint('ProfileCheckService: error checking profile: $e');
       return false;
@@ -409,6 +412,10 @@ final GoRouter router = GoRouter(
       path: '/recover-password',
       pageBuilder: (c, s) => _buildPage(child: const ForgotPasswordScreen(), context: c, state: s),
     ),
+    GoRoute(
+      path: '/pricing',
+      pageBuilder: (c, s) => _buildPage(child: const PremiumPricingPage(), context: c, state: s),
+    ),
 
     // ========== ADMIN ROUTES ==========
     GoRoute(
@@ -418,6 +425,10 @@ final GoRouter router = GoRouter(
     GoRoute(
       path: '/admin_dashboard',
       pageBuilder: (c, s) => _buildPage(child: const AdminDashboardScreen(), context: c, state: s),
+    ),
+    GoRoute(
+      path: '/admin_dashboard2',
+      pageBuilder: (c, s) => _buildPage(child: const AdminDashboardScreen2(), context: c, state: s),
     ),
 
 // ========== JOB SEEKER ROUTES WITH PROFILE CHECK (FINAL FIXED VERSION) ==========
@@ -501,6 +512,12 @@ class _JobSeekerShellState extends State<_JobSeekerShell> {
   @override
   void initState() {
     super.initState();
+    if (_authNotifier.userRole != 'job_seeker') {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        context.go(RouteConfig.getDashboard(_authNotifier.userRole ?? '/'));
+      });
+      return;
+    }
     _checkProfile();
   }
 

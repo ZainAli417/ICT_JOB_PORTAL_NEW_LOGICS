@@ -8,6 +8,7 @@ import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../Constant/Header_Nav.dart';
+import '../Constant/pricing.dart';
 
 class SignUp_Screen extends StatefulWidget {
   const SignUp_Screen({super.key});
@@ -488,6 +489,8 @@ class _SignUp_ScreenState extends State<SignUp_Screen> with TickerProviderStateM
       ),
     );
   }
+
+
 
 
 
@@ -1149,7 +1152,7 @@ class _SignUp_ScreenInner extends StatelessWidget {
     final isWide = MediaQuery.of(context).size.width > 900;
 
     return Scaffold(
-      backgroundColor: Colors.grey.shade50,
+      backgroundColor: Colors.white,
       body: SafeArea(
         child: Column(
           children: [

@@ -7,8 +7,8 @@ import 'package:provider/provider.dart';
 
 import 'Constant/Forget Password Provider.dart';
 import 'Constant/cv_analysis_provider.dart';
-import 'Screens/Admin/admin_dashboard_provider.dart';
 import 'Screens/Admin/admin_login_provider.dart';
+import 'Screens/Admin/admin_provider.dart';
 import 'Screens/Job_Seeker/JS_Profile/JS_Profile_Provider.dart';
 import 'Screens/Job_Seeker/List_applied_jobs_provider.dart';
 import 'Screens/Job_Seeker/JS_Profile_Provider_OLD.dart';
@@ -65,7 +65,7 @@ void main() async {
         ChangeNotifierProvider(create: (_) => AuthNotifier()),
         ChangeNotifierProvider(create: (_) => CVAnalyzerBackendProvider()),
         ChangeNotifierProvider(create: (_) => AdminAuthProvider()),
-        ChangeNotifierProvider(create: (_) => AdminDashboardProvider()),
+        ChangeNotifierProvider(create: (_) => AdminProvider()),
 
         ChangeNotifierProvider(create: (_) => R_TopNavProvider()),
         ChangeNotifierProvider(create: (_) => job_listing_provider()),
