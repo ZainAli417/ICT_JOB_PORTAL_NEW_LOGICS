@@ -74,8 +74,7 @@ class _JSProfileScreenState extends State<ProfileScreen_NEW> with TickerProvider
       duration: const Duration(milliseconds: 400),
       vsync: this,
     );
-    _fadeAnimation =
-        CurvedAnimation(parent: _animController, curve: Curves.easeInOut);
+    _fadeAnimation = CurvedAnimation(parent: _animController, curve: Curves.easeInOut);
     _animController.forward();
   }
 
@@ -126,15 +125,11 @@ class _JSProfileScreenState extends State<ProfileScreen_NEW> with TickerProvider
   void _scrollToCurrentStep() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_stepScrollController.hasClients) {
-        final screenWidth = MediaQuery
-            .of(context)
-            .size
-            .width;
+        final screenWidth = MediaQuery.of(context).size.width;
         final itemWidth = 180.0;
         final targetOffset = (_currentStep * itemWidth) - (screenWidth / 4);
         _stepScrollController.animateTo(
-          targetOffset.clamp(
-              0.0, _stepScrollController.position.maxScrollExtent),
+          targetOffset.clamp(0.0, _stepScrollController.position.maxScrollExtent),
           duration: const Duration(milliseconds: 400),
           curve: Curves.easeInOut,
         );
@@ -142,33 +137,17 @@ class _JSProfileScreenState extends State<ProfileScreen_NEW> with TickerProvider
     });
   }
 
-  @override
   Widget build(BuildContext context) {
-    const double topBarHeight = 120.0;
-
     return ScrollConfiguration(
       behavior: SmoothScrollBehavior(),
-      child: SizedBox.expand(
-        child: Stack(
+      child: Scaffold(
+        body: Row(
           children: [
-            // Main content area sits below the top bar.
-            Positioned.fill(
-              top: topBarHeight,
+            JobSeekerSidebar(activeIndex: 1),
+            Expanded(
               child: FadeTransition(
-                opacity: _fadeAnimation,
-                child: _buildContent(context), // unchanged: contains ChangeNotifierProvider + Scaffold
-              ),
-            ),
-
-            // Top navigation bar overlay (MainLayout used as the bar)
-            Positioned(
-              top: 0,
-              left: 0,
-              right: 0,
-              height: topBarHeight,
-              child: MainLayout(
-                activeIndex: 1,
-                child: const SizedBox.shrink(),
+                opacity: _animController,
+                child: _buildContent(context),
               ),
             ),
           ],
@@ -179,7 +158,7 @@ class _JSProfileScreenState extends State<ProfileScreen_NEW> with TickerProvider
 
   Widget _buildContent(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFFFFFFF),
+      backgroundColor: const Color(0xFFF9FAFB),
       body: Consumer<ProfileProvider_NEW>(
         builder: (context, prov, _) {
           if (prov.isLoading) {
@@ -187,7 +166,6 @@ class _JSProfileScreenState extends State<ProfileScreen_NEW> with TickerProvider
           }
           return Row(
             children: [
-              // Main content area
               Expanded(
                 flex: 7,
                 child: Column(
@@ -197,15 +175,20 @@ class _JSProfileScreenState extends State<ProfileScreen_NEW> with TickerProvider
                   ],
                 ),
               ),
-              // Sidebar
               Container(
                 width: 380,
                 decoration: BoxDecoration(
                   color: Colors.white,
+                  border: Border(
+                    left: BorderSide(
+                      color: Colors.grey.shade200,
+                      width: 1,
+                    ),
+                  ),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
-                      blurRadius: 10,
+                      color: Colors.black.withOpacity(0.03),
+                      blurRadius: 8,
                       offset: const Offset(-2, 0),
                     ),
                   ],
@@ -221,23 +204,38 @@ class _JSProfileScreenState extends State<ProfileScreen_NEW> with TickerProvider
 
   Widget _buildTopBar() {
     return Container(
-      height: 40,
+      height: 72,
       decoration: BoxDecoration(
         color: Colors.white,
-
+        border: Border(
+          bottom: BorderSide(
+            color: Colors.grey.shade200,
+            width: 1,
+          ),
+        ),
       ),
       padding: const EdgeInsets.symmetric(horizontal: 32),
       child: Row(
         children: [
-          FaIcon(FontAwesomeIcons.userCircle, color: const Color(0xFF6366F1),
-              size: 32),
-          const SizedBox(width: 12),
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: const Color(0xFF6366F1).withOpacity(0.1),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: const Icon(
+              Icons.person_outline,
+              color: Color(0xFF6366F1),
+              size: 24,
+            ),
+          ),
+          const SizedBox(width: 16),
           Text(
             'Complete Your Profile',
             style: GoogleFonts.poppins(
-              fontSize: 24,
+              fontSize: 20,
               fontWeight: FontWeight.w600,
-              color: const Color(0xFF6366F1),
+              color: const Color(0xFF0F172A),
             ),
           ),
           const Spacer(),
@@ -249,10 +247,14 @@ class _JSProfileScreenState extends State<ProfileScreen_NEW> with TickerProvider
 
   Widget _buildProgressIndicator() {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       decoration: BoxDecoration(
-        color: const Color(0xFFEEF2FF),
-        borderRadius: BorderRadius.circular(20),
+        color: const Color(0xFF6366F1).withOpacity(0.08),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: const Color(0xFF6366F1).withOpacity(0.2),
+          width: 1,
+        ),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -261,16 +263,16 @@ class _JSProfileScreenState extends State<ProfileScreen_NEW> with TickerProvider
             'Step ${_currentStep + 1} of ${_stepTitles.length}',
             style: GoogleFonts.poppins(
               fontSize: 13,
-              fontWeight: FontWeight.w500,
-              color: const Color(0xFF6063F9),
+              fontWeight: FontWeight.w600,
+              color: const Color(0xFF6366F1),
             ),
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: 12),
           Container(
-            width: 120,
+            width: 100,
             height: 6,
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: Colors.grey.shade200,
               borderRadius: BorderRadius.circular(3),
             ),
             child: FractionallySizedBox(
@@ -278,9 +280,7 @@ class _JSProfileScreenState extends State<ProfileScreen_NEW> with TickerProvider
               widthFactor: (_currentStep + 1) / _stepTitles.length,
               child: Container(
                 decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFF3B82F6), Color(0xFF6366F1)],
-                  ),
+                  color: const Color(0xFF6366F1),
                   borderRadius: BorderRadius.circular(3),
                 ),
               ),
@@ -293,12 +293,11 @@ class _JSProfileScreenState extends State<ProfileScreen_NEW> with TickerProvider
 
   Widget _buildMainContent(ProfileProvider_NEW prov) {
     return Padding(
-      padding: const EdgeInsets.all(15),
+      padding: const EdgeInsets.all(20),
       child: Column(
         children: [
           _buildStepIndicators(),
-          const SizedBox(height: 25),
-          // Instead of FadeTransition, use AnimatedSwitcher for smoother transitions
+          const SizedBox(height: 24),
           Expanded(
             child: AnimatedSwitcher(
               duration: const Duration(milliseconds: 300),
@@ -315,12 +314,12 @@ class _JSProfileScreenState extends State<ProfileScreen_NEW> with TickerProvider
                 );
               },
               child: Container(
-                key: ValueKey<int>(_currentStep), // ← Important!
+                key: ValueKey<int>(_currentStep),
                 child: _buildCurrentStepContent(prov),
               ),
             ),
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 20),
           _buildNavigationButtons(prov),
         ],
       ),
@@ -329,7 +328,7 @@ class _JSProfileScreenState extends State<ProfileScreen_NEW> with TickerProvider
 
   Widget _buildStepIndicators() {
     return SizedBox(
-      height: 65,
+      height: 56,
       child: ListView.builder(
         controller: _stepScrollController,
         scrollDirection: Axis.horizontal,
@@ -346,44 +345,40 @@ class _JSProfileScreenState extends State<ProfileScreen_NEW> with TickerProvider
                   _animController.forward();
                   _scrollToCurrentStep();
                 },
+                borderRadius: BorderRadius.circular(8),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 16, vertical: 12),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   decoration: BoxDecoration(
                     color: isActive
-                        ? const Color(0xFF6366F1)
-                        : isCompleted
-                        ? const Color(0xFF10B981)
-                        : Colors.white,
-                    borderRadius: BorderRadius.circular(12),
+                        ? const Color(0xFF6366F1).withOpacity(0.08)
+                        : (isCompleted ? const Color(0xFF10B981).withOpacity(0.08) : Colors.white),
+                    borderRadius: BorderRadius.circular(8),
                     border: Border.all(
-                      color: isActive || isCompleted
-                          ? Colors.transparent
-                          : const Color(0xFFE5E7EB),
+                      color: isActive
+                          ? const Color(0xFF6366F1).withOpacity(0.3)
+                          : (isCompleted ? const Color(0xFF10B981).withOpacity(0.3) : Colors.grey.shade200),
+                      width: 1,
                     ),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      FaIcon(
-                        isCompleted
-                            ? FontAwesomeIcons.checkCircle
-                            : _stepIcons[index],
-                        color: isActive || isCompleted
-                            ? Colors.white
-                            : const Color(0xFF6B7280),
-                        size: 16,
+                      Icon(
+                        isCompleted ? Icons.check_circle : _stepIcons[index],
+                        color: isActive
+                            ? const Color(0xFF6366F1)
+                            : (isCompleted ? const Color(0xFF10B981) : const Color(0xFF64748B)),
+                        size: 18,
                       ),
                       const SizedBox(width: 8),
                       Text(
                         _stepTitles[index],
                         style: GoogleFonts.poppins(
                           fontSize: 13,
-                          fontWeight: isActive ? FontWeight.w600 : FontWeight
-                              .w500,
-                          color: isActive || isCompleted
-                              ? Colors.white
-                              : const Color(0xFF6B7280),
+                          fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
+                          color: isActive
+                              ? const Color(0xFF0F172A)
+                              : (isCompleted ? const Color(0xFF10B981) : const Color(0xFF475569)),
                         ),
                       ),
                     ],
@@ -392,12 +387,13 @@ class _JSProfileScreenState extends State<ProfileScreen_NEW> with TickerProvider
               ),
               if (index < _stepTitles.length - 1)
                 Container(
-                  width: 20,
+                  width: 24,
                   height: 2,
                   margin: const EdgeInsets.symmetric(horizontal: 8),
-                  color: index < _currentStep
-                      ? const Color(0xFF10B981)
-                      : const Color(0xFFE5E7EB),
+                  decoration: BoxDecoration(
+                    color: index < _currentStep ? const Color(0xFF10B981) : Colors.grey.shade200,
+                    borderRadius: BorderRadius.circular(1),
+                  ),
                 ),
             ],
           );
@@ -433,188 +429,174 @@ class _JSProfileScreenState extends State<ProfileScreen_NEW> with TickerProvider
 
   Widget _buildPersonalInfo(ProfileProvider_NEW prov) {
     return SingleChildScrollView(
-      child: Container(
-        padding: const EdgeInsets.all(28),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.04),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                FaIcon(
-                    FontAwesomeIcons.userCircle, color: const Color(0xFF6366F1),
-                    size: 28),
-                const SizedBox(width: 12),
-                Text(
-                  'Personal Information',
-                  style: GoogleFonts.poppins(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w600,
-                    color: const Color(0xFF111827),
-                  ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.person_outline, color: const Color(0xFF6366F1), size: 24),
+              const SizedBox(width: 12),
+              Text(
+                'Personal Information',
+                style: GoogleFonts.poppins(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  color: const Color(0xFF0F172A),
                 ),
-              ],
-            ),
-            const SizedBox(height: 24),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Stack(
-                  children: [
-                    CircleAvatar(
-                      radius: 40,
-                      backgroundColor: const Color(0xFFEEF2FF),
-                      backgroundImage: prov.profilePicUrl.isNotEmpty
-                          ? NetworkImage(prov.profilePicUrl)
+              ),
+            ],
+          ),
+          const SizedBox(height: 24),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Stack(
+                children: [
+                  Container(
+                    width: 80,
+                    height: 80,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: prov.profilePicUrl.isEmpty
+                          ? const LinearGradient(
+                        colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
+                      )
                           : null,
-                      child: prov.profilePicUrl.isEmpty
-                          ? const FaIcon(FontAwesomeIcons.user, size: 40,
-                          color: Color(0xFF6366F1))
+                      image: prov.profilePicUrl.isNotEmpty
+                          ? DecorationImage(
+                        image: NetworkImage(prov.profilePicUrl),
+                        fit: BoxFit.cover,
+                      )
                           : null,
                     ),
-                    Positioned(
-                      bottom: 0,
-                      right: 0,
-                      child: GestureDetector(
-                        onTap: () => _pickAndUploadProfilePic(prov),
-                        child: Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF6366F1),
-                            shape: BoxShape.circle,
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.2),
-                                blurRadius: 6,
-                              ),
-                            ],
-                          ),
-                          child: const FaIcon(
-                              FontAwesomeIcons.camera, color: Colors.white,
-                              size: 16),
+                    child: prov.profilePicUrl.isEmpty
+                        ? const Icon(Icons.person, size: 40, color: Colors.white)
+                        : null,
+                  ),
+                  Positioned(
+                    bottom: 0,
+                    right: 0,
+                    child: GestureDetector(
+                      onTap: () => _pickAndUploadProfilePic(prov),
+                      child: Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF6366F1),
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.white, width: 2),
                         ),
+                        child: const Icon(Icons.camera_alt, color: Colors.white, size: 14),
                       ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(width: 24),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Upload Profile Photo',
+                      style: GoogleFonts.poppins(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                        color: const Color(0xFF64748B),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    _buildTextField(
+                      label: 'Full Name',
+                      controller: _nameCtrl,
+                      icon: Icons.person_outline,
+                      onChanged: prov.updateName,
                     ),
                   ],
                 ),
-                const SizedBox(width: 24),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Upload Profile Photo',
-                        style: GoogleFonts.poppins(
-                          fontSize: 13,
-                          color: const Color(0xFF6B7280),
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      _buildIOSTextField(
-                        label: 'Full Name',
-                        controller: _nameCtrl,
-                        icon: FontAwesomeIcons.user,
-                        onChanged: prov.updateName,
-                      ),
-                    ],
-                  ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          Row(
+            children: [
+              Expanded(
+                child: _buildTextField(
+                  label: 'Email Address',
+                  controller: _emailCtrl,
+                  icon: Icons.email_outlined,
+                  onChanged: prov.updateEmail,
                 ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(
-                  child: _buildIOSTextField(
-                    label: 'Email Address',
-                    controller: _emailCtrl,
-                    icon: FontAwesomeIcons.envelope,
-                    onChanged: prov.updateEmail,
-                  ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: _buildTextField(
+                  label: 'Secondary Email',
+                  controller: _secondaryEmailCtrl,
+                  icon: Icons.email_outlined,
+                  onChanged: prov.updateSecondaryEmail,
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _buildIOSTextField(
-                    label: 'Secondary Email',
-                    controller: _secondaryEmailCtrl,
-                    icon: FontAwesomeIcons.envelope,
-                    onChanged: prov.updateSecondaryEmail,
-                  ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          Row(
+            children: [
+              Expanded(
+                child: _buildTextField(
+                  label: 'Contact Number',
+                  controller: _contactCtrl,
+                  icon: Icons.phone_outlined,
+                  onChanged: prov.updateContactNumber,
                 ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(
-                  child: _buildIOSTextField(
-                    label: 'Contact Number',
-                    controller: _contactCtrl,
-                    icon: FontAwesomeIcons.phone,
-                    onChanged: prov.updateContactNumber,
-                  ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: _buildTextField(
+                  label: 'Nationality',
+                  controller: _nationalityCtrl,
+                  icon: Icons.public,
+                  onChanged: prov.updateNationality,
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _buildIOSTextField(
-                    label: 'Nationality',
-                    controller: _nationalityCtrl,
-                    icon: FontAwesomeIcons.globe,
-                    onChanged: prov.updateNationality,
-                  ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          Row(
+            children: [
+              Expanded(
+                child: _buildTextField(
+                  label: 'Date of Birth (YYYY-MM-DD)',
+                  controller: _dobCtrl,
+                  icon: Icons.calendar_today_outlined,
+                  onChanged: prov.updateDob,
                 ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(
-                    child:
-                    _buildIOSTextField(
-              label: 'Date of Birth (YYYY-MM-DD)',
-              controller: _dobCtrl,
-              icon: FontAwesomeIcons.calendar,
-              onChanged: prov.updateDob,
-            ),
-                    ),
-            const SizedBox(width: 12),
-                Expanded(
-                    child:
-                    _buildIOSTextField(
-              label: 'Career Objectives',
-
-              controller: _objectivesCtrl,
-              icon: FontAwesomeIcons.lightbulb,
-              maxLines: 3,
-              onChanged: prov.updateObjectives,
-            ),
-                    ),
-            ]
-            ),
-            const SizedBox(height: 12),
-            _buildIOSTextField(
-              label: 'Professional Summary',
-              controller: _personalSummaryCtrl,
-              icon: FontAwesomeIcons.fileAlt,
-              maxLines: 5,
-              hint: 'Provide a brief overview of yourself...',
-
-              onChanged: prov.updatePersonalSummary,
-            ),
-            const SizedBox(height: 10),
-            _buildSkillsSection(prov),
-          ],
-        ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: _buildTextField(
+                  label: 'Career Objectives',
+                  controller: _objectivesCtrl,
+                  icon: Icons.lightbulb_outline,
+                  maxLines: 3,
+                  onChanged: prov.updateObjectives,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          _buildTextField(
+            label: 'Professional Summary',
+            controller: _personalSummaryCtrl,
+            icon: Icons.description_outlined,
+            maxLines: 5,
+            hint: 'Provide a brief overview of yourself...',
+            onChanged: prov.updatePersonalSummary,
+          ),
+          const SizedBox(height: 24),
+          const Divider(height: 1),
+          const SizedBox(height: 24),
+          _buildSkillsSection(prov),
+        ],
       ),
     );
   }
@@ -625,41 +607,32 @@ class _JSProfileScreenState extends State<ProfileScreen_NEW> with TickerProvider
       children: [
         Row(
           children: [
-            const FaIcon(FontAwesomeIcons.layerGroup, color: Color(0xFF6366F1),
-                size: 18),
+            const Icon(Icons.interests_outlined, color: Color(0xFF6366F1), size: 20),
             const SizedBox(width: 8),
             Text(
               'Skills',
               style: GoogleFonts.poppins(
                 fontSize: 15,
                 fontWeight: FontWeight.w600,
-                color: const Color(0xFF111827),
+                color: const Color(0xFF0F172A),
               ),
             ),
           ],
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 16),
         Wrap(
           spacing: 8,
           runSpacing: 8,
-          children: prov.skillsList
-              .asMap()
-              .entries
-              .map((e) {
+          children: prov.skillsList.asMap().entries.map((e) {
             return Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Color(0xFF3B82F6), Color(0xFF6366F1)],
+                color: const Color(0xFF6366F1).withOpacity(0.1),
+                borderRadius: BorderRadius.circular(6),
+                border: Border.all(
+                  color: const Color(0xFF6366F1).withOpacity(0.2),
+                  width: 1,
                 ),
-                borderRadius: BorderRadius.circular(20),
-                boxShadow: [
-                  BoxShadow(
-                    color: const Color(0xFF3B82F6).withOpacity(0.2),
-                    blurRadius: 4,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
@@ -668,23 +641,21 @@ class _JSProfileScreenState extends State<ProfileScreen_NEW> with TickerProvider
                     e.value,
                     style: GoogleFonts.poppins(
                       fontSize: 13,
-                      color: Colors.white,
+                      color: const Color(0xFF6366F1),
                       fontWeight: FontWeight.w500,
                     ),
                   ),
-                  const SizedBox(width: 6),
+                  const SizedBox(width: 8),
                   GestureDetector(
                     onTap: () => prov.removeSkillAt(e.key),
-                    child: const FaIcon(
-                        FontAwesomeIcons.timesCircle, color: Colors.white70,
-                        size: 14),
+                    child: const Icon(Icons.close, color: Color(0xFF6366F1), size: 16),
                   ),
                 ],
               ),
             );
           }).toList(),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 16),
         Row(
           children: [
             Expanded(
@@ -692,34 +663,38 @@ class _JSProfileScreenState extends State<ProfileScreen_NEW> with TickerProvider
                 controller: prov.skillController,
                 decoration: InputDecoration(
                   hintText: 'Add a skill',
-                  contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 16, vertical: 14),
+                  hintStyle: GoogleFonts.poppins(fontSize: 13, color: const Color(0xFF94A3B8)),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   filled: true,
-                  fillColor: const Color(0xFFF9FAFB),
+                  fillColor: Colors.grey.shade50,
                   border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide(color: Colors.grey.shade200),
                   ),
                   enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide(color: Colors.grey.shade200),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: const BorderSide(color: Color(0xFF6366F1)),
                   ),
                 ),
                 style: GoogleFonts.poppins(fontSize: 14),
               ),
             ),
             const SizedBox(width: 12),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF10B981),
-                padding: const EdgeInsets.all(14),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+            Material(
+              color: const Color(0xFF10B981),
+              borderRadius: BorderRadius.circular(8),
+              child: InkWell(
+                onTap: () => prov.addSkillEntry(context),
+                borderRadius: BorderRadius.circular(8),
+                child: Container(
+                  padding: const EdgeInsets.all(12),
+                  child: const Icon(Icons.add, size: 20, color: Colors.white),
                 ),
               ),
-              onPressed: () => prov.addSkillEntry(context),
-              child: const FaIcon(
-                  FontAwesomeIcons.plus, size: 18, color: Colors.white),
             ),
           ],
         ),
@@ -729,82 +704,62 @@ class _JSProfileScreenState extends State<ProfileScreen_NEW> with TickerProvider
 
   Widget _buildEducation(ProfileProvider_NEW prov) {
     return SingleChildScrollView(
-      child: Container(
-        padding: const EdgeInsets.all(28),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.04),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                FaIcon(FontAwesomeIcons.graduationCap,
-                    color: const Color(0xFF6366F1), size: 28),
-                const SizedBox(width: 12),
-                Text(
-                  'Education Background',
-                  style: GoogleFonts.poppins(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w600,
-                    color: const Color(0xFF111827),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 24),
-            _buildIOSTextField(
-              label: 'Institution Name',
-              controller: _institutionCtrl,
-              icon: FontAwesomeIcons.building,
-            ),
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                Expanded(
-                  child: _buildIOSTextField(
-                    label: 'Duration',
-                    controller: _durationCtrl,
-                    icon: FontAwesomeIcons.clock,
-                    hint: 'e.g. 2016 - 2020',
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: _buildIOSTextField(
-                    label: 'Major Subjects',
-                    controller: _majorCtrl,
-                    icon: FontAwesomeIcons.book,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            _buildIOSTextField(
-              label: 'Marks / CGPA',
-              controller: _marksCtrl,
-              icon: FontAwesomeIcons.checkCircle,
-            ),
-            const SizedBox(height: 20),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF10B981),
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 24, vertical: 14),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.school_outlined, color: const Color(0xFF6366F1), size: 24),
+              const SizedBox(width: 12),
+              Text(
+                'Education Background',
+                style: GoogleFonts.poppins(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  color: const Color(0xFF0F172A),
                 ),
               ),
-              onPressed: () {
+            ],
+          ),
+          const SizedBox(height: 24),
+          _buildTextField(
+            label: 'Institution Name',
+            controller: _institutionCtrl,
+            icon: Icons.business_outlined,
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: _buildTextField(
+                  label: 'Duration',
+                  controller: _durationCtrl,
+                  icon: Icons.access_time,
+                  hint: 'e.g. 2016 - 2020',
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: _buildTextField(
+                  label: 'Major Subjects',
+                  controller: _majorCtrl,
+                  icon: Icons.menu_book_outlined,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          _buildTextField(
+            label: 'Marks / CGPA',
+            controller: _marksCtrl,
+            icon: Icons.grade_outlined,
+          ),
+          const SizedBox(height: 20),
+          Material(
+            color: const Color(0xFF10B981),
+            borderRadius: BorderRadius.circular(8),
+            child: InkWell(
+              onTap: () {
                 prov.tempSchool = _institutionCtrl.text;
                 prov.tempEduStart = _durationCtrl.text;
                 prov.tempFieldOfStudy = _majorCtrl.text;
@@ -815,203 +770,163 @@ class _JSProfileScreenState extends State<ProfileScreen_NEW> with TickerProvider
                 _majorCtrl.clear();
                 _marksCtrl.clear();
               },
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const FaIcon(FontAwesomeIcons.plusCircle, size: 16),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Add Education',
-                    style: GoogleFonts.poppins(
-                        fontSize: 14, fontWeight: FontWeight.w600),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 24),
-            if (prov.educationalProfile.isNotEmpty) ...[
-              Text(
-                'Added Education',
-                style: GoogleFonts.poppins(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: const Color(0xFF111827),
+              borderRadius: BorderRadius.circular(8),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.add_circle_outline, size: 18, color: Colors.white),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Add Education',
+                      style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.white),
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(height: 12),
-              ...prov.educationalProfile
-                  .asMap()
-                  .entries
-                  .map((e) {
-                final item = e.value;
-                return Container(
-                  margin: const EdgeInsets.only(bottom: 12),
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF9FAFB),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: const Color(0xFFE5E7EB)),
-                  ),
-                  child: Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFEEF2FF),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: const FaIcon(
-                            FontAwesomeIcons.building, color: Color(0xFF6366F1),
-                            size: 18),
+            ),
+          ),
+          if (prov.educationalProfile.isNotEmpty) ...[
+            const SizedBox(height: 32),
+            const Divider(height: 1),
+            const SizedBox(height: 24),
+            Text(
+              'Added Education',
+              style: GoogleFonts.poppins(
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+                color: const Color(0xFF0F172A),
+              ),
+            ),
+            const SizedBox(height: 16),
+            ...prov.educationalProfile.asMap().entries.map((e) {
+              final item = e.value;
+              return Container(
+                margin: const EdgeInsets.only(bottom: 12),
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade50,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.grey.shade200),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF6366F1).withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
                       ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              item['institutionName']?.toString() ??
-                                  'Institution',
-                              style: GoogleFonts.poppins(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w600,
-                                color: const Color(0xFF111827),
-                              ),
+                      child: const Icon(Icons.school_outlined, color: Color(0xFF6366F1), size: 20),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            item['institutionName']?.toString() ?? 'Institution',
+                            style: GoogleFonts.poppins(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: const Color(0xFF0F172A),
                             ),
-                            const SizedBox(height: 4),
-                            Text(
-                              '${item['duration'] ??
-                                  ''} • ${item['majorSubjects'] ?? ''}',
-                              style: GoogleFonts.poppins(
-                                fontSize: 12,
-                                color: const Color(0xFF6B7280),
-                              ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            '${item['duration'] ?? ''} • ${item['majorSubjects'] ?? ''}',
+                            style: GoogleFonts.poppins(
+                              fontSize: 12,
+                              color: const Color(0xFF64748B),
                             ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
-                      IconButton(
-                        onPressed: () => prov.removeEducationAt(e.key),
-                        icon: const FaIcon(
-                            FontAwesomeIcons.trash, color: Color(0xFFEF4444),
-                            size: 18),
-                      ),
-                    ],
-                  ),
-                );
-              }),
-            ],
+                    ),
+                    IconButton(
+                      onPressed: () => prov.removeEducationAt(e.key),
+                      icon: const Icon(Icons.delete_outline, color: Color(0xFFEF4444), size: 20),
+                    ),
+                  ],
+                ),
+              );
+            }),
           ],
-        ),
+        ],
       ),
     );
   }
 
   Widget _buildProfessionalProfile(ProfileProvider_NEW prov) {
     return SingleChildScrollView(
-      child: Container(
-        padding: const EdgeInsets.all(28),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.04),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                FaIcon(
-                    FontAwesomeIcons.briefcase, color: const Color(0xFF6366F1),
-                    size: 28),
-                const SizedBox(width: 12),
-                Text(
-                  'Professional Profile',
-                  style: GoogleFonts.poppins(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w600,
-                    color: const Color(0xFF111827),
-                  ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.work_outline, color: const Color(0xFF6366F1), size: 24),
+              const SizedBox(width: 12),
+              Text(
+                'Professional Profile',
+                style: GoogleFonts.poppins(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  color: const Color(0xFF0F172A),
                 ),
-              ],
-            ),
-            const SizedBox(height: 24),
-            _buildIOSTextField(
-              label: 'Professional Summary',
-              controller: _profSummaryCtrl,
-              icon: FontAwesomeIcons.fileAlt,
-              maxLines: 8,
-              hint: 'Provide a detailed overview of your professional background...',
-              onChanged: (v) {
-                prov.professionalProfileSummary = v;
-                prov.markPersonalDirty();
-              },
-            ),
-          ],
-        ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 24),
+          _buildTextField(
+            label: 'Professional Summary',
+            controller: _profSummaryCtrl,
+            icon: Icons.description_outlined,
+            maxLines: 8,
+            hint: 'Provide a detailed overview of your professional background...',
+            onChanged: (v) {
+              prov.professionalProfileSummary = v;
+              prov.markPersonalDirty();
+            },
+          ),
+        ],
       ),
     );
   }
 
   Widget _buildExperience(ProfileProvider_NEW prov) {
     return SingleChildScrollView(
-      child: Container(
-        padding: const EdgeInsets.all(28),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.04),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                FaIcon(FontAwesomeIcons.clock, color: const Color(0xFF6366F1),
-                    size: 28),
-                const SizedBox(width: 12),
-                Text(
-                  'Professional Experience',
-                  style: GoogleFonts.poppins(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w600,
-                    color: const Color(0xFF111827),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 24),
-            _buildIOSTextField(
-              label: 'Experience Details',
-              controller: _experienceTextCtrl,
-              icon: FontAwesomeIcons.briefcase,
-              maxLines: 5,
-              hint: 'Job title, Company, Duration, Key responsibilities...',
-            ),
-            const SizedBox(height: 20),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF10B981),
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 24, vertical: 14),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.access_time, color: const Color(0xFF6366F1), size: 24),
+              const SizedBox(width: 12),
+              Text(
+                'Professional Experience',
+                style: GoogleFonts.poppins(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  color: const Color(0xFF0F172A),
                 ),
               ),
-              onPressed: () {
+            ],
+          ),
+          const SizedBox(height: 24),
+          _buildTextField(
+            label: 'Experience Details',
+            controller: _experienceTextCtrl,
+            icon: Icons.work_outline,
+            maxLines: 5,
+            hint: 'Job title, Company, Duration, Key responsibilities...',
+          ),
+          const SizedBox(height: 20),
+          Material(
+            color: const Color(0xFF10B981),
+            borderRadius: BorderRadius.circular(8),
+            child: InkWell(
+              onTap: () {
                 prov.tempCompany = '';
                 prov.tempRole = '';
                 prov.tempExpStart = '';
@@ -1020,79 +935,78 @@ class _JSProfileScreenState extends State<ProfileScreen_NEW> with TickerProvider
                 prov.addExperienceEntry(context);
                 _experienceTextCtrl.clear();
               },
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const FaIcon(FontAwesomeIcons.plusCircle, size: 16),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Add Experience',
-                    style: GoogleFonts.poppins(
-                        fontSize: 14, fontWeight: FontWeight.w600),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 24),
-            if (prov.professionalExperience.isNotEmpty) ...[
-              Text(
-                'Added Experience',
-                style: GoogleFonts.poppins(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: const Color(0xFF111827),
+              borderRadius: BorderRadius.circular(8),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.add_circle_outline, size: 18, color: Colors.white),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Add Experience',
+                      style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.white),
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(height: 12),
-              ...prov.professionalExperience
-                  .asMap()
-                  .entries
-                  .map((e) {
-                final item = e.value;
-                return Container(
-                  margin: const EdgeInsets.only(bottom: 12),
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF9FAFB),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: const Color(0xFFE5E7EB)),
-                  ),
-                  child: Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFDDEAFF),
-                          borderRadius: BorderRadius.circular(10),
+            ),
+          ),
+          if (prov.professionalExperience.isNotEmpty) ...[
+            const SizedBox(height: 32),
+            const Divider(height: 1),
+            const SizedBox(height: 24),
+            Text(
+              'Added Experience',
+              style: GoogleFonts.poppins(
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+                color: const Color(0xFF0F172A),
+              ),
+            ),
+            const SizedBox(height: 16),
+            ...prov.professionalExperience.asMap().entries.map((e) {
+              final item = e.value;
+              return Container(
+                margin: const EdgeInsets.only(bottom: 12),
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade50,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.grey.shade200),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF6366F1).withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Icon(Icons.work_outline, color: Color(0xFF6366F1), size: 20),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        item['text']?.toString() ?? 'Experience',
+                        style: GoogleFonts.poppins(
+                          fontSize: 13,
+                          color: const Color(0xFF0F172A),
                         ),
-                        child: const FaIcon(FontAwesomeIcons.briefcase,
-                            color: Color(0xFF6366F1), size: 18),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          item['text']?.toString() ?? 'Experience',
-                          style: GoogleFonts.poppins(
-                            fontSize: 13,
-                            color: const Color(0xFF111827),
-                          ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      IconButton(
-                        onPressed: () => prov.removeExperienceAt(e.key),
-                        icon: const FaIcon(
-                            FontAwesomeIcons.trash, color: Color(0xFFEF4444),
-                            size: 18),
-                      ),
-                    ],
-                  ),
-                );
-              }),
-            ],
+                    ),
+                    IconButton(
+                      onPressed: () => prov.removeExperienceAt(e.key),
+                      icon: const Icon(Icons.delete_outline, color: Color(0xFFEF4444), size: 20),
+                    ),
+                  ],
+                ),
+              );
+            }),
           ],
-        ),
+        ],
       ),
     );
   }
@@ -1100,7 +1014,7 @@ class _JSProfileScreenState extends State<ProfileScreen_NEW> with TickerProvider
   Widget _buildCertifications(ProfileProvider_NEW prov) {
     return _buildListSection(
       title: 'Certifications',
-      icon: FontAwesomeIcons.award,
+      icon: Icons.card_membership_outlined,
       items: prov.certifications,
       controller: _singleLineCtrl,
       hint: 'Certification name',
@@ -1110,14 +1024,14 @@ class _JSProfileScreenState extends State<ProfileScreen_NEW> with TickerProvider
         _singleLineCtrl.clear();
       },
       onRemove: prov.removeCertificationAt,
-      itemIcon: FontAwesomeIcons.award,
+      itemIcon: Icons.verified_outlined,
     );
   }
 
   Widget _buildPublications(ProfileProvider_NEW prov) {
     return _buildListSection(
       title: 'Publications',
-      icon: FontAwesomeIcons.fileAlt,
+      icon: Icons.article_outlined,
       items: prov.publications,
       controller: _singleLineCtrl,
       hint: 'Publication title',
@@ -1126,14 +1040,14 @@ class _JSProfileScreenState extends State<ProfileScreen_NEW> with TickerProvider
         _singleLineCtrl.clear();
       },
       onRemove: prov.removePublicationAt,
-      itemIcon: FontAwesomeIcons.file,
+      itemIcon: Icons.description_outlined,
     );
   }
 
   Widget _buildAwards(ProfileProvider_NEW prov) {
     return _buildListSection(
       title: 'Awards & Honors',
-      icon: FontAwesomeIcons.award,
+      icon: Icons.emoji_events_outlined,
       items: prov.awards,
       controller: _singleLineCtrl,
       hint: 'Award name',
@@ -1142,14 +1056,14 @@ class _JSProfileScreenState extends State<ProfileScreen_NEW> with TickerProvider
         _singleLineCtrl.clear();
       },
       onRemove: prov.removeAwardAt,
-      itemIcon: FontAwesomeIcons.trophy,
+      itemIcon: Icons.military_tech_outlined,
     );
   }
 
   Widget _buildReferences(ProfileProvider_NEW prov) {
     return _buildListSection(
       title: 'References',
-      icon: FontAwesomeIcons.users,
+      icon: Icons.people_outline,
       items: prov.references,
       controller: _singleLineCtrl,
       hint: 'Reference details',
@@ -1158,7 +1072,7 @@ class _JSProfileScreenState extends State<ProfileScreen_NEW> with TickerProvider
         _singleLineCtrl.clear();
       },
       onRemove: prov.removeReferenceAt,
-      itemIcon: FontAwesomeIcons.user,
+      itemIcon: Icons.person_outline,
     );
   }
 
@@ -1173,270 +1087,234 @@ class _JSProfileScreenState extends State<ProfileScreen_NEW> with TickerProvider
     required IconData itemIcon,
   }) {
     return SingleChildScrollView(
-      child: Container(
-        padding: const EdgeInsets.all(28),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.04),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                FaIcon(icon, color: const Color(0xFF6366F1), size: 28),
-                const SizedBox(width: 12),
-                Text(
-                  title,
-                  style: GoogleFonts.poppins(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w600,
-                    color: const Color(0xFF111827),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 24),
-            Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: controller,
-                    decoration: InputDecoration(
-                      hintText: hint,
-                      contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 14),
-                      filled: true,
-                      fillColor: const Color(0xFFF9FAFB),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
-                      ),
-                    ),
-                    style: GoogleFonts.poppins(fontSize: 14),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF10B981),
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.all(14),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  onPressed: onAdd,
-                  child: const FaIcon(FontAwesomeIcons.plus, size: 18),
-                ),
-              ],
-            ),
-            const SizedBox(height: 24),
-            if (items.isNotEmpty) ...[
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, color: const Color(0xFF6366F1), size: 24),
+              const SizedBox(width: 12),
               Text(
-                'Added $title',
+                title,
                 style: GoogleFonts.poppins(
-                  fontSize: 16,
+                  fontSize: 18,
                   fontWeight: FontWeight.w600,
-                  color: const Color(0xFF111827),
+                  color: const Color(0xFF0F172A),
                 ),
               ),
-              const SizedBox(height: 12),
-              ...items
-                  .asMap()
-                  .entries
-                  .map((e) {
-                return Container(
-                  margin: const EdgeInsets.only(bottom: 12),
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF9FAFB),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: const Color(0xFFE5E7EB)),
-                  ),
-                  child: Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFEEF2FF),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: FaIcon(
-                            itemIcon, color: const Color(0xFF6366F1), size: 18),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          e.value,
-                          style: GoogleFonts.poppins(
-                            fontSize: 13,
-                            color: const Color(0xFF111827),
-                          ),
-                        ),
-                      ),
-                      IconButton(
-                        onPressed: () => onRemove(e.key),
-                        icon: const FaIcon(
-                            FontAwesomeIcons.trash, color: Color(0xFFEF4444),
-                            size: 18),
-                      ),
-                    ],
-                  ),
-                );
-              }),
             ],
+          ),
+          const SizedBox(height: 24),
+          Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: controller,
+                  decoration: InputDecoration(
+                    hintText: hint,
+                    hintStyle: GoogleFonts.poppins(fontSize: 13, color: const Color(0xFF94A3B8)),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    filled: true,
+                    fillColor: Colors.grey.shade50,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: BorderSide(color: Colors.grey.shade200),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: BorderSide(color: Colors.grey.shade200),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: const BorderSide(color: Color(0xFF6366F1)),
+                    ),
+                  ),
+                  style: GoogleFonts.poppins(fontSize: 14),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Material(
+                color: const Color(0xFF10B981),
+                borderRadius: BorderRadius.circular(8),
+                child: InkWell(
+                  onTap: onAdd,
+                  borderRadius: BorderRadius.circular(8),
+                  child: Container(
+                    padding: const EdgeInsets.all(12),
+                    child: const Icon(Icons.add, size: 20, color: Colors.white),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          if (items.isNotEmpty) ...[
+            const SizedBox(height: 32),
+            const Divider(height: 1),
+            const SizedBox(height: 24),
+            Text(
+              'Added $title',
+              style: GoogleFonts.poppins(
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+                color: const Color(0xFF0F172A),
+              ),
+            ),
+            const SizedBox(height: 16),
+            ...items.asMap().entries.map((e) {
+              return Container(
+                margin: const EdgeInsets.only(bottom: 12),
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade50,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.grey.shade200),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF6366F1).withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Icon(itemIcon, color: const Color(0xFF6366F1), size: 20),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        e.value,
+                        style: GoogleFonts.poppins(
+                          fontSize: 13,
+                          color: const Color(0xFF0F172A),
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: () => onRemove(e.key),
+                      icon: const Icon(Icons.delete_outline, color: Color(0xFFEF4444), size: 20),
+                    ),
+                  ],
+                ),
+              );
+            }),
           ],
-        ),
+        ],
       ),
     );
   }
 
   Widget _buildDocuments(ProfileProvider_NEW prov) {
     return SingleChildScrollView(
-      child: Container(
-        padding: const EdgeInsets.all(28),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.04),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                FaIcon(FontAwesomeIcons.folder, color: const Color(0xFF6366F1),
-                    size: 28),
-                const SizedBox(width: 12),
-                Text(
-                  'Documents',
-                  style: GoogleFonts.poppins(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w600,
-                    color: const Color(0xFF111827),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 24),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF10B981),
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 24, vertical: 14),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-              onPressed: () => _pickAndUploadDocument(prov),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const FaIcon(FontAwesomeIcons.cloudUploadAlt, size: 16),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Upload Document',
-                    style: GoogleFonts.poppins(
-                        fontSize: 14, fontWeight: FontWeight.w600),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 24),
-            if (prov.documents.isNotEmpty) ...[
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.folder_outlined, color: const Color(0xFF6366F1), size: 24),
+              const SizedBox(width: 12),
               Text(
-                'Uploaded Documents',
+                'Documents',
                 style: GoogleFonts.poppins(
-                  fontSize: 16,
+                  fontSize: 18,
                   fontWeight: FontWeight.w600,
-                  color: const Color(0xFF111827),
+                  color: const Color(0xFF0F172A),
                 ),
               ),
-              const SizedBox(height: 12),
-              ...prov.documents
-                  .asMap()
-                  .entries
-                  .map((e) {
-                final item = e.value;
-                return Container(
-                  margin: const EdgeInsets.only(bottom: 12),
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF9FAFB),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: const Color(0xFFE5E7EB)),
-                  ),
-                  child: Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFFFEDED),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: const FaIcon(
-                            FontAwesomeIcons.fileAlt, color: Color(0xFFEF4444),
-                            size: 18),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              item['name']?.toString() ?? 'Document',
-                              style: GoogleFonts.poppins(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w600,
-                                color: const Color(0xFF111827),
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              item['contentType']?.toString() ?? '',
-                              style: GoogleFonts.poppins(
-                                fontSize: 12,
-                                color: const Color(0xFF6B7280),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      IconButton(
-                        onPressed: () {
-                          prov.removeDocumentAt(e.key);
-                          prov.saveDocumentsSection(context);
-                        },
-                        icon: const FaIcon(
-                            FontAwesomeIcons.trash, color: Color(0xFFEF4444),
-                            size: 18),
-                      ),
-                    ],
-                  ),
-                );
-              }),
             ],
+          ),
+          const SizedBox(height: 24),
+          Material(
+            color: const Color(0xFF10B981),
+            borderRadius: BorderRadius.circular(8),
+            child: InkWell(
+              onTap: () => _pickAndUploadDocument(prov),
+              borderRadius: BorderRadius.circular(8),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.cloud_upload_outlined, size: 18, color: Colors.white),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Upload Document',
+                      style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.white),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          if (prov.documents.isNotEmpty) ...[
+            const SizedBox(height: 32),
+            const Divider(height: 1),
+            const SizedBox(height: 24),
+            Text(
+              'Uploaded Documents',
+              style: GoogleFonts.poppins(
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+                color: const Color(0xFF0F172A),
+              ),
+            ),
+            const SizedBox(height: 16),
+            ...prov.documents.asMap().entries.map((e) {
+              final item = e.value;
+              return Container(
+                margin: const EdgeInsets.only(bottom: 12),
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade50,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.grey.shade200),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFEF4444).withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Icon(Icons.insert_drive_file_outlined, color: Color(0xFFEF4444), size: 20),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            item['name']?.toString() ?? 'Document',
+                            style: GoogleFonts.poppins(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: const Color(0xFF0F172A),
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            item['contentType']?.toString() ?? '',
+                            style: GoogleFonts.poppins(
+                              fontSize: 12,
+                              color: const Color(0xFF64748B),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: () {
+                        prov.removeDocumentAt(e.key);
+                        prov.saveDocumentsSection(context);
+                      },
+                      icon: const Icon(Icons.delete_outline, color: Color(0xFFEF4444), size: 20),
+                    ),
+                  ],
+                ),
+              );
+            }),
           ],
-        ),
+        ],
       ),
     );
   }
@@ -1445,104 +1323,102 @@ class _JSProfileScreenState extends State<ProfileScreen_NEW> with TickerProvider
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        // 🔙 Previous Button
         if (_currentStep > 0)
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFF3F4F6),
-              foregroundColor: const Color(0xFF111827),
-              padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 18), // ↑ thicker
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(14), // slightly rounder
-              ),
-              elevation: 1,
-            ),
-            onPressed: () {
-              setState(() => _currentStep--);
-              _animController.reset();
-              _animController.forward();
-              _scrollToCurrentStep();
-            },
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const FaIcon(FontAwesomeIcons.chevronLeft, size: 18), // ↑ larger
-                const SizedBox(width: 10),
-                Text(
-                  'Previous',
-                  style: GoogleFonts.poppins(
-                    fontSize: 15, // ↑
-                    fontWeight: FontWeight.w600,
-                  ),
+          Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: () {
+                setState(() => _currentStep--);
+                _animController.reset();
+                _animController.forward();
+                _scrollToCurrentStep();
+              },
+              borderRadius: BorderRadius.circular(8),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.grey.shade300),
+                  borderRadius: BorderRadius.circular(8),
                 ),
-              ],
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.chevron_left, size: 20, color: Color(0xFF475569)),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Previous',
+                      style: GoogleFonts.poppins(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: const Color(0xFF475569),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
           )
         else
           const SizedBox(),
-
-        // ✅ Save + Next Buttons
         Row(
           children: [
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF10B981),
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 18), // ↑ thicker
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                elevation: 2,
-              ),
-              onPressed: () => _saveCurrentSection(prov),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const FaIcon(FontAwesomeIcons.check, size: 18),
-                  const SizedBox(width: 10),
-                  Text(
-                    'Save Section',
-                    style: GoogleFonts.poppins(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
-                    ),
+            Material(
+              color: const Color(0xFF10B981),
+              borderRadius: BorderRadius.circular(8),
+              child: InkWell(
+                onTap: () => _saveCurrentSection(prov),
+                borderRadius: BorderRadius.circular(8),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.check, size: 20, color: Colors.white),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Save Section',
+                        style: GoogleFonts.poppins(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ],
                   ),
-                ],
+                ),
               ),
             ),
-
             if (_currentStep < _stepTitles.length - 1) ...[
-              const SizedBox(width: 14),
-              ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF6366F1),
-                  foregroundColor: Colors.white,
-                  padding:
-                  const EdgeInsets.symmetric(horizontal: 28, vertical: 18),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  elevation: 2,
-                ),
-                onPressed: () {
-                  setState(() => _currentStep++);
-                  _animController.reset();
-                  _animController.forward();
-                  _scrollToCurrentStep();
-                },
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      'Next',
-                      style: GoogleFonts.poppins(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
-                      ),
+              const SizedBox(width: 12),
+              Material(
+                color: const Color(0xFF6366F1),
+                borderRadius: BorderRadius.circular(8),
+                child: InkWell(
+                  onTap: () {
+                    setState(() => _currentStep++);
+                    _animController.reset();
+                    _animController.forward();
+                    _scrollToCurrentStep();
+                  },
+                  borderRadius: BorderRadius.circular(8),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          'Next',
+                          style: GoogleFonts.poppins(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        const Icon(Icons.chevron_right, size: 20, color: Colors.white),
+                      ],
                     ),
-                    const SizedBox(width: 10),
-                    const FaIcon(FontAwesomeIcons.chevronRight, size: 18),
-                  ],
+                  ),
                 ),
               ),
             ],
@@ -1584,7 +1460,7 @@ class _JSProfileScreenState extends State<ProfileScreen_NEW> with TickerProvider
     }
   }
 
-  Widget _buildIOSTextField({
+  Widget _buildTextField({
     required String label,
     required TextEditingController controller,
     required IconData icon,
@@ -1597,14 +1473,14 @@ class _JSProfileScreenState extends State<ProfileScreen_NEW> with TickerProvider
       children: [
         Row(
           children: [
-            FaIcon(icon, color: const Color(0xFF6B7280), size: 14),
-            const SizedBox(width: 6),
+            Icon(icon, color: const Color(0xFF64748B), size: 16),
+            const SizedBox(width: 8),
             Text(
               label,
               style: GoogleFonts.poppins(
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
-                color: const Color(0xFF374151),
+                color: const Color(0xFF475569),
               ),
             ),
           ],
@@ -1615,24 +1491,24 @@ class _JSProfileScreenState extends State<ProfileScreen_NEW> with TickerProvider
           maxLines: maxLines,
           decoration: InputDecoration(
             hintText: hint ?? label,
-            contentPadding: const EdgeInsets.symmetric(
-                horizontal: 16, vertical: 14),
+            hintStyle: GoogleFonts.poppins(fontSize: 13, color: const Color(0xFF94A3B8)),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             filled: true,
-            fillColor: const Color(0xFFF9FAFB),
+            fillColor: Colors.grey.shade50,
             border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide(color: Colors.grey.shade200),
             ),
             enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide(color: Colors.grey.shade200),
             ),
             focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Color(0xFF3B82F6)),
+              borderRadius: BorderRadius.circular(8),
+              borderSide: const BorderSide(color: Color(0xFF6366F1), width: 1.5),
             ),
           ),
-          style: GoogleFonts.poppins(fontSize: 14),
+          style: GoogleFonts.poppins(fontSize: 14, color: const Color(0xFF0F172A)),
           onChanged: onChanged,
         ),
       ],
@@ -1652,8 +1528,7 @@ class _JSProfileScreenState extends State<ProfileScreen_NEW> with TickerProvider
     if (bytes == null) return;
 
     final mimeType = lookupMimeType(file.name, headerBytes: bytes);
-    await prov.uploadProfilePicture(
-        Uint8List.fromList(bytes), file.name, mimeType: mimeType);
+    await prov.uploadProfilePicture(Uint8List.fromList(bytes), file.name, mimeType: mimeType);
   }
 
   Future<void> _pickAndUploadDocument(ProfileProvider_NEW prov) async {
@@ -1668,62 +1543,61 @@ class _JSProfileScreenState extends State<ProfileScreen_NEW> with TickerProvider
     if (bytes == null) return;
 
     final mimeType = lookupMimeType(file.name, headerBytes: bytes);
-    final entry = await prov.uploadDocument(
-        Uint8List.fromList(bytes), file.name, mimeType: mimeType);
+    final entry = await prov.uploadDocument(Uint8List.fromList(bytes), file.name, mimeType: mimeType);
     if (entry != null) {
-      _showWebNotification(
-          context, 'Document uploaded successfully', isSuccess: true);
+      _showWebNotification(context, 'Document uploaded successfully', isSuccess: true);
     } else {
-      _showWebNotification(
-          context, 'Failed to upload document', isSuccess: false);
+      _showWebNotification(context, 'Failed to upload document', isSuccess: false);
     }
   }
 
-  void _showWebNotification(BuildContext context, String message,
-      {required bool isSuccess}) {
+  void _showWebNotification(BuildContext context, String message, {required bool isSuccess}) {
     showDialog(
       context: context,
-      builder: (context) =>
-          AlertDialog(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-            ),
-            title: Row(
-              children: [
-                FaIcon(
-                  isSuccess ? FontAwesomeIcons.checkCircle : FontAwesomeIcons
-                      .timesCircle,
-                  color: isSuccess ? const Color(0xFF10B981) : const Color(
-                      0xFFEF4444),
-                  size: 32,
-                ),
-                const SizedBox(width: 12),
-                Text(
-                  isSuccess ? 'Success' : 'Error',
-                  style: GoogleFonts.poppins(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
-            content: Text(
-              message,
-              style: GoogleFonts.poppins(fontSize: 14),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: Text(
-                  'OK',
-                  style: GoogleFonts.poppins(
-                    fontWeight: FontWeight.w600,
-                    color: const Color(0xFF6366F1),
-                  ),
-                ),
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: isSuccess ? const Color(0xFF10B981).withOpacity(0.1) : const Color(0xFFEF4444).withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
               ),
-            ],
+              child: Icon(
+                isSuccess ? Icons.check_circle_outline : Icons.error_outline,
+                color: isSuccess ? const Color(0xFF10B981) : const Color(0xFFEF4444),
+                size: 24,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Text(
+              isSuccess ? 'Success' : 'Error',
+              style: GoogleFonts.poppins(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                color: const Color(0xFF0F172A),
+              ),
+            ),
+          ],
+        ),
+        content: Text(
+          message,
+          style: GoogleFonts.poppins(fontSize: 14, color: const Color(0xFF475569)),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(
+              'OK',
+              style: GoogleFonts.poppins(
+                fontWeight: FontWeight.w600,
+                color: const Color(0xFF6366F1),
+              ),
+            ),
           ),
+        ],
+      ),
     );
   }
 }

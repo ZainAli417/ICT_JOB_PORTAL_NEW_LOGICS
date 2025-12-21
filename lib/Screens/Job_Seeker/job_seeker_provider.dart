@@ -14,6 +14,7 @@ class JobSeekerProvider extends ChangeNotifier {
 
   bool _isLoadingActiveJobs = true;
   bool _isLoadingAllJobs = true;
+  bool _filtersDirty = false;
 
   String _searchQuery = '';
   Map<String, dynamic> _activeFilters = {};
@@ -79,6 +80,7 @@ class JobSeekerProvider extends ChangeNotifier {
       },
     );
   }
+  Timer? _realtimeDebounce;
 
   void _setupAllJobsListener() {
     _allJobsSubscription?.cancel();
@@ -97,26 +99,23 @@ class JobSeekerProvider extends ChangeNotifier {
   }
 
   void _handleActiveJobsUpdate(QuerySnapshot snapshot) {
-    try {
-      final processed = _processJobSnapshot(snapshot);
-      _activeJobs
-        ..clear()
-        ..addAll(processed);
+    _realtimeDebounce?.cancel();
 
-      _isLoadingActiveJobs = false;
-      _applyFiltersAndSearch();
-      notifyListeners();
+    _realtimeDebounce = Timer(const Duration(milliseconds: 200), () {
+      try {
+        final processed = _processJobSnapshot(snapshot);
 
-      if (!_activeJobsController.isClosed) {
-        _activeJobsController.add(List<Map<String, dynamic>>.from(_activeJobs));
+        _activeJobs
+          ..clear()
+          ..addAll(processed);
+
+        _isLoadingActiveJobs = false;
+        _applyFiltersAndSearch();
+        notifyListeners();
+      } catch (e, st) {
+        debugPrint('Error processing active jobs snapshot: $e\n$st');
       }
-
-      debugPrint('Active jobs updated: ${_activeJobs.length} jobs');
-    } catch (e, st) {
-      debugPrint('Error processing active jobs snapshot: $e\n$st');
-      _isLoadingActiveJobs = false;
-      notifyListeners();
-    }
+    });
   }
 
   void _handleAllJobsUpdate(QuerySnapshot snapshot) {
@@ -210,24 +209,27 @@ class JobSeekerProvider extends ChangeNotifier {
   Stream<List<Map<String, dynamic>>> allJobsStream() {
     return _allJobsController.stream;
   }
-
   void searchJobs(String query) {
+    _filtersDirty = true;
     _searchQuery = query.trim().toLowerCase();
     _applyFiltersAndSearch();
     notifyListeners();
   }
 
   void applyFilters(Map<String, dynamic> filters) {
+    _filtersDirty = true;
     _activeFilters = Map.from(filters);
     _applyFiltersAndSearch();
     notifyListeners();
   }
 
   void setSortBy(String sortOption) {
+    _filtersDirty = true;
     _sortBy = sortOption;
     _applyFiltersAndSearch();
     notifyListeners();
   }
+
 
   void clearFilters() {
     _searchQuery = '';

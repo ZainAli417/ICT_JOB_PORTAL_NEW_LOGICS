@@ -31,14 +31,12 @@ import 'login_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
- // await dotenv.load(fileName: 'env/.env'); // loads .env
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  // await dotenv.load(fileName: 'env/.env'); // loads .env
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
   // ─── If targeting web, you can reintroduce URL strategy here:
   if (kIsWeb) {
-     setUrlStrategy(PathUrlStrategy());
+    setUrlStrategy(PathUrlStrategy());
   }
 
   WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -59,7 +57,8 @@ void main() async {
         ChangeNotifierProvider(create: (_) => SignUpProvider_Recruiter()),
         ChangeNotifierProvider(create: (_) => LoginProvider_Recruiter()),
         ChangeNotifierProvider(create: (_) => JS_TopNavProvider()),
-        ChangeNotifierProvider(create: (_) => ProfileProvider()),
+        ChangeNotifierProvider(create: (_) => JS_TopNavProvider()..refresh()),
+
         ChangeNotifierProvider(create: (_) => ProfileProvider_NEW()),
         ChangeNotifierProvider(create: (_) => AuthNotifier()),
         ChangeNotifierProvider(create: (_) => CVAnalyzerBackendProvider()),
@@ -74,11 +73,7 @@ void main() async {
         ChangeNotifierProvider(create: (_) => ApplicantsProvider()),
         ChangeNotifierProvider(create: (_) => AIMatchProvider()),
 
-
-
-        ChangeNotifierProvider(create: (_) => SignupProvider())
-
-
+        ChangeNotifierProvider(create: (_) => SignupProvider()),
       ],
       child: const JobPortalApp(),
     ),
@@ -91,7 +86,6 @@ class JobPortalApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp.router(
-
       title: 'Maha Services',
       debugShowCheckedModeBanner: false,
       routerConfig: router,
@@ -112,8 +106,7 @@ class JobPortalApp extends StatelessWidget {
           ),
         ),
         buttonTheme: ButtonThemeData(
-          shape:
-          RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
           buttonColor: const Color(0xFF6366F1),
           textTheme: ButtonTextTheme.primary,
         ),

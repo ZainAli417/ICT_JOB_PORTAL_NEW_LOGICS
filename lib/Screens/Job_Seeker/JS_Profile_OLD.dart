@@ -159,11 +159,13 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
                 left: 0,
                 right: 0,
                 height: topBarHeight,
-                child: MainLayout(
+                child: SizedBox(height: 1,),
+                /*child: MainLayout(
                   activeIndex: 1,
                   child: const SizedBox.shrink(),
                 ),
-              ),
+              ),*/
+                )
             ],
           ),
         ),

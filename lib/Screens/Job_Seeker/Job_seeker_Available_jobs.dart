@@ -46,6 +46,15 @@ class _LiveJobsForSeekerState extends State<LiveJobsForSeeker>
 
   // UI State
   bool _isSidebarCollapsed = false;
+  @override
+  void didUpdateWidget(covariant LiveJobsForSeeker oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    if (oldWidget.jobs != widget.jobs) {
+      _initializeSalaryRange();
+      _applyFilters(); // 🔥 re-filter using latest jobs
+    }
+  }
 
   @override
   void initState() {
@@ -221,7 +230,7 @@ class _LiveJobsForSeekerState extends State<LiveJobsForSeeker>
     return FadeTransition(
       opacity: _fadeAnimation,
       child: Scaffold(
-        backgroundColor: const Color(0xFFF8FAFC),
+        backgroundColor: const Color(0xFFFFFFFF),
         body: Row(
           children: [
             // Left Sidebar - Filters Panel
@@ -442,11 +451,8 @@ class _LiveJobsForSeekerState extends State<LiveJobsForSeeker>
   Widget _buildTopHeader() {
     return Container(
       height: 70,
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        border: Border(bottom: BorderSide(color: Color(0xFFE2E8F0))),
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+
       child: Row(
         children: [
           // Results count

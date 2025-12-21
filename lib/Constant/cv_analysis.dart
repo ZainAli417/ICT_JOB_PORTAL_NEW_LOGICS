@@ -94,8 +94,6 @@ class _CVAnalysisScreenState extends State<CVAnalysisScreen>
 
   @override
   Widget build(BuildContext context) {
-    const double topBarHeight = 120.0;
-
     return ScrollConfiguration(
       behavior: SmoothScrollBehavior(),
       child: ChangeNotifierProvider(
@@ -103,27 +101,15 @@ class _CVAnalysisScreenState extends State<CVAnalysisScreen>
           useDirectGemini: true,
           geminiApiKey: widget.geminiApiKey,
         ),
-        child: SizedBox.expand(
-          child: Stack(
+        child: Scaffold(
+          backgroundColor: const Color(0xFFF8FAFC),
+          body: Row(
             children: [
-              Positioned.fill(
-                top: topBarHeight,
-                child: Scaffold(
-                  backgroundColor: Colors.transparent,
-                  body: FadeTransition(
-                    opacity: _animController,
-                    child: _buildMainContent(context),
-                  ),
-                ),
-              ),
-              Positioned(
-                top: 0,
-                left: 0,
-                right: 0,
-                height: topBarHeight,
-                child: MainLayout(
-                  activeIndex: 2,
-                  child: const SizedBox.shrink(),
+              JobSeekerSidebar(activeIndex: 2),
+              Expanded(
+                child: FadeTransition(
+                  opacity: _animController,
+                  child: _buildMainContent(context),
                 ),
               ),
             ],

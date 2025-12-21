@@ -14,10 +14,11 @@ class _PremiumPricingPageState extends State<PremiumPricingPage>
     with TickerProviderStateMixin {
   late AnimationController _fadeController;
   late AnimationController _slideController;
-  late AnimationController _controller;
+  late AnimationController _gridController;
 
   bool _isAnnual = true;
   int _hoveredCardIndex = -1;
+  String _selectedUserType = 'Job Seeker'; // Job Seeker, Recruiter, Admin
 
   @override
   void initState() {
@@ -25,24 +26,27 @@ class _PremiumPricingPageState extends State<PremiumPricingPage>
     _fadeController = AnimationController(
       duration: const Duration(milliseconds: 800),
       vsync: this,
-    )..forward();
-    _controller = AnimationController(
+    )
+      ..forward();
+
+    _gridController = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 30),
-    )..repeat();
+    )
+      ..repeat();
 
     _slideController = AnimationController(
       duration: const Duration(milliseconds: 600),
       vsync: this,
-    )..forward();
+    )
+      ..forward();
   }
 
   @override
   void dispose() {
     _fadeController.dispose();
     _slideController.dispose();
-    _controller.dispose();
-
+    _gridController.dispose();
     super.dispose();
   }
 
@@ -51,75 +55,75 @@ class _PremiumPricingPageState extends State<PremiumPricingPage>
     return Scaffold(
       backgroundColor: const Color(0xFFFAFAFC),
       body: Stack(
-    children: [
-          const HeaderNav(),
-
-      // Animated grid pattern background
-    Positioned.fill(
-    child: AnimatedBuilder(
-      animation: _controller,
-      builder: (context, child) {
-        return CustomPaint(
-          painter: _GridPainter(_controller.value),
-          size: Size.infinite,
-        );
-      },
-    ),
-    ),
-      Column(
         children: [
-          Expanded(
-            child: SingleChildScrollView(
-              physics: const BouncingScrollPhysics(),
-              child: Column(
-                children: [
 
-                  const SizedBox(height: 80),
-                  FadeTransition(
-                    opacity: _fadeController,
-                    child: SlideTransition(
-                      position: Tween<Offset>(
-                        begin: const Offset(0, 0.3),
-                        end: Offset.zero,
-                      ).animate(CurvedAnimation(
-                        parent: _slideController,
-                        curve: Curves.easeOutCubic,
-                      )),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 0),
-                        child: Column(
-                          children: [
-                            const SizedBox(height: 20),
+          // Animated grid pattern background
+          Positioned.fill(
+            child: AnimatedBuilder(
+              animation: _gridController,
+              builder: (context, child) {
+                return CustomPaint(
+                  painter: _GridPainter(_gridController.value),
+                  size: Size.infinite,
+                );
+              },
+            ),
+          ),
 
-                            _buildHeader(),
-                            const SizedBox(height: 56),
-                            _buildBillingToggle(),
-                            const SizedBox(height: 64),
-                            _buildPricingCards(),
-                            const SizedBox(height: 80),
-                            _buildFAQSection(),
-                            const SizedBox(height: 80),
-                            _buildFooter(),
-                          ],
+          Column(
+            children: [
+              Expanded(
+                child: SingleChildScrollView(
+                  physics: const BouncingScrollPhysics(),
+                  child: Column(
+                    children: [
+                      FadeTransition(
+                        opacity: _fadeController,
+                        child: SlideTransition(
+                          position: Tween<Offset>(
+                            begin: const Offset(0, 0.3),
+                            end: Offset.zero,
+                          ).animate(CurvedAnimation(
+                            parent: _slideController,
+                            curve: Curves.easeOutCubic,
+                          )),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 0),
+                            child: Column(
+                              children: [
+                                const HeaderNav(),
+
+                                const SizedBox(height: 20),
+                                _buildHeader(),
+                                const SizedBox(height: 40),
+                                _buildUserTypeSelector(),
+                                const SizedBox(height: 40),
+                                _buildBillingToggle(),
+                                const SizedBox(height: 64),
+                                _buildPricingCards(),
+                                const SizedBox(height: 80),
+                                _buildFAQSection(),
+                                const SizedBox(height: 80),
+                                _buildFooter(),
+                              ],
+                            ),
+                          ),
                         ),
                       ),
-                    ),
+                    ],
                   ),
-                ],
+                ),
               ),
-            ),
+            ],
           ),
         ],
       ),
-      ]
-    ),
     );
   }
 
   Widget _buildHeader() {
     return Column(
       children: [
-        // Badge
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
           decoration: BoxDecoration(
@@ -155,10 +159,8 @@ class _PremiumPricingPageState extends State<PremiumPricingPage>
           ),
         ),
         const SizedBox(height: 24),
-
-        // Title
         Text(
-          'Simple, transparent pricing',
+          'Choose Your Perfect Plan',
           style: GoogleFonts.inter(
             fontSize: 48,
             fontWeight: FontWeight.w700,
@@ -169,12 +171,10 @@ class _PremiumPricingPageState extends State<PremiumPricingPage>
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 16),
-
-        // Subtitle
         SizedBox(
           width: 600,
           child: Text(
-            'Choose the perfect plan for your needs. Start free, upgrade as you grow. All plans include our core features.',
+            'Tailored solutions for job seekers, recruiters, and admins. Start free, scale as you grow.',
             style: GoogleFonts.inter(
               fontSize: 18,
               fontWeight: FontWeight.w400,
@@ -189,16 +189,85 @@ class _PremiumPricingPageState extends State<PremiumPricingPage>
     );
   }
 
+  Widget _buildUserTypeSelector() {
+    final userTypes = [
+      {'label': 'Job Seeker', 'icon': Icons.person_search},
+      {'label': 'Recruiter', 'icon': Icons.business_center},
+      {'label': 'Admin', 'icon': Icons.admin_panel_settings},
+    ];
+
+    return Container(
+      padding: const EdgeInsets.all(6),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF0F172A).withOpacity(0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: userTypes.map((type) {
+          final isSelected = _selectedUserType == type['label'];
+          return Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4),
+            child: GestureDetector(
+              onTap: () =>
+                  setState(() => _selectedUserType = type['label'] as String),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 24, vertical: 14),
+                decoration: BoxDecoration(
+                  gradient: isSelected
+                      ? const LinearGradient(
+                    colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
+                  )
+                      : null,
+                  color: isSelected ? null : Colors.transparent,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      type['icon'] as IconData,
+                      size: 20,
+                      color: isSelected ? Colors.white : const Color(
+                          0xFF64748B),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      type['label'] as String,
+                      style: GoogleFonts.inter(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        color: isSelected ? Colors.white : const Color(
+                            0xFF64748B),
+                        letterSpacing: -0.2,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
+
   Widget _buildBillingToggle() {
     return Container(
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
-        color: const Color(0xFFFFFFFF),
+        color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: const Color(0xFFE2E8F0),
-          width: 1,
-        ),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
         boxShadow: [
           BoxShadow(
             color: const Color(0xFF0F172A).withOpacity(0.04),
@@ -222,12 +291,8 @@ class _PremiumPricingPageState extends State<PremiumPricingPage>
     );
   }
 
-  Widget _buildToggleOption(
-      String label,
-      bool isActive,
-      VoidCallback onTap, {
-        bool showBadge = false,
-      }) {
+  Widget _buildToggleOption(String label, bool isActive, VoidCallback onTap,
+      {bool showBadge = false}) {
     return GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
@@ -246,9 +311,7 @@ class _PremiumPricingPageState extends State<PremiumPricingPage>
               style: GoogleFonts.inter(
                 fontSize: 15,
                 fontWeight: FontWeight.w600,
-                color: isActive
-                    ? Colors.white
-                    : const Color(0xFF64748B),
+                color: isActive ? Colors.white : const Color(0xFF64748B),
                 letterSpacing: -0.2,
               ),
             ),
@@ -281,87 +344,226 @@ class _PremiumPricingPageState extends State<PremiumPricingPage>
     return LayoutBuilder(
       builder: (context, constraints) {
         final isMobile = constraints.maxWidth < 900;
+        final plans = _getPlansForUserType();
 
         if (isMobile) {
           return Column(
-            children: [
-              _buildPricingCard(0, _getPlanData(0)),
-              const SizedBox(height: 24),
-              _buildPricingCard(1, _getPlanData(1)),
-              const SizedBox(height: 24),
-              _buildPricingCard(2, _getPlanData(2)),
-            ],
+            children: plans
+                .asMap()
+                .entries
+                .map((entry) {
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 24),
+                child: _buildPricingCard(entry.key, entry.value),
+              );
+            }).toList(),
           );
         }
 
         return Row(
           mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.start,
-          children: List.generate(3, (index) {
+          children: plans
+              .asMap()
+              .entries
+              .map((entry) {
             return Flexible(
               child: Padding(
-                padding: EdgeInsets.symmetric(horizontal: index == 1 ? 12 : 0),
-                child: _buildPricingCard(index, _getPlanData(index)),
+                padding: EdgeInsets.symmetric(
+                  horizontal: entry.key == 1 ? 12 : 0,
+                ),
+                child: _buildPricingCard(entry.key, entry.value),
               ),
             );
-          }),
+          }).toList(),
         );
       },
     );
   }
 
-  Map<String, dynamic> _getPlanData(int index) {
-    final plans = [
-      {
-        'title': 'Starter',
-        'subtitle': 'For individuals',
-        'price': '0',
-        'period': 'Forever free',
-        'features': [
-          {'text': 'Up to 3 projects', 'included': true},
-          {'text': 'Basic analytics', 'included': true},
-          {'text': 'Email support', 'included': true},
-          {'text': 'Community access', 'included': true},
-          {'text': 'Custom branding', 'included': false},
-          {'text': 'API access', 'included': false},
-        ],
-        'buttonText': 'Get Started',
-        'isPopular': false,
-      },
-      {
-        'title': 'Professional',
-        'subtitle': 'For small teams',
-        'price': _isAnnual ? '29' : '39',
-        'period': _isAnnual ? 'per month, billed annually' : 'per month',
-        'features': [
-          {'text': 'Unlimited projects', 'included': true},
-          {'text': 'Advanced analytics', 'included': true},
-          {'text': 'Priority support', 'included': true},
-          {'text': 'Team collaboration', 'included': true},
-          {'text': 'Custom branding', 'included': true},
-          {'text': 'API access', 'included': true},
-        ],
-        'buttonText': 'Start Free Trial',
-        'isPopular': true,
-      },
-      {
-        'title': 'Enterprise',
-        'subtitle': 'For large organizations',
-        'price': '99',
-        'period': 'per month, custom pricing available',
-        'features': [
-          {'text': 'Everything in Pro', 'included': true},
-          {'text': 'Dedicated support', 'included': true},
-          {'text': 'SSO & SAML', 'included': true},
-          {'text': 'Advanced security', 'included': true},
-          {'text': 'SLA guarantee', 'included': true},
-          {'text': 'Custom integrations', 'included': true},
-        ],
-        'buttonText': 'Contact Sales',
-        'isPopular': false,
-      },
-    ];
-    return plans[index];
+  List<Map<String, dynamic>> _getPlansForUserType() {
+    switch (_selectedUserType) {
+      case 'Job Seeker':
+        return [
+          {
+            'title': 'Free',
+            'subtitle': 'For casual job seekers',
+            'price': '0',
+            'period': 'Forever free',
+            'features': [
+              {'text': 'Manual Profile Creation', 'included': true},
+              {'text': 'Browse Job Listings', 'included': true},
+              {'text': 'Up to 3 CV AI Analyses', 'included': true},
+              {'text': 'Basic Job Alerts', 'included': true},
+              {'text': 'Community Access', 'included': true},
+              {'text': 'AI-Powered CV Builder', 'included': false},
+              {'text': 'Priority Support', 'included': false},
+              {'text': 'Interview Preparation AI', 'included': false},
+            ],
+            'buttonText': 'Get Started Free',
+            'isPopular': false,
+          },
+          {
+            'title': 'Professional',
+            'subtitle': 'For serious job seekers',
+            'price': _isAnnual ? '19' : '24',
+            'period': _isAnnual ? 'per month, billed annually' : 'per month',
+            'features': [
+              {'text': 'Everything in Free', 'included': true},
+              {'text': 'AI-Powered CV Builder', 'included': true},
+              {'text': 'Unlimited CV Analyses', 'included': true},
+              {'text': 'Advanced Job Matching', 'included': true},
+              {'text': 'Interview Preparation AI', 'included': true},
+              {'text': 'Priority Job Applications', 'included': true},
+              {'text': 'Career Coach AI Assistant', 'included': true},
+              {'text': 'Priority Support (24h response)', 'included': true},
+            ],
+            'buttonText': 'Start 14-Day Free Trial',
+            'isPopular': true,
+          },
+          {
+            'title': 'Premium',
+            'subtitle': 'For executive-level seekers',
+            'price': _isAnnual ? '49' : '59',
+            'period': _isAnnual ? 'per month, billed annually' : 'per month',
+            'features': [
+              {'text': 'Everything in Professional', 'included': true},
+              {'text': 'Executive Profile Optimization', 'included': true},
+              {'text': 'Direct Recruiter Access', 'included': true},
+              {'text': 'Personalized Job Concierge', 'included': true},
+              {'text': 'Salary Negotiation AI', 'included': true},
+              {'text': 'LinkedIn Profile Enhancement', 'included': true},
+              {'text': 'VIP Support (4h response)', 'included': true},
+              {'text': 'Monthly Career Strategy Session', 'included': true},
+            ],
+            'buttonText': 'Go Premium',
+            'isPopular': false,
+          },
+        ];
+
+      case 'Recruiter':
+        return [
+          {
+            'title': 'Starter',
+            'subtitle': 'For small teams',
+            'price': '0',
+            'period': 'Up to 3 active job posts',
+            'features': [
+              {'text': 'Up to 3 Active Job Posts', 'included': true},
+              {'text': 'Basic Candidate Search', 'included': true},
+              {'text': 'Manual Candidate Screening', 'included': true},
+              {'text': 'Email Notifications', 'included': true},
+              {'text': '50 Candidate Views/month', 'included': true},
+              {'text': 'AI-Powered Candidate Matching', 'included': false},
+              {'text': 'Auto Job Description Builder', 'included': false},
+              {'text': 'Analytics Dashboard', 'included': false},
+            ],
+            'buttonText': 'Start Free',
+            'isPopular': false,
+          },
+          {
+            'title': 'Business',
+            'subtitle': 'For growing companies',
+            'price': _isAnnual ? '99' : '119',
+            'period': _isAnnual ? 'per month, billed annually' : 'per month',
+            'features': [
+              {'text': 'Everything in Starter', 'included': true},
+              {'text': 'Unlimited Job Posts', 'included': true},
+              {'text': 'AI-Powered Candidate Matching', 'included': true},
+              {'text': 'Auto Candidate Shortlisting', 'included': true},
+              {'text': 'Auto Job Description Builder', 'included': true},
+              {'text': 'Advanced Analytics Dashboard', 'included': true},
+              {'text': 'Interview Scheduling Tools', 'included': true},
+              {'text': 'Unlimited Candidate Views', 'included': true},
+              {'text': 'Team Collaboration (5 users)', 'included': true},
+            ],
+            'buttonText': 'Start 14-Day Free Trial',
+            'isPopular': true,
+          },
+          {
+            'title': 'Enterprise',
+            'subtitle': 'For large organizations',
+            'price': _isAnnual ? '299' : '349',
+            'period': _isAnnual ? 'per month, billed annually' : 'per month',
+            'features': [
+              {'text': 'Everything in Business', 'included': true},
+              {'text': 'Dedicated Account Manager', 'included': true},
+              {'text': 'Custom Branding', 'included': true},
+              {'text': 'API Access for Integration', 'included': true},
+              {'text': 'Advanced Workflow Automation', 'included': true},
+              {'text': 'Unlimited Team Members', 'included': true},
+              {'text': 'Priority Admin Review (2h)', 'included': true},
+              {'text': 'Custom Training & Onboarding', 'included': true},
+              {'text': 'SLA Guarantee', 'included': true},
+            ],
+            'buttonText': 'Contact Sales',
+            'isPopular': false,
+          },
+        ];
+
+      case 'Admin':
+        return [
+          {
+            'title': 'Essential',
+            'subtitle': 'For small platforms',
+            'price': _isAnnual ? '199' : '239',
+            'period': _isAnnual ? 'per month, billed annually' : 'per month',
+            'features': [
+              {'text': 'Recruiter Request Management', 'included': true},
+              {'text': 'Candidate Vetting System', 'included': true},
+              {'text': 'Interview Coordination', 'included': true},
+              {'text': 'Basic Analytics Dashboard', 'included': true},
+              {'text': 'Up to 50 Recruiters', 'included': true},
+              {'text': 'Email Support', 'included': true},
+              {'text': 'AI-Powered Fraud Detection', 'included': false},
+              {'text': 'Advanced Reporting', 'included': false},
+            ],
+            'buttonText': 'Get Started',
+            'isPopular': false,
+          },
+          {
+            'title': 'Professional',
+            'subtitle': 'For growing platforms',
+            'price': _isAnnual ? '399' : '479',
+            'period': _isAnnual ? 'per month, billed annually' : 'per month',
+            'features': [
+              {'text': 'Everything in Essential', 'included': true},
+              {'text': 'AI-Powered Fraud Detection', 'included': true},
+              {'text': 'Advanced Reporting & Analytics', 'included': true},
+              {'text': 'Automated Candidate Matching', 'included': true},
+              {'text': 'Quality Score System', 'included': true},
+              {'text': 'Up to 200 Recruiters', 'included': true},
+              {'text': 'Priority Support (8h response)', 'included': true},
+              {'text': 'Custom Workflows', 'included': true},
+              {'text': 'Multi-Admin Access (3 admins)', 'included': true},
+            ],
+            'buttonText': 'Start 14-Day Free Trial',
+            'isPopular': true,
+          },
+          {
+            'title': 'Enterprise',
+            'subtitle': 'For large platforms',
+            'price': _isAnnual ? '799' : '959',
+            'period': _isAnnual ? 'per month, billed annually' : 'per month',
+            'features': [
+              {'text': 'Everything in Professional', 'included': true},
+              {'text': 'Unlimited Recruiters', 'included': true},
+              {'text': 'Unlimited Admins', 'included': true},
+              {'text': 'White-Label Solution', 'included': true},
+              {'text': 'Advanced AI Automation', 'included': true},
+              {'text': 'Dedicated Success Manager', 'included': true},
+              {'text': 'Custom Integrations', 'included': true},
+              {'text': '24/7 VIP Support (1h response)', 'included': true},
+              {'text': 'SLA with 99.9% Uptime', 'included': true},
+            ],
+            'buttonText': 'Contact Sales',
+            'isPopular': false,
+          },
+        ];
+
+      default:
+        return [];
+    }
   }
 
   Widget _buildPricingCard(int index, Map<String, dynamic> plan) {
@@ -382,9 +584,8 @@ class _PremiumPricingPageState extends State<PremiumPricingPage>
             color: Colors.white,
             borderRadius: BorderRadius.circular(24),
             border: Border.all(
-              color: isPopular
-                  ? const Color(0xFF6366F1)
-                  : const Color(0xFFE2E8F0),
+              color: isPopular ? const Color(0xFF6366F1) : const Color(
+                  0xFFE2E8F0),
               width: isPopular ? 2 : 1,
             ),
             boxShadow: [
@@ -406,13 +607,10 @@ class _PremiumPricingPageState extends State<PremiumPricingPage>
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Popular Badge
                     if (isPopular)
                       Container(
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 6,
-                        ),
+                            horizontal: 12, vertical: 6),
                         decoration: BoxDecoration(
                           gradient: const LinearGradient(
                             colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
@@ -430,8 +628,6 @@ class _PremiumPricingPageState extends State<PremiumPricingPage>
                         ),
                       ),
                     if (isPopular) const SizedBox(height: 20),
-
-                    // Title
                     Text(
                       plan['title'],
                       style: GoogleFonts.inter(
@@ -442,8 +638,6 @@ class _PremiumPricingPageState extends State<PremiumPricingPage>
                       ),
                     ),
                     const SizedBox(height: 4),
-
-                    // Subtitle
                     Text(
                       plan['subtitle'],
                       style: GoogleFonts.inter(
@@ -454,8 +648,6 @@ class _PremiumPricingPageState extends State<PremiumPricingPage>
                       ),
                     ),
                     const SizedBox(height: 24),
-
-                    // Price
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -495,8 +687,6 @@ class _PremiumPricingPageState extends State<PremiumPricingPage>
                       ],
                     ),
                     const SizedBox(height: 8),
-
-                    // Period
                     Text(
                       plan['period'],
                       style: GoogleFonts.inter(
@@ -507,19 +697,10 @@ class _PremiumPricingPageState extends State<PremiumPricingPage>
                       ),
                     ),
                     const SizedBox(height: 32),
-
-                    // CTA Button
                     _buildCTAButton(plan['buttonText'], isPopular, isHovered),
                     const SizedBox(height: 32),
-
-                    // Divider
-                    Container(
-                      height: 1,
-                      color: const Color(0xFFE2E8F0),
-                    ),
+                    Container(height: 1, color: const Color(0xFFE2E8F0)),
                     const SizedBox(height: 24),
-
-                    // Features
                     ...List.generate(
                       (plan['features'] as List).length,
                           (i) {
@@ -536,8 +717,6 @@ class _PremiumPricingPageState extends State<PremiumPricingPage>
                   ],
                 ),
               ),
-
-              // Shine effect on hover
               if (isHovered && isPopular)
                 Positioned.fill(
                   child: ClipRRect(
@@ -580,10 +759,7 @@ class _PremiumPricingPageState extends State<PremiumPricingPage>
         borderRadius: BorderRadius.circular(12),
         border: isPrimary
             ? null
-            : Border.all(
-          color: const Color(0xFFE2E8F0),
-          width: 1.5,
-        ),
+            : Border.all(color: const Color(0xFFE2E8F0), width: 1.5),
         boxShadow: isHovered
             ? [
           BoxShadow(
@@ -625,9 +801,8 @@ class _PremiumPricingPageState extends State<PremiumPricingPage>
             child: Icon(
               included ? Icons.check_rounded : Icons.close_rounded,
               size: 14,
-              color: included
-                  ? const Color(0xFF6366F1)
-                  : const Color(0xFF94A3B8),
+              color: included ? const Color(0xFF6366F1) : const Color(
+                  0xFF94A3B8),
             ),
           ),
         ),
@@ -638,93 +813,14 @@ class _PremiumPricingPageState extends State<PremiumPricingPage>
             style: GoogleFonts.inter(
               fontSize: 14,
               fontWeight: FontWeight.w500,
-              color: included
-                  ? const Color(0xFF334155)
-                  : const Color(0xFF94A3B8),
+              color: included ? const Color(0xFF334155) : const Color(
+                  0xFF94A3B8),
               letterSpacing: -0.1,
               decoration: included ? null : TextDecoration.lineThrough,
             ),
           ),
         ),
       ],
-    );
-  }
-
-  Widget _buildFAQSection() {
-    return Container(
-      constraints: const BoxConstraints(maxWidth: 800),
-      child: Column(
-        children: [
-          Text(
-            'Frequently asked questions',
-            style: GoogleFonts.inter(
-              fontSize: 32,
-              fontWeight: FontWeight.w700,
-              color: const Color(0xFF0F172A),
-              letterSpacing: -1,
-            ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 40),
-          _buildFAQItem(
-            'Can I change plans at any time?',
-            'Yes, you can upgrade or downgrade your plan at any time. Changes take effect immediately.',
-          ),
-          const SizedBox(height: 16),
-          _buildFAQItem(
-            'What payment methods do you accept?',
-            'We accept all major credit cards, PayPal, and bank transfers for annual plans.',
-          ),
-          const SizedBox(height: 16),
-          _buildFAQItem(
-            'Is there a free trial?',
-            'Yes! Professional and Enterprise plans come with a 14-day free trial. No credit card required.',
-          ),
-          const SizedBox(height: 16),
-          _buildFAQItem(
-            'What happens when I cancel?',
-            'You can cancel anytime. You\'ll retain access until the end of your billing period.',
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildFAQItem(String question, String answer) {
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: const Color(0xFFE2E8F0),
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            question,
-            style: GoogleFonts.inter(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: const Color(0xFF0F172A),
-              letterSpacing: -0.2,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            answer,
-            style: GoogleFonts.inter(
-              fontSize: 14,
-              fontWeight: FontWeight.w400,
-              color: const Color(0xFF64748B),
-              height: 1.6,
-              letterSpacing: -0.1,
-            ),
-          ),
-        ],
-      ),
     );
   }
 
@@ -917,6 +1013,83 @@ class _PremiumPricingPageState extends State<PremiumPricingPage>
     );
   }
 
+  Widget _buildFAQSection() {
+    return Container(
+      constraints: const BoxConstraints(maxWidth: 800),
+      child: Column(
+        children: [
+          Text(
+            'Frequently asked questions',
+            style: GoogleFonts.inter(
+              fontSize: 32,
+              fontWeight: FontWeight.w700,
+              color: const Color(0xFF0F172A),
+              letterSpacing: -1,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 40),
+          _buildFAQItem(
+            'Can I change plans at any time?',
+            'Yes, you can upgrade or downgrade your plan at any time. Changes take effect immediately.',
+          ),
+          const SizedBox(height: 16),
+          _buildFAQItem(
+            'What payment methods do you accept?',
+            'We accept all major credit cards, PayPal, and bank transfers for annual plans.',
+          ),
+          const SizedBox(height: 16),
+          _buildFAQItem(
+            'Is there a free trial?',
+            'Yes! Professional and Enterprise plans come with a 14-day free trial. No credit card required.',
+          ),
+          const SizedBox(height: 16),
+          _buildFAQItem(
+            'What happens when I cancel?',
+            'You can cancel anytime. You\'ll retain access until the end of your billing period.',
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFAQItem(String question, String answer) {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: const Color(0xFFE2E8F0),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            question,
+            style: GoogleFonts.inter(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: const Color(0xFF0F172A),
+              letterSpacing: -0.2,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            answer,
+            style: GoogleFonts.inter(
+              fontSize: 14,
+              fontWeight: FontWeight.w400,
+              color: const Color(0xFF64748B),
+              height: 1.6,
+              letterSpacing: -0.1,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
   Widget _buildStatsShowcase() {
     return Container(
@@ -1017,10 +1190,8 @@ class _PremiumPricingPageState extends State<PremiumPricingPage>
     );
   }
 
-
-
-
 }
+
 class _GridPainter extends CustomPainter {
   final double animationValue;
 

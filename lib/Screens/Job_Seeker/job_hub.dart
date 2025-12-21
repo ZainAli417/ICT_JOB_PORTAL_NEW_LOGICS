@@ -3,7 +3,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
-
+import 'package:tuple/tuple.dart';
 import 'JS_Top_Bar.dart';
 import 'job_seeker_provider.dart';
 import 'Job_seeker_Available_jobs.dart';
@@ -104,14 +104,23 @@ class _job_hubState extends State<job_hub>
   Widget build(BuildContext context) {
     return ScrollConfiguration(
       behavior: SmoothScrollBehavior(),
-      child: MainLayout(
-        activeIndex: 3,
-        child: FadeTransition(
-          opacity: _fadeAnimation,
-          child: SlideTransition(
-            position: _slideAnimation,
-            child: _buildDashboardContent(context),
-          ),
+      child: Scaffold(
+        body: Row(
+          children: [
+            // NEW SIDEBAR - Add this
+            JobSeekerSidebar(activeIndex: 3), // 3 = Job Hub index
+
+            // YOUR EXISTING CONTENT - Wrap in Expanded
+            Expanded(
+              child: FadeTransition(
+                opacity: _fadeAnimation,
+                child: SlideTransition(
+                  position: _slideAnimation,
+                  child: _buildDashboardContent(context),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -120,7 +129,7 @@ class _job_hubState extends State<job_hub>
   Widget _buildDashboardContent(BuildContext context) {
     // Responsive 3-column main layout:
     return Padding(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(0),
       child: LayoutBuilder(builder: (context, constraints) {
         final maxW = constraints.maxWidth;
         final isDesktop = maxW > 1100;
@@ -148,48 +157,40 @@ class _job_hubState extends State<job_hub>
                         children: [
                           const SizedBox(height: 16),
                           Expanded(
-                            child: Consumer<JobSeekerProvider>(
-                              builder: (context, provider, _) {
-                                return StreamBuilder<List<Map<String, dynamic>>>(
-                                  stream: provider.publicJobsStream(),
-                                  builder: (context, snapshot) {
-                                    if (snapshot.connectionState ==
-                                        ConnectionState.waiting) {
-                                      return const Center(
-                                          child: CircularProgressIndicator());
-                                    }
+                            child: Selector<JobSeekerProvider, Tuple2<bool, List<Map<String, dynamic>>>>(
+                              selector: (_, p) => Tuple2(
+                                p.isLoadingActiveJobs,
+                                p.filteredJobs,
+                              ),
+                              builder: (context, data, _) {
+                                final isLoading = data.item1;
+                                final jobs = data.item2;
 
-                                    if (snapshot.hasError) {
-                                      return Center(
-                                        child: Text(
-                                          'Error loading jobs: ${snapshot.error}',
+                                if (isLoading) {
+                                  return const Center(child: CircularProgressIndicator());
+                                }
+
+                                if (jobs.isEmpty) {
+                                  return Center(
+                                    child: Column(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        Icon(
+                                          Icons.work_outline_rounded,
+                                          size: 80,
+                                          color: Colors.grey.shade400,
+                                        ),
+                                        const SizedBox(height: 16),
+                                        const Text(
+                                          'No jobs available right now.\nPlease check back later.',
                                           textAlign: TextAlign.center,
                                         ),
-                                      );
-                                    }
+                                      ],
+                                    ),
+                                  );
+                                }
 
-                                    final jobs = snapshot.data ?? [];
-                                    if (jobs.isEmpty) {
-                                      return Center(
-                                        child: Column(
-                                          mainAxisAlignment: MainAxisAlignment.center,
-                                          children: [
-                                            Icon(Icons.work_outline_rounded,
-                                                size: 80,
-                                                color: Colors.grey.shade400),
-                                            const SizedBox(height: 16),
-                                            const Text(
-                                              'No jobs available right now.\nPlease check back later.',
-                                              textAlign: TextAlign.center,
-                                            ),
-                                          ],
-                                        ),
-                                      );
-                                    }
-
-                                    return LiveJobsForSeeker(jobs: jobs);
-                                  },
-                                );
+                                return LiveJobsForSeeker(jobs: jobs);
                               },
                             ),
                           ),
@@ -247,42 +248,30 @@ class _job_hubState extends State<job_hub>
                   height: 600,
                   child: Consumer<JobSeekerProvider>(
                     builder: (context, provider, _) {
-                      return StreamBuilder<List<Map<String, dynamic>>>(
-                        stream: provider.publicJobsStream(),
-                        builder: (context, snapshot) {
-                          if (snapshot.connectionState ==
-                              ConnectionState.waiting) {
-                            return const Center(
-                                child: CircularProgressIndicator());
-                          }
-                          if (snapshot.hasError) {
-                            return Center(
-                              child: Text(
-                                'Error loading jobs: ${snapshot.error}',
+                      if (provider.isLoadingActiveJobs) {
+                        return const Center(child: CircularProgressIndicator());
+                      }
+
+                      final jobs = provider.filteredJobs;
+
+                      if (jobs.isEmpty) {
+                        return Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.work_outline_rounded,
+                                  size: 80, color: Colors.grey.shade400),
+                              const SizedBox(height: 16),
+                              const Text(
+                                'No jobs available right now.\nPlease check back later.',
                                 textAlign: TextAlign.center,
                               ),
-                            );
-                          }
-                          final jobs = snapshot.data ?? [];
-                          if (jobs.isEmpty) {
-                            return Center(
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(Icons.work_outline_rounded,
-                                      size: 80, color: Colors.grey.shade400),
-                                  const SizedBox(height: 16),
-                                  const Text(
-                                    'No jobs available right now.\nPlease check back later.',
-                                    textAlign: TextAlign.center,
-                                  ),
-                                ],
-                              ),
-                            );
-                          }
-                          return LiveJobsForSeeker(jobs: jobs);
-                        },
-                      );
+                            ],
+                          ),
+                        );
+                      }
+
+                      return LiveJobsForSeeker(jobs: jobs);
                     },
                   ),
                 ),
