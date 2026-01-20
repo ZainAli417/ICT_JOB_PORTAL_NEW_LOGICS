@@ -153,15 +153,22 @@ class _recruiter_job_listingState extends State<recruiter_job_listing> with Tick
 
   @override
   Widget build(BuildContext context) {
-    return Recruiter_MainLayout(
-      activeIndex: 1,
-      child: FadeTransition(
-        opacity: _fadeAnimation,
-        child: SlideTransition(
-          position: _slideAnimation,
-          child: _buildDashboardContent(context),
-        ),
-      ),
+    return Scaffold(
+        backgroundColor: Colors.white,
+        body: Row(
+            children: [
+              RecruiterSidebar(activeIndex: 0),
+              Expanded(
+                child:  FadeTransition(
+                  opacity: _fadeAnimation,
+                  child: SlideTransition(
+                    position: _slideAnimation,
+                    child: _buildDashboardContent(context),
+                  ),
+                ),
+              )
+            ]
+        )
     );
   }
 
